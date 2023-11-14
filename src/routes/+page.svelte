@@ -14,6 +14,7 @@
     let displayCount: string = "";
     let msgsFromServer: Utils.SavedChatMsg[] = [{ from: "noone", msgTxt: "hey" }];
     let userList: string[] = [];
+    let tuberList: Utils.Tuber[] = [];
     let myNameFromServer: string | undefined = undefined;
     export let data: Utils.DataFirstLoad;
 
@@ -121,6 +122,8 @@
                 return;
             }
             userList = parsed.data.users.map(u=>u.displayName);
+            tuberList = parsed.data.tubers
+            msgsFromServer = parsed.data.msgs
         });
 
         console.log("subscribed");
@@ -150,9 +153,12 @@
             return
 		}
         const r = await f.json()
-        console.log(r)
-        const count = r['count']
-        displayCount = count
+        const parsedResponse = Utils.tubeResponseSchema.safeParse(r)
+        if(!parsedResponse.success){
+            console.log('bad tube response')
+            return
+        }
+        displayCount = parsedResponse.data.count.toString()
 
     }
 </script>
@@ -190,28 +196,36 @@
     >Set Name</button
 >
 
+<h3>Chat</h3>
 <div class="msgs">
     {#each msgsFromServer as m}
-        <p>{m.from} : {m.msgTxt}</p>
+    <p>{m.from} : {m.msgTxt}</p>
     {/each}
 </div>
 <input
 type="text"
 bind:value={msgInput}
 on:keydown={(event) => {
-        if (!msgInput) {
-            return;
-        }
-        if (event.key === "Enter") {
-            sendMsg();
-            event.preventDefault();
-        }
-    }}
+    if (!msgInput) {
+        return;
+    }
+    if (event.key === "Enter") {
+        sendMsg();
+        event.preventDefault();
+    }
+}}
 />
 <button type="button" on:click={sendMsg} disabled={!msgInput}>Send Msg</button>
+<h3>Users</h3>
 <div class="msgs">
     {#each userList as u}
-        <p>{u}</p>
+    <p>{u}</p>
+    {/each}
+</div>
+<h3>Tubers</h3>
+<div class="msgs">
+    {#each tuberList as t}
+    <p>{t.channelName} : {t.count}</p>
     {/each}
 </div>
 

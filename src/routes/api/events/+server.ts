@@ -37,7 +37,9 @@ export const GET: RequestHandler = async (request) => {
 			start(c) {
 				foundUser.con = c;
 				const welcomeSub : Utils.WelcomeSubscriber = {
-					users: ServerState.state.users.map(u=>({displayName:u.displayName}))
+					users: ServerState.state.users.map(u=>({displayName:u.displayName})),
+					tubers: ServerState.state.tubers,
+					msgs: ServerState.state.msgs,
 				}
 				// setTimeout(() => {
 					c.enqueue(ServerState.encode('welcomeSubscriber',welcomeSub))

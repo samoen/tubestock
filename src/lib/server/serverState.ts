@@ -1,19 +1,34 @@
 import type * as Utils from "$lib/utils";
 
-export type User = {
+export type UserOnServer = {
     uid:string;
     displayName:string;
     con: ReadableStreamController<unknown> | undefined;
 	stream: ReadableStream | undefined;
+	idleStock:number;
+	positions:Position[]
 }
-type AppState = {
-	users : User[]
-	msgs : Utils.SavedChatMsg[]
+export type Position = {
+	tuberId:string,
+	amount:number,
+	subsAtStart:number,
+}
 
+// export type Tuber = {
+// 	channelName:string,
+// 	channelId:string,
+// 	lastSubCount:number,
+// }
+
+type AppState = {
+	users : UserOnServer[]
+	msgs : Utils.SavedChatMsg[]
+	tubers: Utils.Tuber[]
 }
 export const state : AppState = {
 	users: [],
-	msgs: []
+	msgs: [],
+	tubers: [],
 }
 
 export function broadcastUserSentMessage(chatMsg:Utils.ChatMsgBroadcast){
@@ -49,7 +64,7 @@ export function broadcastUserSentMessage(chatMsg:Utils.ChatMsgBroadcast){
 	}
 }
 
-export function broadcastUserJoined(joined:User){
+export function broadcastUserJoined(joined:UserOnServer){
     console.log('broadcast user joined to users: ' + state.users.length + 'online: ' + state.users.filter(u=>u.con).length)
     for (const user of state.users) {
 		if (user.stream && user.con) {

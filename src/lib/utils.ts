@@ -48,7 +48,22 @@ export const tubeRequestSchema = z.object({
 })
 export type TubeRequest = z.infer<typeof tubeRequestSchema>
 
+
+export const tubeResponseSchema = z.object({
+    count:z.number()
+})
+export type TubeResponse = z.infer<typeof tubeResponseSchema>
+
+export const tuberSchema = z.object({
+    channelName:z.string(),
+    channelId:z.string(),
+    count:z.number()
+})
+export type Tuber = z.infer<typeof tuberSchema>
+
 export const welcomeSubscriberSchema = z.object({
-    users:z.array(z.object({displayName:z.string()}))
+    users:z.array(z.object({displayName:z.string()})),
+    tubers:z.array(tuberSchema),
+    msgs:z.array(savedChatMsgSchema)
 })
 export type WelcomeSubscriber = z.infer<typeof welcomeSubscriberSchema>
