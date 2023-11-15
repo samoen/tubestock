@@ -47,27 +47,21 @@ export const POST: RequestHandler = async (requestEvent) => {
     if (!tubeId || !tuberNameFromSearch) {
         return json({ good: false })
     }
-    console.log(tubeId)
-
-    const usrfetched = await fetch(
-        `https://mixerno.space/api/youtube-channel-counter/user/${tubeId}`,
-        {
-            headers: {
-                'Accept': 'application/json',
-
-            }
-        }
-    )
-
-    let usrTxt = await usrfetched.json()
-    const count = usrTxt['counts'][0]['count']
-    ServerState.state.tubers.push({
+    
+    const tuberSubs = await ServerState.fetchTuberSubsFromId(tubeId)
+    if(tuberSubs == undefined){
+        return json({ good: false })
+    }
+    const tuberAdded : Utils.Tuber = {
         channelName:tuberNameFromSearch,
         channelId:tubeId,
-        count:count,
-    })
+        count:tuberSubs,
+        countUpdatedAt: new Date().getTime()
+    }
+    ServerState.state.tubers.push(tuberAdded)
+    ServerState.broadcast('tuberAdded',tuberAdded)
     const response: Utils.TubeResponse = {
-        count: count
+        count: tuberSubs
     }
 
     return json(response);

@@ -1,18 +1,19 @@
 import type * as Utils from "$lib/utils";
 
 export type UserOnServer = {
-    uid:string;
-    displayName:string;
-    con: ReadableStreamController<unknown> | undefined;
+	uid: string;
+	publicId: string;
+	displayName: string;
+	con: ReadableStreamController<unknown> | undefined;
 	stream: ReadableStream | undefined;
-	idleStock:number;
-	positions:Position[]
+	idleStock: number;
+	positions: Utils.Position[]
 }
-export type Position = {
-	tuberId:string,
-	amount:number,
-	subsAtStart:number,
-}
+
+
+// export function createUser(){
+
+// }
 
 // export type Tuber = {
 // 	channelName:string,
@@ -21,27 +22,22 @@ export type Position = {
 // }
 
 type AppState = {
-	users : UserOnServer[]
-	msgs : Utils.SavedChatMsg[]
+	users: UserOnServer[]
+	msgs: Utils.SavedChatMsg[]
 	tubers: Utils.Tuber[]
 }
-export const state : AppState = {
+export const state: AppState = {
 	users: [],
 	msgs: [],
 	tubers: [],
 }
 
-export function broadcastUserSentMessage(chatMsg:Utils.ChatMsgBroadcast){
-	console.log('broadcast chatmsg to users: ' + state.users.length + 'online: ' + state.users.filter(u=>u.con).length)
-    for (const user of state.users) {
+export function broadcast(event: string, data: object) {
+	for (const user of state.users) {
 		if (user.stream && user.con) {
-			// const toSend : UpdateFromServer = {
-            //     newMsg: msgs.at(-1)
-            // };
 			let fail = false;
 			try {
-                console.log('enquing to users ' + JSON.stringify(chatMsg))
-				user.con.enqueue(encode(`chatmsg`, chatMsg));
+				user.con.enqueue(encode(event, data));
 			} catch (e) {
 				console.log(user.displayName + ' failed to enqeue ' + e);
 				fail = true;
@@ -62,39 +58,19 @@ export function broadcastUserSentMessage(chatMsg:Utils.ChatMsgBroadcast){
 			}
 		}
 	}
+
 }
 
-export function broadcastUserJoined(joined:UserOnServer){
-    console.log('broadcast user joined to users: ' + state.users.length + 'online: ' + state.users.filter(u=>u.con).length)
-    for (const user of state.users) {
-		if (user.stream && user.con) {
-			const toSend : Utils.UserJoined = {
-                joinedUserName: joined.displayName,
-            };
-			let fail = false;
-			try {
-                console.log('enquing to users ' + JSON.stringify(toSend))
-				user.con.enqueue(encode(`userJoined`, toSend));
-			} catch (e) {
-				console.log(user.displayName + ' failed to enqeue ' + e);
-				fail = true;
-			}
-			if (fail) {
-				try {
-					user.con?.close();
-				} catch (e) {
-					console.log('failed to enque and failed to close!');
-				}
-				try {
-					// user.connectionState.stream?.cancel()
-				} catch (e) {
-					console.log('failed to enque and failed to cancel stream!');
-				}
-				user.con = undefined;
-				user.stream = undefined;
-			}
-		}
-	}
+export function broadcastUserSentMessage(chatMsg: Utils.ChatMsgBroadcast) {
+	broadcast('chatmsg', chatMsg)
+}
+
+export function broadcastUserJoined(joined: UserOnServer) {
+	const toSend: Utils.UserOnClient = {
+		displayName: joined.displayName,
+		publicId: joined.publicId
+	};
+	broadcast('userJoined', toSend)
 }
 
 const textEncoder = new TextEncoder();
@@ -105,4 +81,82 @@ export function encode(event: string, data: object, noretry = false) {
 	}
 	toEncode = toEncode + `\n`;
 	return textEncoder.encode(toEncode);
+}
+export function calcReturnValue(pos: Utils.Position): number | undefined {
+	const foundTuber = state.tubers.findLast(t => t.channelId == pos.tuberId)
+	if (!foundTuber) return undefined
+
+	const subsGained = foundTuber.count - pos.subsAtStart
+	const percentGain = subsGained / pos.subsAtStart
+	let bonus = Math.floor(pos.amount * percentGain)
+	if (!pos.long) {
+		bonus = bonus * -1
+	}
+	return bonus
+}
+export function positionToPosWithReturnVal(pos: Utils.Position): Utils.PositionWithReturnValue | undefined {
+	const val = calcReturnValue(pos)
+	if (val == undefined) return undefined
+	const posWithValue: Utils.PositionWithReturnValue = {
+		...pos,
+		returnValue: val,
+	}
+	return posWithValue
+}
+export function positionArrayToPosWithReturnValArray(poses : Utils.Position[]): Utils.PositionWithReturnValue[]{
+	const result : Utils.PositionWithReturnValue[] = []
+	for (const pos of poses){
+		const withRet = positionToPosWithReturnVal(pos)
+		if(withRet == undefined)continue
+		result.push(withRet)
+	}
+	return result
+}
+export async function checkUpdateCount(tuber: Utils.Tuber) {
+	let testing = true
+	if (testing) {
+		tuber.count = tuber.count - 500000
+		tuber.countUpdatedAt = new Date().getTime()
+		return
+	}
+
+	const updatedAtPlusADay = tuber.countUpdatedAt + 80000000
+	const today = new Date().getTime()
+	if (today < updatedAtPlusADay) {
+		return
+	}
+	const fetchedCount = await fetchTuberSubsFromId(tuber.channelId)
+	if (fetchedCount == undefined) {
+		return
+	}
+	tuber.count = fetchedCount
+	tuber.countUpdatedAt = today
+}
+
+export async function fetchTuberSubsFromId(id: string): Promise<number | undefined> {
+	const usrfetched = await fetch(
+		`https://mixerno.space/api/youtube-channel-counter/user/${id}`,
+		{
+			headers: {
+				'Accept': 'application/json',
+
+			}
+		}
+	)
+	if (!usrfetched.ok) {
+		return undefined
+	}
+
+	let usrTxt = await usrfetched.json()
+	let count: number | undefined = undefined
+	try {
+		count = usrTxt['counts'][0]['count']
+	} catch (e) {
+		console.log('failed to get count from mixerno')
+	}
+	if (count == undefined || typeof count !== 'number') {
+		return undefined
+	}
+
+	return count
 }
