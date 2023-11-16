@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { sendMsgSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
+import * as Uuid from 'uuid'
 
 export const POST: RequestHandler = async (event) => {
     const uidCookie = event.cookies.get('uid')
@@ -33,6 +34,7 @@ export const POST: RequestHandler = async (event) => {
         return json({ error: 'tuber not found' }, { status: 400 });
     }
     const position : Utils.Position = {
+        positionId: Uuid.v4(),
         amount:putStockRequest.data.amount,
         subsAtStart:foundTuber.count,
         tuberId:foundTuber.channelId,

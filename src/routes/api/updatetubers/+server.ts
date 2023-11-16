@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     updateThem()
-    
+    // ServerState.broadcast('positionsUpdated',{})
 
     return json({ good: true });
 };

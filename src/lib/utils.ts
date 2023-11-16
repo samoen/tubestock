@@ -75,6 +75,7 @@ export const exitPositionRequestSchema = z.object({
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 
 export const positionSchema = z.object({
+    positionId:z.string(),
     tuberId: z.string(),
     tuberName: z.string(),
     amount: z.number(),
@@ -96,6 +97,10 @@ export const exitPositionResponseSchema = z.object({
 })
 export type ExitPositionResponse = z.infer<typeof exitPositionResponseSchema>
 
+export const positionUpdateEventSchema = z.object({
+    positions:z.array(positionWithReturnValueSchema)
+})
+
 export const putStockResponseSchema = z.object({
     idleStock: z.number(),
     positions: z.array(positionWithReturnValueSchema),
@@ -112,11 +117,11 @@ export type Tuber = z.infer<typeof tuberSchema>
 
 
 export const welcomeSubscriberSchema = z.object({
-    users: z.array(userOnClientSchema),
-    tubers: z.array(tuberSchema),
-    msgs: z.array(savedChatMsgSchema),
-    positions: z.array(positionWithReturnValueSchema),
-    yourName: z.string(),
-    yourIdleStock: z.number(),
+    users: z.array(userOnClientSchema).optional(),
+    tubers: z.array(tuberSchema).optional(),
+    msgs: z.array(savedChatMsgSchema).optional(),
+    positions: z.array(positionWithReturnValueSchema).optional(),
+    yourName: z.string().optional(),
+    yourIdleStock: z.number().optional(),
 })
 export type WelcomeSubscriber = z.infer<typeof welcomeSubscriberSchema>

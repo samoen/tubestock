@@ -139,12 +139,24 @@
                 console.log("bad welcome sub update from server");
                 return;
             }
-            userList = parsed.data.users;
-            tuberList = parsed.data.tubers;
-            chatMsgsDisplay = parsed.data.msgs.reverse();
-            positionsList = parsed.data.positions;
-            myNameDisplay = parsed.data.yourName;
-            idleStockDisplay = parsed.data.yourIdleStock;
+            if(parsed.data.users){
+                userList = parsed.data.users;
+            }
+            if(parsed.data.tubers){
+                tuberList = parsed.data.tubers;
+            }
+            if(parsed.data.msgs){
+                chatMsgsDisplay = parsed.data.msgs.reverse();
+            }
+            if(parsed.data.positions){
+                positionsList = parsed.data.positions;
+            }
+            if(parsed.data.yourName){
+                myNameDisplay = parsed.data.yourName;
+            }
+            if(parsed.data.yourIdleStock !== undefined){
+                idleStockDisplay = parsed.data.yourIdleStock;
+            }
         });
 
         source.addEventListener("tuberAdded", (e) => {
@@ -298,19 +310,23 @@
             currentTarget: EventTarget & HTMLInputElement;
         },
         toFire: () => {}
-    ) {
-        if (event.key === "Enter") {
-            toFire();
-            event.preventDefault();
+        ) {
+            if (event.key === "Enter") {
+                toFire();
+                event.preventDefault();
+            }
         }
-    }
-</script>
+    </script>
 
 <svelte:window bind:scrollY={$windowScrollY} />
 
 <div class="topBar" class:solid={$atTop} class:blurry={!$atTop}>
     <span>Tubestock</span>
 </div>
+{#if !source || source.readyState == 2}
+    <button on:click={subscribe}>subscribe</button>
+    
+{/if}
 <button on:click={updateTubers}>update tubers</button>
 <h3>User</h3>
 <p>My name : {myNameDisplay}</p>
@@ -357,7 +373,7 @@
 <br />
 <br />
 
-<!-- <button on:click={subscribe}>subscribe</button> -->
+
 
 <h3>Chat</h3>
 <div class="msgs">

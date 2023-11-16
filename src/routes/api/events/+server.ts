@@ -39,15 +39,15 @@ export const GET: RequestHandler = async (event) => {
 		}
 		const foundUser = ServerState.state.users.findLast(u=>u.uid == uidCookie);
 		if (!foundUser) {
-			console.log('user not found')
-			event.cookies.delete('uid')
-			event.cookies.delete('username')
+			console.log('cant subscribe user not found')
+			event.cookies.delete('uid',{path:'/'})
+			event.cookies.delete('username',{path:'/'})
 			return json({ error: 'user not found' }, { status: 401 });
 		}
 		if (foundUser.displayName != usernameCookie) {
 			console.log('user not match ')
-			event.cookies.delete('uid')
-			event.cookies.delete('username')
+			event.cookies.delete('uid',{path:'/'})
+			event.cookies.delete('username',{path:'/'})
 			return json({ error: 'username cookie not matching uid cookie in user list' }, { status: 401 });
 		}
 		if (
