@@ -5,6 +5,8 @@ import * as Utils from '$lib/utils'
 import * as uuid from 'uuid'
 
 export const POST: RequestHandler = async (event) => {
+    await ServerState.fakeLatency()
+    
     const msg = await event.request.json();
     const parsed = Utils.setNameSchema.safeParse(msg)
     if (!parsed.success) {

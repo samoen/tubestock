@@ -10,6 +10,13 @@ export type UserOnServer = {
 	positions: Utils.Position[]
 }
 
+const USE_FAKE_LATENCY = true
+export async function fakeLatency(){
+	if(import.meta.env.MODE == 'development' && USE_FAKE_LATENCY){
+		await new Promise(r=>setTimeout(r,700))
+	}
+}
+
 
 // export function createUser(){
 
@@ -58,7 +65,46 @@ export function broadcast(event: string, data: object) {
 			}
 		}
 	}
-
+}
+export type SamResult<T> = {
+    failed:false
+    value : T,
+} | {
+    failed: true,
+    error: Error
+}
+function runCatching<T>(toRun:()=>T):SamResult<T>{
+	try{
+		const ran = toRun()
+		return {
+			failed:false,
+			value:ran,
+		}
+	}catch(e){
+		console.log('runcatching caught')
+		return {
+            failed:true,
+            error:((a:unknown)=>{
+                if(a instanceof Error){
+                    return a
+                }
+                return new Error(String(a))
+            })(e),
+        }
+	}
+}
+export function sendToUser(user: UserOnServer, payload: Utils.WelcomeSubscriber) {
+	const con = user.con
+	if (!con) return
+	const res = runCatching(()=>{
+		con.enqueue(encode('welcomeSubscriber', payload));
+	})
+	if(res.failed){
+		console.log(user.displayName + ' failed to enqeue');
+		runCatching(()=>con.close())
+		user.con = undefined;
+		user.stream = undefined;
+	}
 }
 
 export function broadcastUserSentMessage(chatMsg: Utils.ChatMsgBroadcast) {
@@ -103,34 +149,35 @@ export function positionToPosWithReturnVal(pos: Utils.Position): Utils.PositionW
 	}
 	return posWithValue
 }
-export function positionArrayToPosWithReturnValArray(poses : Utils.Position[]): Utils.PositionWithReturnValue[]{
-	const result : Utils.PositionWithReturnValue[] = []
-	for (const pos of poses){
+export function positionArrayToPosWithReturnValArray(poses: Utils.Position[]): Utils.PositionWithReturnValue[] {
+	const result: Utils.PositionWithReturnValue[] = []
+	for (const pos of poses) {
 		const withRet = positionToPosWithReturnVal(pos)
-		if(withRet == undefined)continue
+		if (withRet == undefined) continue
 		result.push(withRet)
 	}
 	return result
 }
-export async function checkUpdateCount(tuber: Utils.Tuber) {
+export async function checkUpdateCount(tuber: Utils.Tuber): Promise<boolean> {
 	let testing = true
 	if (testing) {
 		tuber.count = tuber.count - 500000
 		tuber.countUpdatedAt = new Date().getTime()
-		return
+		return true
 	}
 
 	const updatedAtPlusADay = tuber.countUpdatedAt + 80000000
 	const today = new Date().getTime()
 	if (today < updatedAtPlusADay) {
-		return
+		return false
 	}
 	const fetchedCount = await fetchTuberSubsFromId(tuber.channelId)
 	if (fetchedCount == undefined) {
-		return
+		return false
 	}
 	tuber.count = fetchedCount
 	tuber.countUpdatedAt = today
+	return true
 }
 
 export async function fetchTuberSubsFromId(id: string): Promise<number | undefined> {

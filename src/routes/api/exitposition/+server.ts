@@ -6,16 +6,16 @@ import * as uuid from 'uuid'
 
 export const POST: RequestHandler = async (event) => {
     const uidCookie = event.cookies.get('uid')
-    if(!uidCookie){
+    if (!uidCookie) {
         return json({ error: 'need a uid cookie to exit position' }, { status: 401 });
     }
     const usernameCookie = event.cookies.get('username')
-    if(!usernameCookie){
+    if (!usernameCookie) {
         return json({ error: 'need a username cookie to exit position' }, { status: 401 });
     }
-    
-    const foundUser = ServerState.state.users.findLast(u=>u.uid == uidCookie && u.displayName == usernameCookie)
-    if(!foundUser){
+
+    const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie && u.displayName == usernameCookie)
+    if (!foundUser) {
         return json({ error: 'user not found' }, { status: 401 });
     }
 
@@ -29,19 +29,21 @@ export const POST: RequestHandler = async (event) => {
     //     return json({ error: 'tuber not in list' }, { status: 400 });
     // }
 
-    const toExits = foundUser.positions.filter(p=>p.tuberId == parsed.data.channelId)
-
-    for(const toExit of toExits){
-        const bonus = ServerState.calcReturnValue(toExit)
-        if(bonus == undefined)continue
-        const refund = toExit.amount + bonus
-        foundUser.idleStock += refund
-
+    const toExit = foundUser.positions.findLast(p => p.positionId == parsed.data.positionId)
+    if (!toExit) {
+        return json({ error: 'position not found' }, { status: 400 });
     }
-    foundUser.positions = foundUser.positions.filter(p=>p.tuberId !== parsed.data.channelId)
     
+    const bonus = ServerState.calcReturnValue(toExit)
+    if (bonus == undefined){
+        return json({ error: 'server error' }, { status: 400 });
+    }
+    const refund = toExit.amount + bonus
+    foundUser.idleStock += refund
+    foundUser.positions = foundUser.positions.filter(p => p.positionId !== parsed.data.positionId)
 
-    const response : Utils.ExitPositionResponse = {
+
+    const response: Utils.ExitPositionResponse = {
         idleStock: foundUser.idleStock,
         positions: ServerState.positionArrayToPosWithReturnValArray(foundUser.positions),
     }

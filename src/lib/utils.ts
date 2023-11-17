@@ -11,19 +11,21 @@ export type DataFirstLoad = {
     userId?: string;
 };
 
+export const safeString = z.string().min(1).max(255)
+
 export const setNameSchema = z.object({
-    wantName: z.string()
+    wantName: safeString
 })
 export type SetName = z.infer<typeof setNameSchema>
 
 export const sendMsgSchema = z.object({
-    msgTxt: z.string()
+    msgTxt: safeString
 })
 export type SendMsg = z.infer<typeof sendMsgSchema>
 
 export const savedChatMsgSchema = z.object({
     msgTxt: z.string(),
-    from: z.string(),
+    fromUserName: z.string(),
 })
 
 export type SavedChatMsg = z.infer<typeof savedChatMsgSchema>
@@ -70,7 +72,7 @@ export const putStockRequestSchema = z.object({
 export type PutStockRequest = z.infer<typeof putStockRequestSchema>
 
 export const exitPositionRequestSchema = z.object({
-    channelId: z.string().min(1).max(255),
+    positionId:z.string(),
 })
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 

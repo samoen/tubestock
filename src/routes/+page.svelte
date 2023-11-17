@@ -6,14 +6,16 @@
     } from "$lib/utils";
     import { onMount } from "svelte";
     import * as Utils from "$lib/utils";
+    import * as ClientState from "$lib/client/clientState";
     import { invalidateAll } from "$app/navigation";
     import { derived, writable } from "svelte/store";
+    import spinny from "$lib/client/svg/spinny.svg";
+    import SubmitButton from "$lib/client/components/SimpleForm.svelte";
+    import SimpleForm from "$lib/client/components/SimpleForm.svelte";
+
 
     export let data: Utils.DataFirstLoad;
-
-    let setNameInput: string;
-    let msgInput: string;
-    let tuberInput: string;
+    
     let chatMsgsDisplay: Utils.SavedChatMsg[] = [];
     let userList: Utils.UserOnClient[] = [];
     let tuberList: Utils.Tuber[] = [];
@@ -24,6 +26,7 @@
     let putStockAmountInput: string;
     let loading = false;
     let source: EventSource | undefined = undefined;
+    let mounted = false
 
     export const windowScrollY = writable(0);
     export const atTop = derived(windowScrollY, ($s) => {
@@ -45,14 +48,14 @@
             source?.close();
         });
         subscribe();
+        mounted = true
     });
 
-    async function setName() {
-        if (!setNameInput) return;
+
+    async function setName(inputTxt:string) {
         const toSend: SetName = {
-            wantName: setNameInput,
+            wantName: inputTxt,
         };
-        setNameInput = "";
         const joincall = await fetch("/api/setname", {
             method: "POST",
             body: JSON.stringify(toSend),
@@ -69,12 +72,11 @@
         myNameDisplay = welcome.data.yourName;
     }
 
-    async function sendMsg() {
+    async function sendMsg(chatInputTxt:string) {
         const toSend: SendMsg = {
-            msgTxt: msgInput,
+            msgTxt: chatInputTxt,
         };
-        msgInput = "";
-        const joincall = await fetch("/api/sendMsg", {
+        const resp = await fetch("/api/sendMsg", {
             method: "POST",
             body: JSON.stringify(toSend),
             headers: {
@@ -83,7 +85,6 @@
         });
     }
 
-    
     async function subscribe() {
         if (source != undefined) {
             console.log("resubscribing");
@@ -139,22 +140,22 @@
                 console.log("bad welcome sub update from server");
                 return;
             }
-            if(parsed.data.users){
+            if (parsed.data.users) {
                 userList = parsed.data.users;
             }
-            if(parsed.data.tubers){
+            if (parsed.data.tubers) {
                 tuberList = parsed.data.tubers;
             }
-            if(parsed.data.msgs){
+            if (parsed.data.msgs) {
                 chatMsgsDisplay = parsed.data.msgs.reverse();
             }
-            if(parsed.data.positions){
+            if (parsed.data.positions) {
                 positionsList = parsed.data.positions;
             }
-            if(parsed.data.yourName){
+            if (parsed.data.yourName) {
                 myNameDisplay = parsed.data.yourName;
             }
-            if(parsed.data.yourIdleStock !== undefined){
+            if (parsed.data.yourIdleStock !== undefined) {
                 idleStockDisplay = parsed.data.yourIdleStock;
             }
         });
@@ -179,15 +180,9 @@
             return;
         }
     }
-    async function requestTubeClicked() {
-        if(!tuberInput)return
-        loading = true
-        requestTuber()
-        loading = false
-    }
-    async function requestTuber(){
+    async function requestTuber(searchTxt:string) {
         const toSend: Utils.TubeRequest = {
-            channelName: tuberInput,
+            channelName: searchTxt,
         };
         let f = await fetch("/api/tube", {
             method: "POST",
@@ -206,8 +201,6 @@
             console.log("bad tube response");
             return;
         }
-        // displayCount = parsedResponse.data.count.toString();
-        tuberInput = ''
     }
     async function shortStockClicked() {
         if (!selectedTuber) return;
@@ -260,14 +253,14 @@
         idleStockDisplay = parsedResponse.data.idleStock;
         positionsList = parsedResponse.data.positions;
     }
-    function exitPositionClicked(id: string) {
+    function exitPositionClicked(positionId: string) {
         loading = true;
-        exitPosition(id);
+        exitPosition(positionId);
         loading = false;
     }
-    async function exitPosition(id: string) {
+    async function exitPosition(positionId: string) {
         const toSend: Utils.ExitPositionRequest = {
-            channelId: id,
+            positionId: positionId,
         };
         let f = await fetch("/api/exitposition", {
             method: "POST",
@@ -310,51 +303,40 @@
             currentTarget: EventTarget & HTMLInputElement;
         },
         toFire: () => {}
-        ) {
-            if (event.key === "Enter") {
-                toFire();
-                event.preventDefault();
-            }
+    ) {
+        if (event.key === "Enter") {
+            toFire();
+            event.preventDefault();
         }
-    </script>
+    }
+</script>
 
 <svelte:window bind:scrollY={$windowScrollY} />
 
 <div class="topBar" class:solid={$atTop} class:blurry={!$atTop}>
     <span>Tubestock</span>
 </div>
-{#if !source || source.readyState == 2}
+{#if mounted && (!source || source.readyState == 2)}
     <button on:click={subscribe}>subscribe</button>
-    
 {/if}
+<!-- {#if loading}
+    <img src={spinny} alt='spinner'>
+{/if} -->
 <button on:click={updateTubers}>update tubers</button>
 <h3>User</h3>
 <p>My name : {myNameDisplay}</p>
 <p>My stock : {idleStockDisplay}</p>
-<input
-    type="text"
-    bind:value={setNameInput}
-    on:keydown={(event) => {
-        inputSubmit(event, setName);
-        // if (!setNameInput) {
-        //     return;
-        // }
-        // if (event.key === "Enter") {
-        //     setName();
-        //     event.preventDefault();
-        // }
-    }}
-/>
-<button type="button" on:click={setName} disabled={!setNameInput}
-    >Set Name</button
->
+<SimpleForm 
+    buttonLabel='Set Username' 
+    fire={setName} 
+></SimpleForm>
 <br />
 <button on:click={deleteUser}>delete user</button>
 <br />
 <br />
 <h3>Positions</h3>
 <div class="msgs">
-    {#each positionsList as p (p.tuberId)}
+    {#each positionsList as p (p.positionId)}
         <div>
             <span>
                 {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
@@ -364,7 +346,7 @@
             <button
                 type="button"
                 on:click={() => {
-                    exitPositionClicked(p.tuberId);
+                    exitPositionClicked(p.positionId);
                 }}>exit</button
             >
         </div>
@@ -373,22 +355,13 @@
 <br />
 <br />
 
-
-
 <h3>Chat</h3>
 <div class="msgs">
     {#each chatMsgsDisplay as m}
-        <p>{m.from} : {m.msgTxt}</p>
+        <p>{m.fromUserName} : {m.msgTxt}</p>
     {/each}
 </div>
-<input
-    type="text"
-    bind:value={msgInput}
-    on:keydown={(event) => {
-        inputSubmit(event, sendMsg);
-    }}
-/>
-<button type="button" on:click={sendMsg} disabled={!msgInput}>Send Msg</button>
+<SimpleForm buttonLabel='Send' fire={sendMsg}></SimpleForm>
 <h3>Users</h3>
 <div class="msgs">
     {#each userList as u (u.publicId)}
@@ -396,17 +369,10 @@
     {/each}
 </div>
 <h3>Tuber search</h3>
-<input 
-    type="text" 
-    bind:value={tuberInput} 
-    on:keydown={(event)=>inputSubmit(event,requestTubeClicked)}
-    disabled={loading}
-
-    />
-<button on:click={requestTubeClicked} disabled={!tuberInput}>Search</button>
+<SimpleForm buttonLabel='Search' fire={requestTuber}></SimpleForm>
 <h3>Tubers</h3>
 <div class="msgs">
-    {#each tuberList as t}
+    {#each tuberList as t (t.channelId)}
         <div>
             <span>{t.channelName} : {t.count}</span>
             <button type="button" on:click={() => (selectedTuber = t)}
@@ -469,4 +435,6 @@
         backdrop-filter: blur(5px);
         -webkit-backdrop-filter: blur(5px);
     }
+
+
 </style>

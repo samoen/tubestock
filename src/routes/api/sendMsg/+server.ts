@@ -22,7 +22,7 @@ export const POST: RequestHandler = async (r) => {
     }
     console.log(`server received chat ${JSON.stringify(msg)}`);
     const toSave : Utils.SavedChatMsg = {
-        from: foundUser.displayName,
+        fromUserName: foundUser.displayName,
         msgTxt: sentMsg.data.msgTxt,
     }
     const toBroadCast : Utils.ChatMsgBroadcast = {
