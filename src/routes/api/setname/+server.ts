@@ -1,32 +1,35 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import * as Kit from '@sveltejs/kit';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
-import * as uuid from 'uuid'
 
-export const POST: RequestHandler = async (event) => {
+export const POST: Kit.RequestHandler = async (event) => {
     await ServerState.fakeLatency()
     
     const msg = await event.request.json();
-    const parsed = Utils.setNameSchema.safeParse(msg)
+    const parsed = Utils.setNameRequestSchema.safeParse(msg)
     if (!parsed.success) {
-        return json({ error: 'malformed setname request' }, { status: 400 });
+        throw Kit.error(400,'malformed setname request')
     }
     
     const existingUid = event.cookies.get('uid')
     if(!existingUid){
-        return json({ error: 'need a uid cookie to set your name' }, { status: 400 });
+        throw Kit.error(400, 'need a uid cookie to set your name');
     }
     const foundUser = ServerState.state.users.findLast(u=>u.uid == existingUid)
     if(!foundUser){
-        return json({ error: 'user not found' }, { status: 400 });
+        throw Kit.error(400, 'user not found');
     }
     foundUser.displayName = parsed.data.wantName
     event.cookies.set('username', parsed.data.wantName, { path: '/', secure: false });
+
+    const toBroad : Utils.WelcomeSubscriber = {
+        users:ServerState.usersOnServerToClient()
+    }
+    ServerState.broadcast('welcomeSubscriber',toBroad)
 
     const response : Utils.SetNameResponse = {
         yourName: parsed.data.wantName
     }
 
-    return json(response);
+    return Kit.json(response);
 };

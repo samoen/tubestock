@@ -13,15 +13,23 @@ export type DataFirstLoad = {
 
 export const safeString = z.string().min(1).max(255)
 
-export const setNameSchema = z.object({
+export const emptyObject = z.object({})
+
+export const setNameRequestSchema = z.object({
     wantName: safeString
 })
-export type SetName = z.infer<typeof setNameSchema>
+export type SetNameRequest = z.infer<typeof setNameRequestSchema>
 
-export const sendMsgSchema = z.object({
+export const setNameResponseSchema = z.object({
+    yourName: z.string(),
+})
+export type SetNameResponse = z.infer<typeof setNameResponseSchema>
+
+
+export const sendMsgRequestSchema = z.object({
     msgTxt: safeString
 })
-export type SendMsg = z.infer<typeof sendMsgSchema>
+export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
 
 export const savedChatMsgSchema = z.object({
     msgTxt: z.string(),
@@ -42,16 +50,6 @@ export const userOnClientSchema = z.object({
 })
 
 export type UserOnClient = z.infer<typeof userOnClientSchema>
-
-// export const userJoinedSchema = z.object({
-//     joinedUserName:z.string(),
-// })
-// export type UserJoined = z.infer<typeof userJoinedSchema>
-
-export const setNameResponseSchema = z.object({
-    yourName: z.string(),
-})
-export type SetNameResponse = z.infer<typeof setNameResponseSchema>
 
 export const tubeRequestSchema = z.object({
     channelName: z.string()
@@ -127,3 +125,30 @@ export const welcomeSubscriberSchema = z.object({
     yourIdleStock: z.number().optional(),
 })
 export type WelcomeSubscriber = z.infer<typeof welcomeSubscriberSchema>
+export type SamResult<T> = {
+    failed:false
+    value : T,
+} | {
+    failed: true,
+    error: Error
+}
+export function runCatching<T>(toRun:()=>T):SamResult<T>{
+	try{
+		const ran = toRun()
+		return {
+			failed:false,
+			value:ran,
+		}
+	}catch(e){
+		console.log('runcatching caught')
+		return {
+            failed:true,
+            error:((a:unknown)=>{
+                if(a instanceof Error){
+                    return a
+                }
+                return new Error(String(a))
+            })(e),
+        }
+	}
+}

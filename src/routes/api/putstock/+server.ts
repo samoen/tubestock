@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { sendMsgSchema } from '$lib/utils';
+import { sendMsgRequestSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'

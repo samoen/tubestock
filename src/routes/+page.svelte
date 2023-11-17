@@ -1,8 +1,8 @@
 <script lang="ts">
     import {
         chatMsgBroadcastSchema,
-        type SendMsg,
-        type SetName,
+        type SendMsgRequest,
+        type SetNameRequest,
     } from "$lib/utils";
     import { onMount } from "svelte";
     import * as Utils from "$lib/utils";
@@ -12,10 +12,10 @@
     import spinny from "$lib/client/svg/spinny.svg";
     import SubmitButton from "$lib/client/components/SimpleForm.svelte";
     import SimpleForm from "$lib/client/components/SimpleForm.svelte";
-
+    import { z } from "zod";
 
     export let data: Utils.DataFirstLoad;
-    
+
     let chatMsgsDisplay: Utils.SavedChatMsg[] = [];
     let userList: Utils.UserOnClient[] = [];
     let tuberList: Utils.Tuber[] = [];
@@ -26,7 +26,7 @@
     let putStockAmountInput: string;
     let loading = false;
     let source: EventSource | undefined = undefined;
-    let mounted = false
+    let mounted = false;
 
     export const windowScrollY = writable(0);
     export const atTop = derived(windowScrollY, ($s) => {
@@ -48,41 +48,23 @@
             source?.close();
         });
         subscribe();
-        mounted = true
+        mounted = true;
     });
 
-
-    async function setName(inputTxt:string) {
-        const toSend: SetName = {
+    async function setName(inputTxt: string) {
+        const toSend: SetNameRequest = {
             wantName: inputTxt,
         };
-        const joincall = await fetch("/api/setname", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!joincall.ok) {
-            return;
-        }
-        const resp = await joincall.json();
-        const welcome = Utils.setNameResponseSchema.safeParse(resp);
-        if (!welcome.success) return;
-        myNameDisplay = welcome.data.yourName;
+        const fSafe = await hitEndpoint('setname',toSend,Utils.setNameResponseSchema)
+        if(fSafe.failed)return
+        myNameDisplay = fSafe.value.yourName;
     }
 
-    async function sendMsg(chatInputTxt:string) {
-        const toSend: SendMsg = {
+    async function sendMsg(chatInputTxt: string) {
+        const toSend: SendMsgRequest = {
             msgTxt: chatInputTxt,
         };
-        const resp = await fetch("/api/sendMsg", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
+        hitEndpoint('sendMsg',toSend,Utils.emptyObject)
     }
 
     async function subscribe() {
@@ -99,7 +81,7 @@
             return;
         }
         source.addEventListener("error", function (ev) {
-            console.log("source error ");
+            console.log("source error");
             this.close();
         });
 
@@ -173,34 +155,20 @@
 
         console.log("subscribed");
     }
+    
     async function deleteUser() {
-        let f = await fetch("/api/delete", { method: "POST" });
-        if (!f.ok) {
-            console.log("failed delete hero request");
-            return;
-        }
+        loading = true
+        await hitEndpoint('delete',{},Utils.emptyObject)
+        loading = false
     }
-    async function requestTuber(searchTxt:string) {
+
+    async function requestTuber(searchTxt: string) {
+        loading = true
         const toSend: Utils.TubeRequest = {
             channelName: searchTxt,
         };
-        let f = await fetch("/api/tube", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!f.ok) {
-            console.log("failed request tube");
-            return;
-        }
-        const r = await f.json();
-        const parsedResponse = Utils.tubeResponseSchema.safeParse(r);
-        if (!parsedResponse.success) {
-            console.log("bad tube response");
-            return;
-        }
+        await hitEndpoint('tube',toSend,Utils.tubeResponseSchema)
+        loading = false
     }
     async function shortStockClicked() {
         if (!selectedTuber) return;
@@ -233,25 +201,10 @@
             amount: amt,
             long: long,
         };
-        let f = await fetch("/api/putstock", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!f.ok) {
-            console.log("failed request putstock");
-            return;
-        }
-        const r = await f.json();
-        const parsedResponse = Utils.putStockResponseSchema.safeParse(r);
-        if (!parsedResponse.success) {
-            console.log("bad put stock response");
-            return;
-        }
-        idleStockDisplay = parsedResponse.data.idleStock;
-        positionsList = parsedResponse.data.positions;
+        let resp = await hitEndpoint('putstock',toSend,Utils.putStockResponseSchema)
+        if(resp.failed)return
+        idleStockDisplay = resp.value.idleStock;
+        positionsList = resp.value.positions;
     }
     function exitPositionClicked(positionId: string) {
         loading = true;
@@ -262,51 +215,69 @@
         const toSend: Utils.ExitPositionRequest = {
             positionId: positionId,
         };
-        let f = await fetch("/api/exitposition", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!f.ok) {
-            console.log("failed request exit position");
-            return;
-        }
-        const r = await f.json();
-        const parsedResponse = Utils.exitPositionResponseSchema.safeParse(r);
-        if (!parsedResponse.success) {
-            console.log("bad exit position response");
-            return;
-        }
-        idleStockDisplay = parsedResponse.data.idleStock;
-        positionsList = parsedResponse.data.positions;
+        let fSafe = await hitEndpoint('exitposition',toSend,Utils.exitPositionResponseSchema)
+        if(fSafe.failed)return
+        
+        idleStockDisplay = fSafe.value.idleStock;
+        positionsList = fSafe.value.positions;
     }
+
     async function updateTubers() {
         const toSend = {
             secret: "fakesecret",
         };
-        let f = await fetch("/api/updatetubers", {
-            method: "POST",
-            body: JSON.stringify(toSend),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!f.ok) {
-            console.log("failed request updatetubers");
-            return;
-        }
+        await hitEndpoint('updatetubers',toSend,Utils.emptyObject)
     }
-    function inputSubmit(
-        event: KeyboardEvent & {
-            currentTarget: EventTarget & HTMLInputElement;
-        },
-        toFire: () => {}
-    ) {
-        if (event.key === "Enter") {
-            toFire();
-            event.preventDefault();
+
+    async function hitEndpoint<
+        T extends z.ZodTypeAny, 
+        V extends z.infer<T>
+    >(
+        endPoint: string,
+        toSend: object,
+        responseSchema : T
+    ): Promise<Utils.SamResult<V>> {
+        try {
+            
+            let fetched = await fetch(`/api/${endPoint}`, {
+                method: "POST",
+                body: JSON.stringify(toSend),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const bod = await fetched.json();
+            if (!fetched.ok) {
+                const msg = bod['message']
+                console.log(`Endpoint ${endPoint} failed with message: ${msg}`)
+                return {
+                    failed:true,
+                    error:new Error(msg)
+                }
+            }
+            const parsed = responseSchema.safeParse(bod)
+            if(!parsed.success){
+                console.log('parsed not succuss')
+                return{
+                    failed:true,
+                    error: parsed.error
+                }
+            }
+            return {
+                failed: false,
+                value: parsed.data,
+            };
+        } catch (e) {
+            console.log(`Endpoint ${endPoint} unknown failure: ${String(e)}`)
+            return {
+                failed: true,
+                error: ((a: unknown) => {
+                    if (a instanceof Error) {
+                        return a;
+                    }
+                    return new Error(String(a));
+                })(e),
+            };
         }
     }
 </script>
@@ -326,10 +297,7 @@
 <h3>User</h3>
 <p>My name : {myNameDisplay}</p>
 <p>My stock : {idleStockDisplay}</p>
-<SimpleForm 
-    buttonLabel='Set Username' 
-    fire={setName} 
-></SimpleForm>
+<SimpleForm buttonLabel="Set Username" fire={setName} />
 <br />
 <button on:click={deleteUser}>delete user</button>
 <br />
@@ -345,6 +313,7 @@
             </span>
             <button
                 type="button"
+                disabled={loading}
                 on:click={() => {
                     exitPositionClicked(p.positionId);
                 }}>exit</button
@@ -361,7 +330,7 @@
         <p>{m.fromUserName} : {m.msgTxt}</p>
     {/each}
 </div>
-<SimpleForm buttonLabel='Send' fire={sendMsg}></SimpleForm>
+<SimpleForm buttonLabel="Send" fire={sendMsg} />
 <h3>Users</h3>
 <div class="msgs">
     {#each userList as u (u.publicId)}
@@ -369,7 +338,7 @@
     {/each}
 </div>
 <h3>Tuber search</h3>
-<SimpleForm buttonLabel='Search' fire={requestTuber}></SimpleForm>
+<SimpleForm buttonLabel="Search" fire={requestTuber} />
 <h3>Tubers</h3>
 <div class="msgs">
     {#each tuberList as t (t.channelId)}
@@ -435,6 +404,4 @@
         backdrop-filter: blur(5px);
         -webkit-backdrop-filter: blur(5px);
     }
-
-
 </style>

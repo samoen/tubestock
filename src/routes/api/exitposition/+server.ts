@@ -1,42 +1,36 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
-import * as uuid from 'uuid'
+import * as Kit from '@sveltejs/kit';
 
-export const POST: RequestHandler = async (event) => {
+export const POST: Kit.RequestHandler = async (event) => {
     const uidCookie = event.cookies.get('uid')
     if (!uidCookie) {
-        return json({ error: 'need a uid cookie to exit position' }, { status: 401 });
+        throw Kit.error(401, 'need a uid cookie to exit position');
     }
     const usernameCookie = event.cookies.get('username')
     if (!usernameCookie) {
-        return json({ error: 'need a username cookie to exit position' }, { status: 401 });
+        throw Kit.error(401, 'need a username cookie to exit position');
     }
 
     const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie && u.displayName == usernameCookie)
     if (!foundUser) {
-        return json({ error: 'user not found' }, { status: 401 });
+        throw Kit.error(401, 'user not found');
     }
 
     const msg = await event.request.json();
     const parsed = Utils.exitPositionRequestSchema.safeParse(msg)
     if (!parsed.success) {
-        return json({ error: 'malformed exitposition request' }, { status: 400 });
+        throw Kit.error(400, 'malformed request');
     }
-    // const current = ServerState.state.tubers.findLast(t=>t.channelId == parsed.data.channelId)
-    // if(!current){
-    //     return json({ error: 'tuber not in list' }, { status: 400 });
-    // }
 
     const toExit = foundUser.positions.findLast(p => p.positionId == parsed.data.positionId)
     if (!toExit) {
-        return json({ error: 'position not found' }, { status: 400 });
+        throw Kit.error(400, 'position not found');
     }
     
     const bonus = ServerState.calcReturnValue(toExit)
     if (bonus == undefined){
-        return json({ error: 'server error' }, { status: 400 });
+        throw Kit.error(500, 'Failed to calculate stock return value');
     }
     const refund = toExit.amount + bonus
     foundUser.idleStock += refund
@@ -48,5 +42,5 @@ export const POST: RequestHandler = async (event) => {
         positions: ServerState.positionArrayToPosWithReturnValArray(foundUser.positions),
     }
 
-    return json(response);
+    return Kit.json(response);
 };

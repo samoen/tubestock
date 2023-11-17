@@ -1,5 +1,4 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import * as Kit from '@sveltejs/kit';
 import * as Utils from '$lib/utils'
 import * as ServerState from '$lib/server/serverState'
 import * as z from 'zod'
@@ -11,13 +10,12 @@ const searchResult = z.object({
     )
 })
 
-export const POST: RequestHandler = async (requestEvent) => {
+export const POST: Kit.RequestHandler = async (requestEvent) => {
     let reqJson = await requestEvent.request.json()
     const parsed = Utils.tubeRequestSchema.safeParse(reqJson)
     if (!parsed.success) {
-        return json({ good: false })
+        throw Kit.error(400,'Malformed request')
     }
-    console.log('will process ' + parsed.data.channelName)
 
     const foundTuber = ServerState.state.tubers.findLast(t=>t.channelName == parsed.data.channelName)
     if(foundTuber){
@@ -25,7 +23,7 @@ export const POST: RequestHandler = async (requestEvent) => {
         const response : Utils.TubeResponse = {
             count:foundTuber.count
         }
-        return json(response)
+        return Kit.json(response)
     }
 
     const fetched = await fetch(`https://mixerno.space/api/youtube-channel-counter/search/${parsed.data.channelName}`)
@@ -34,23 +32,22 @@ export const POST: RequestHandler = async (requestEvent) => {
     const parsedSearch = searchResult.safeParse(fText)
     if (!parsedSearch.success) {
         console.log('failed parse search')
-        return json({ good: false })
+        throw Kit.error(400,'failed to parse search result')
     }
     const first = parsedSearch.data.list.at(0)
     if (!first) {
-        console.log('failed search')
-        return json({ good: false })
+        throw Kit.error(400,'search is empty')
     }
     const tuberNameFromSearch = first.at(0)
     console.log('tubername from search ' + tuberNameFromSearch)
     const tubeId = first.at(2)
     if (!tubeId || !tuberNameFromSearch) {
-        return json({ good: false })
+        throw Kit.error(400,'tuber search failed')
     }
     
     const tuberSubs = await ServerState.fetchTuberSubsFromId(tubeId)
     if(tuberSubs == undefined){
-        return json({ good: false })
+        throw Kit.error(400,'failed fetch tuber subs')
     }
     const tuberAdded : Utils.Tuber = {
         channelName:tuberNameFromSearch,
@@ -64,5 +61,5 @@ export const POST: RequestHandler = async (requestEvent) => {
         count: tuberSubs
     }
 
-    return json(response);
+    return Kit.json(response);
 };

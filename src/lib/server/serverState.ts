@@ -1,4 +1,4 @@
-import type * as Utils from "$lib/utils";
+import * as Utils from "$lib/utils";
 
 export type UserOnServer = {
 	uid: string;
@@ -39,6 +39,17 @@ export const state: AppState = {
 	tubers: [],
 }
 
+export function usersOnServerToClient():Utils.UserOnClient[]{
+	const usersOnClient: Utils.UserOnClient[] = state.users.map(u => {
+		const onClient: Utils.UserOnClient = {
+			displayName: u.displayName,
+			publicId: u.publicId,
+		}
+		return onClient
+	})
+	return usersOnClient
+}
+
 export function broadcast(event: string, data: object) {
 	for (const user of state.users) {
 		if (user.stream && user.con) {
@@ -66,42 +77,17 @@ export function broadcast(event: string, data: object) {
 		}
 	}
 }
-export type SamResult<T> = {
-    failed:false
-    value : T,
-} | {
-    failed: true,
-    error: Error
-}
-function runCatching<T>(toRun:()=>T):SamResult<T>{
-	try{
-		const ran = toRun()
-		return {
-			failed:false,
-			value:ran,
-		}
-	}catch(e){
-		console.log('runcatching caught')
-		return {
-            failed:true,
-            error:((a:unknown)=>{
-                if(a instanceof Error){
-                    return a
-                }
-                return new Error(String(a))
-            })(e),
-        }
-	}
-}
+
+
 export function sendToUser(user: UserOnServer, payload: Utils.WelcomeSubscriber) {
 	const con = user.con
 	if (!con) return
-	const res = runCatching(()=>{
+	const res = Utils.runCatching(()=>{
 		con.enqueue(encode('welcomeSubscriber', payload));
 	})
 	if(res.failed){
 		console.log(user.displayName + ' failed to enqeue');
-		runCatching(()=>con.close())
+		Utils.runCatching(()=>con.close())
 		user.con = undefined;
 		user.stream = undefined;
 	}

@@ -23,7 +23,6 @@
     }
 
     async function itClicked(){
-        console.log('fired')
         if (!meInputTxt) return;
         // formProps.loading = true;
         meLoad = true

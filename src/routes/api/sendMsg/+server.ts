@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { sendMsgSchema } from '$lib/utils';
+import { sendMsgRequestSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 
@@ -15,7 +15,7 @@ export const POST: RequestHandler = async (r) => {
     }
 
     const msg = await r.request.json();
-    const sentMsg = sendMsgSchema.safeParse(msg)
+    const sentMsg = sendMsgRequestSchema.safeParse(msg)
     if (!sentMsg.success) {
         console.log('malformed sentmsg')
         return json({ error: 'malformed request' }, { status: 400 });
@@ -31,5 +31,5 @@ export const POST: RequestHandler = async (r) => {
     ServerState.state.msgs.push(toSave)
     ServerState.broadcastUserSentMessage(toBroadCast)
 
-    return json({ good: true });
+    return json({});
 };
