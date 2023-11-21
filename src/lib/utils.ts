@@ -1,15 +1,7 @@
 
 import * as z from 'zod'
 
-export type DataFirstLoad = {
-    cookieMissing?: boolean;
-    noPlayer?: boolean;
-    username?: string;
-    idleStock?: number;
-    noMatch?: boolean;
-    readyToSubscribe?: boolean;
-    userId?: string;
-};
+
 
 export const safeString = z.string().min(1).max(255)
 
@@ -32,6 +24,7 @@ export const sendMsgRequestSchema = z.object({
 export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
 
 export const savedChatMsgSchema = z.object({
+    msgId:z.string(),
     msgTxt: z.string(),
     fromUserName: z.string(),
 })
@@ -116,7 +109,7 @@ export const tuberSchema = z.object({
 export type Tuber = z.infer<typeof tuberSchema>
 
 
-export const welcomeSubscriberSchema = z.object({
+export const worldEventSchema = z.object({
     users: z.array(userOnClientSchema).optional(),
     tubers: z.array(tuberSchema).optional(),
     msgs: z.array(savedChatMsgSchema).optional(),
@@ -124,7 +117,29 @@ export const welcomeSubscriberSchema = z.object({
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
 })
-export type WelcomeSubscriber = z.infer<typeof welcomeSubscriberSchema>
+export type WorldEvent = z.infer<typeof worldEventSchema>
+
+// export type DataFirstLoad = {
+//     cookieMissing?: boolean;
+//     noPlayer?: boolean;
+//     username?: string;
+//     idleStock?: number;
+//     noMatch?: boolean;
+//     readyToSubscribe?: boolean;
+//     userId?: string;
+// };
+
+export const dataFirstLoadSchema = z.object({
+    users: z.array(userOnClientSchema),
+    tubers: z.array(tuberSchema),
+    msgs: z.array(savedChatMsgSchema),
+    positions: z.array(positionWithReturnValueSchema).optional(),
+    yourName: z.string().optional(),
+    yourIdleStock: z.number().optional(),
+})
+
+export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
+
 export type SamResult<T> = {
     failed:false
     value : T,

@@ -17,23 +17,12 @@ export async function fakeLatency(){
 	}
 }
 
-
-// export function createUser(){
-
-// }
-
-// export type Tuber = {
-// 	channelName:string,
-// 	channelId:string,
-// 	lastSubCount:number,
-// }
-
-type AppState = {
+type ServerAppState = {
 	users: UserOnServer[]
 	msgs: Utils.SavedChatMsg[]
 	tubers: Utils.Tuber[]
 }
-export const state: AppState = {
+export const state: ServerAppState = {
 	users: [],
 	msgs: [],
 	tubers: [],
@@ -79,11 +68,11 @@ export function broadcast(event: string, data: object) {
 }
 
 
-export function sendToUser(user: UserOnServer, payload: Utils.WelcomeSubscriber) {
+export function sendToUser(user: UserOnServer, payload: Utils.WorldEvent) {
 	const con = user.con
 	if (!con) return
 	const res = Utils.runCatching(()=>{
-		con.enqueue(encode('welcomeSubscriber', payload));
+		con.enqueue(encode('world', payload));
 	})
 	if(res.failed){
 		console.log(user.displayName + ' failed to enqeue');
@@ -95,6 +84,22 @@ export function sendToUser(user: UserOnServer, payload: Utils.WelcomeSubscriber)
 
 export function broadcastUserSentMessage(chatMsg: Utils.ChatMsgBroadcast) {
 	broadcast('chatmsg', chatMsg)
+}
+
+export function broadcastEveryoneEverything(){
+	const usrsOnClient = usersOnServerToClient()
+	for (const user of state.users) {
+        if (!user.con) continue
+        const welcomeSub: Utils.WorldEvent = {
+            tubers: state.tubers,
+            positions: positionArrayToPosWithReturnValArray(user.positions),
+			msgs: state.msgs,
+			users: usrsOnClient,
+			yourIdleStock:user.idleStock,
+			yourName:user.displayName,
+        }
+        sendToUser(user, welcomeSub)
+    }
 }
 
 export function broadcastUserJoined(joined: UserOnServer) {

@@ -22,10 +22,10 @@ export const POST: Kit.RequestHandler = async (event) => {
     foundUser.displayName = parsed.data.wantName
     event.cookies.set('username', parsed.data.wantName, { path: '/', secure: false });
 
-    const toBroad : Utils.WelcomeSubscriber = {
+    const worldEvent : Utils.WorldEvent = {
         users:ServerState.usersOnServerToClient()
     }
-    ServerState.broadcast('welcomeSubscriber',toBroad)
+    ServerState.broadcast('world',worldEvent)
 
     const response : Utils.SetNameResponse = {
         yourName: parsed.data.wantName

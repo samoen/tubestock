@@ -29,13 +29,6 @@ async function updateThem() {
         if (!didUpdate) continue
         gotUpdated.push(tuber)
     }
-
-    for (const user of ServerState.state.users) {
-        if (!user.con) continue
-        const welcomeSub: Utils.WelcomeSubscriber = {
-            tubers: ServerState.state.tubers,
-            positions: ServerState.positionArrayToPosWithReturnValArray(user.positions),
-        }
-        ServerState.sendToUser(user, welcomeSub)
-    }
+    ServerState.broadcastEveryoneEverything()
+    
 }

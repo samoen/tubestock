@@ -2,10 +2,16 @@ import * as ServerState from '$lib/server/serverState';
 import * as Utils from '$lib/utils';
 import type { PageServerLoad } from './$types';
 
+export let ssr = false
+
 // This runs on the server once when the page is first requested
 export const load = (async (r) => {
 	console.log('running page server load');
-	const dtl: Utils.DataFirstLoad = {};
+	// const dfl: Utils.DataFirstLoad = {
+	// 	users: ServerState.usersOnServerToClient(),
+	// 	tubers: ServerState.state.tubers,
+	// 	msgs: ServerState.state.msgs,
+	// }
 
 	// const uidCookie = r.cookies.get('uid');
 	// const usernameCookie = r.cookies.get('username');
@@ -31,9 +37,9 @@ export const load = (async (r) => {
 	// 	return dtl;
 	// }
 
-	dtl.readyToSubscribe = true;
+	// dtl.readyToSubscribe = true;
 	// dtl.username = foundUser.displayName
 	// dtl.idleStock = foundUser.idleStock
-	return dtl;
+	return;
 
 }) satisfies PageServerLoad;

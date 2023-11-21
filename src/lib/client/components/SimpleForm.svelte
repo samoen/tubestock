@@ -1,6 +1,5 @@
 <script lang="ts">
     import spinny from "$lib/client/svg/spinny.svg";
-    import * as ClientState from "$lib/client/clientState"
 
     export let buttonLabel: string;
     // export let loading: boolean;
@@ -24,10 +23,8 @@
 
     async function itClicked(){
         if (!meInputTxt) return;
-        // formProps.loading = true;
         meLoad = true
         await fire(meInputTxt);
-        // formProps.loading = false;
         meLoad = false
         meInputTxt = "";
     }
@@ -39,9 +36,7 @@
     type="text"
     disabled={meLoad}
     bind:value={meInputTxt}
-    on:keydown={(event) => {
-        inputSubmit(event);
-    }}
+    on:keydown={inputSubmit}
 />
 <!-- disabled={formProps.loading} -->
 <!-- class:transparentText={formProps.loading} -->

@@ -5,9 +5,35 @@ import * as Uuid from 'uuid'
 
 export const GET: Kit.RequestHandler = async (event) => {
 	// try {
+	await ServerState.fakeLatency()
 	let usernameCookie = event.cookies.get('username');
 	let uidCookie = event.cookies.get('uid');
-	console.log(`stream requested by uid ${uidCookie}`);
+	console.log(`stream requested with cookie username ${usernameCookie}`);
+
+	const removeCookies = ()=>{
+		event.cookies.delete('uid', { path: '/' })
+		event.cookies.delete('username', { path: '/' })
+		uidCookie = undefined
+		usernameCookie = undefined
+	}
+
+	if(!uidCookie || !usernameCookie){
+		removeCookies()
+	}
+
+	let foundUser : ServerState.UserOnServer | undefined = undefined
+	if (uidCookie && usernameCookie) {
+		foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
+		if (!foundUser) {
+			console.log('cant subscribe user not found')
+			removeCookies()
+		}else if (foundUser.displayName != usernameCookie) {
+			console.log('user not match ')
+			removeCookies()
+			foundUser = undefined
+		}
+	}
+
 	let userCreated = false
 	if (!uidCookie) {
 		uidCookie = Uuid.v4();
@@ -33,24 +59,18 @@ export const GET: Kit.RequestHandler = async (event) => {
 
 		ServerState.state.users.push(userJoined)
 		userCreated = true
+		foundUser = userJoined
 		// ServerState.broadcastUserJoined(userJoined)
 		// return json({ error: 'need uid cookie to start a stream' }, { status: 401 });
 	}
-	const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
+	// const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
 	if (!foundUser) {
-		console.log('cant subscribe user not found')
-		event.cookies.delete('uid', { path: '/' })
-		event.cookies.delete('username', { path: '/' })
-		throw Kit.error(401, 'user not found');
+		console.log('that should be impossible')
+		throw Kit.error(401, 'the impossible happened');
 	}
-	if (foundUser.displayName != usernameCookie) {
-		console.log('user not match ')
-		event.cookies.delete('uid', { path: '/' })
-		event.cookies.delete('username', { path: '/' })
-		throw Kit.error(401, 'username cookie not matching uid cookie in user list');
-	}
+	const constFoundUser : ServerState.UserOnServer = foundUser
 	if (
-		foundUser.con != undefined
+		constFoundUser.con != undefined
 	) {
 		console.log('subscriber is already subscribed, closing old one')
 		// closing here causes infinite subscribe loops?
@@ -67,31 +87,14 @@ export const GET: Kit.RequestHandler = async (event) => {
 
 	const rs = new ReadableStream({
 		start(c) {
-			foundUser.con = c;
-
-			
-			const theirPositions = ServerState.positionArrayToPosWithReturnValArray(foundUser.positions)
-			const welcomeSub: Utils.WelcomeSubscriber = {
-				users: ServerState.usersOnServerToClient(),
-				tubers: ServerState.state.tubers,
-				msgs: ServerState.state.msgs,
-				positions: theirPositions,
-				yourName: foundUser.displayName,
-				yourIdleStock: foundUser.idleStock,
-			}
-			// setTimeout(() => {
-			console.log('welcoming subscriber with ' + JSON.stringify(welcomeSub))
-			c.enqueue(ServerState.encode('welcomeSubscriber', welcomeSub))
-			if (userCreated) {
-				ServerState.broadcastUserJoined(foundUser);
-			}
-			// }, 1);
+			constFoundUser.con = c;
+			ServerState.broadcastEveryoneEverything()
 		},
 		cancel(reason) {
-			console.log(`stream cancel handle for hero ${foundUser.displayName}`);
+			console.log(`stream cancel handle for hero ${constFoundUser.displayName}`);
 			if (reason) console.log(`reason: ${reason}`);
-			foundUser.con = undefined;
-			foundUser.stream = undefined;
+			constFoundUser.con = undefined;
+			constFoundUser.stream = undefined;
 			// ServerState.broadcastUserSentMessage();
 		}
 	});

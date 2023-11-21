@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { sendMsgRequestSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
+import * as Uuid from 'uuid'
 
 export const POST: RequestHandler = async (r) => {
     const uid = r.cookies.get('uid')
@@ -22,6 +23,7 @@ export const POST: RequestHandler = async (r) => {
     }
     console.log(`server received chat ${JSON.stringify(msg)}`);
     const toSave : Utils.SavedChatMsg = {
+        msgId:Uuid.v4(),
         fromUserName: foundUser.displayName,
         msgTxt: sentMsg.data.msgTxt,
     }

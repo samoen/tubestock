@@ -1,199 +1,83 @@
 <script lang="ts">
-    import {
-        chatMsgBroadcastSchema,
-        type SendMsgRequest,
-        type SetNameRequest,
-    } from "$lib/utils";
-    import { onMount } from "svelte";
+    import { getContext, onMount } from "svelte";
     import * as Utils from "$lib/utils";
-    import * as ClientState from "$lib/client/clientState";
-    import { invalidateAll } from "$app/navigation";
-    import { derived, writable } from "svelte/store";
-    import spinny from "$lib/client/svg/spinny.svg";
-    import SubmitButton from "$lib/client/components/SimpleForm.svelte";
+    import * as ClientState from "$lib/client/clientState.svelte";
     import SimpleForm from "$lib/client/components/SimpleForm.svelte";
     import { z } from "zod";
 
-    export let data: Utils.DataFirstLoad;
+    console.log("init base page");
+    // let cState: ClientState.ClientAppState = getContext(
+    //     ClientState.CLIENT_STATE_CTX
+    // );
+    let cState = ClientState.clientAppStateRune.value;
 
-    let chatMsgsDisplay: Utils.SavedChatMsg[] = [];
-    let userList: Utils.UserOnClient[] = [];
-    let tuberList: Utils.Tuber[] = [];
-    let positionsList: Utils.PositionWithReturnValue[] = [];
-    let myNameDisplay: string | undefined = undefined;
-    let idleStockDisplay: number | undefined = undefined;
-    let selectedTuber: Utils.Tuber | undefined = undefined;
-    let putStockAmountInput: string;
-    let loading = false;
-    let source: EventSource | undefined = undefined;
-    let mounted = false;
-
-    export const windowScrollY = writable(0);
-    export const atTop = derived(windowScrollY, ($s) => {
-        return $s < 35;
-    });
-
+    // $effect(()=>{
     onMount(async () => {
-        // if (import.meta.env.MODE == "development") {
-        //     await invalidateAll();
-        // }
-        console.log("onmount fired with ssr data " + JSON.stringify(data));
-
-        if (source) {
-            console.log("mounted with existing source, weird");
-        }
-
-        window.addEventListener("unload", () => {
-            console.log("window unload");
-            source?.close();
-        });
-        subscribe();
-        mounted = true;
+        await subscribe();
+        // console.log("onmount fired with ssr data " + JSON.stringify(data));
+        console.log("eyewyudsfhgfdq");
     });
+    // onMount(async () => {
+    // if (import.meta.env.MODE == "development") {
+    //     await invalidateAll();
+    // }
+
+    // cState = getContext('state')
+
+    // if ($state.source) {
+    //     console.log("mounted with existing source, weird");
+    // }
+
+    // });
 
     async function setName(inputTxt: string) {
-        const toSend: SetNameRequest = {
+        const toSend: Utils.SetNameRequest = {
             wantName: inputTxt,
         };
-        const fSafe = await hitEndpoint('setname',toSend,Utils.setNameResponseSchema)
-        if(fSafe.failed)return
-        myNameDisplay = fSafe.value.yourName;
+        const fSafe = await hitEndpoint(
+            "setname",
+            toSend,
+            Utils.setNameResponseSchema
+        );
+        if (fSafe.failed) return;
+        cState.myNameDisplay = fSafe.value.yourName;
     }
 
     async function sendMsg(chatInputTxt: string) {
-        const toSend: SendMsgRequest = {
+        const toSend: Utils.SendMsgRequest = {
             msgTxt: chatInputTxt,
         };
-        hitEndpoint('sendMsg',toSend,Utils.emptyObject)
+        hitEndpoint("sendMsg", toSend, Utils.emptyObject);
     }
 
-    async function subscribe() {
-        if (source != undefined) {
-            console.log("resubscribing");
-            source.close();
-            // return;
-        }
-        try {
-            source = new EventSource("/api/events");
-        } catch (e) {
-            console.log("failed to source");
-            console.log(e);
-            return;
-        }
-        source.addEventListener("error", function (ev) {
-            console.log("source error");
-            this.close();
-        });
-
-        source.addEventListener("chatmsg", (ev) => {
-            const parsed = chatMsgBroadcastSchema.safeParse(
-                JSON.parse(ev.data)
-            );
-            if (!parsed.success) {
-                console.log("bad update from server");
-                return;
-            }
-            console.log("got a chatmsg " + JSON.stringify(parsed.data));
-            console.log("pushing new msg to list");
-            chatMsgsDisplay.unshift(parsed.data.newMsg);
-            chatMsgsDisplay = chatMsgsDisplay;
-        });
-
-        source.addEventListener("userJoined", (e) => {
-            const parsed = Utils.userOnClientSchema.safeParse(
-                JSON.parse(e.data)
-            );
-            if (!parsed.success) {
-                console.log("bad update from server");
-                return;
-            }
-            console.log("got user joined " + JSON.stringify(parsed.data));
-            console.log("pushing new msg to list");
-            userList.unshift(parsed.data);
-            userList = userList;
-        });
-
-        source.addEventListener("welcomeSubscriber", (e) => {
-            const parsed = Utils.welcomeSubscriberSchema.safeParse(
-                JSON.parse(e.data)
-            );
-            if (!parsed.success) {
-                console.log(JSON.parse(e.data));
-                console.log("bad welcome sub update from server");
-                return;
-            }
-            if (parsed.data.users) {
-                userList = parsed.data.users;
-            }
-            if (parsed.data.tubers) {
-                tuberList = parsed.data.tubers;
-            }
-            if (parsed.data.msgs) {
-                chatMsgsDisplay = parsed.data.msgs.reverse();
-            }
-            if (parsed.data.positions) {
-                positionsList = parsed.data.positions;
-            }
-            if (parsed.data.yourName) {
-                myNameDisplay = parsed.data.yourName;
-            }
-            if (parsed.data.yourIdleStock !== undefined) {
-                idleStockDisplay = parsed.data.yourIdleStock;
-            }
-        });
-
-        source.addEventListener("tuberAdded", (e) => {
-            console.log("got new tuber ");
-            const parsed = Utils.tuberSchema.safeParse(JSON.parse(e.data));
-            if (!parsed.success) {
-                console.log("bad tuber added update from server");
-                return;
-            }
-            tuberList.unshift(parsed.data);
-            tuberList = tuberList;
-        });
-
-        console.log("subscribed");
-    }
-    
     async function deleteUser() {
-        loading = true
-        await hitEndpoint('delete',{},Utils.emptyObject)
-        loading = false
+        await hitEndpoint("delete", {}, Utils.emptyObject);
     }
 
     async function requestTuber(searchTxt: string) {
-        loading = true
         const toSend: Utils.TubeRequest = {
             channelName: searchTxt,
         };
-        await hitEndpoint('tube',toSend,Utils.tubeResponseSchema)
-        loading = false
+        await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
     }
     async function shortStockClicked() {
-        if (!selectedTuber) return;
-        if (!putStockAmountInput) return;
-        const intVal = Number.parseInt(putStockAmountInput);
+        if (!cState.selectedTuber) return;
+        if (!cState.putStockAmountInput) return;
+        const intVal = Number.parseInt(cState.putStockAmountInput);
         if (!intVal) {
             return;
         }
-        loading = true;
-        await putStock(selectedTuber.channelId, intVal, false);
-        loading = false;
-        putStockAmountInput = "";
+        await putStock(cState.selectedTuber.channelId, intVal, false);
     }
 
     async function longStockClicked() {
-        if (!selectedTuber) return;
-        if (!putStockAmountInput) return;
-        const intVal = Number.parseInt(putStockAmountInput);
+        if (!cState.selectedTuber) return;
+        if (!cState.putStockAmountInput) return;
+        const intVal = Number.parseInt(cState.putStockAmountInput);
         if (!intVal) {
             return;
         }
-        loading = true;
-        await putStock(selectedTuber.channelId, intVal, true);
-        loading = false;
-        putStockAmountInput = "";
+        await putStock(cState.selectedTuber.channelId, intVal, true);
     }
     async function putStock(channelId: string, amt: number, long: boolean) {
         const toSend: Utils.PutStockRequest = {
@@ -201,44 +85,47 @@
             amount: amt,
             long: long,
         };
-        let resp = await hitEndpoint('putstock',toSend,Utils.putStockResponseSchema)
-        if(resp.failed)return
-        idleStockDisplay = resp.value.idleStock;
-        positionsList = resp.value.positions;
+        let resp = await hitEndpoint(
+            "putstock",
+            toSend,
+            Utils.putStockResponseSchema
+        );
+        if (resp.failed) return;
+        cState.putStockAmountInput = "";
+        cState.idleStockDisplay = resp.value.idleStock;
+        cState.positionsList = resp.value.positions;
     }
     function exitPositionClicked(positionId: string) {
-        loading = true;
         exitPosition(positionId);
-        loading = false;
     }
     async function exitPosition(positionId: string) {
         const toSend: Utils.ExitPositionRequest = {
             positionId: positionId,
         };
-        let fSafe = await hitEndpoint('exitposition',toSend,Utils.exitPositionResponseSchema)
-        if(fSafe.failed)return
-        
-        idleStockDisplay = fSafe.value.idleStock;
-        positionsList = fSafe.value.positions;
+        let fSafe = await hitEndpoint(
+            "exitposition",
+            toSend,
+            Utils.exitPositionResponseSchema
+        );
+        if (fSafe.failed) return;
+
+        cState.idleStockDisplay = fSafe.value.idleStock;
+        cState.positionsList = fSafe.value.positions;
     }
 
     async function updateTubers() {
         const toSend = {
             secret: "fakesecret",
         };
-        await hitEndpoint('updatetubers',toSend,Utils.emptyObject)
+        await hitEndpoint("updatetubers", toSend, Utils.emptyObject);
     }
 
-    async function hitEndpoint<
-        T extends z.ZodTypeAny, 
-        V extends z.infer<T>
-    >(
+    async function hitEndpoint<T extends z.ZodTypeAny, V extends z.infer<T>>(
         endPoint: string,
         toSend: object,
-        responseSchema : T
+        responseSchema: T
     ): Promise<Utils.SamResult<V>> {
         try {
-            
             let fetched = await fetch(`/api/${endPoint}`, {
                 method: "POST",
                 body: JSON.stringify(toSend),
@@ -248,27 +135,27 @@
             });
             const bod = await fetched.json();
             if (!fetched.ok) {
-                const msg = bod['message']
-                console.log(`Endpoint ${endPoint} failed with message: ${msg}`)
+                const msg = bod["message"];
+                console.log(`Endpoint ${endPoint} failed with message: ${msg}`);
                 return {
-                    failed:true,
-                    error:new Error(msg)
-                }
+                    failed: true,
+                    error: new Error(msg),
+                };
             }
-            const parsed = responseSchema.safeParse(bod)
-            if(!parsed.success){
-                console.log('parsed not succuss')
-                return{
-                    failed:true,
-                    error: parsed.error
-                }
+            const parsed = responseSchema.safeParse(bod);
+            if (!parsed.success) {
+                console.log("parsed not succuss");
+                return {
+                    failed: true,
+                    error: parsed.error,
+                };
             }
             return {
                 failed: false,
                 value: parsed.data,
             };
         } catch (e) {
-            console.log(`Endpoint ${endPoint} unknown failure: ${String(e)}`)
+            console.log(`Endpoint ${endPoint} unknown failure: ${String(e)}`);
             return {
                 failed: true,
                 error: ((a: unknown) => {
@@ -280,60 +167,176 @@
             };
         }
     }
+    export async function subscribe() {
+        cState.loading = true;
+        console.log("subscribing to events");
+        if (cState.source != undefined) {
+            // for some reason if we navigate back to this page the source fires but the ui doesnt update. so resubscribe
+            // console.log("closing old source to resubscribe");
+            // cState.source.close();
+            // await new Promise((r) => setTimeout(r, 500));
+
+            console.log(
+                "already subscribed with status" + cState.source.readyState
+            );
+            cState.loading = false;
+            return;
+        }
+        // window.onunload = () => {
+        //     manualSourceError();
+        // };
+        // try {
+
+        cState.source = new EventSource("/api/events");
+        if (!cState.source) {
+            console.log("source still undef after updated");
+            return;
+        }
+        // } catch (e) {
+        //     console.log("failed to source");
+        //     console.log(e);
+        //     return;
+        // }
+
+        cState.source.addEventListener("open", function (ev) {
+            console.log("source opened");
+            cState.loading = false;
+        });
+        cState.source.addEventListener("error", function (ev) {
+            console.log("source error");
+            // console.log('this readystate ' + this.readyState)
+            // const sReady = source ? source.readyState : 'undefined'
+            // console.log('source readystate ' + sReady)
+            this.close();
+            cState.source?.close();
+            cState.source = undefined;
+            // cState = cState
+        });
+
+        cState.source.addEventListener("chatmsg", (ev) => {
+            console.log("got chatmsg event");
+            const parsed = Utils.chatMsgBroadcastSchema.safeParse(
+                JSON.parse(ev.data)
+            );
+            if (!parsed.success) {
+                console.log("bad update from server");
+                return;
+            }
+            cState.chatMsgsDisplay = [
+                parsed.data.newMsg,
+                ...cState.chatMsgsDisplay,
+            ];
+        });
+
+        cState.source.addEventListener("userJoined", (e) => {
+            const parsed = Utils.userOnClientSchema.safeParse(
+                JSON.parse(e.data)
+            );
+            if (!parsed.success) {
+                console.log("bad update from server");
+                return;
+            }
+            console.log("got user joined " + JSON.stringify(parsed.data));
+            cState.userList = [parsed.data, ...cState.userList];
+        });
+
+        cState.source.addEventListener("world", (e) => {
+            const parsed = Utils.worldEventSchema.safeParse(JSON.parse(e.data));
+            if (!parsed.success) {
+                console.log(JSON.parse(e.data));
+                console.log("bad welcome sub update from server");
+                return;
+            }
+            if (parsed.data.users) {
+                cState.userList = parsed.data.users;
+            }
+            if (parsed.data.tubers) {
+                cState.tuberList = parsed.data.tubers;
+            }
+            if (parsed.data.msgs) {
+                cState.chatMsgsDisplay = parsed.data.msgs.reverse();
+            }
+            if (parsed.data.positions) {
+                cState.positionsList = parsed.data.positions;
+            }
+            if (parsed.data.yourName) {
+                cState.myNameDisplay = parsed.data.yourName;
+            }
+            if (parsed.data.yourIdleStock !== undefined) {
+                cState.idleStockDisplay = parsed.data.yourIdleStock;
+            }
+            cState = cState;
+        });
+
+        cState.source.addEventListener("tuberAdded", (e) => {
+            const parsed = Utils.tuberSchema.safeParse(JSON.parse(e.data));
+            if (!parsed.success) {
+                console.log("bad tuber added update from server");
+                return;
+            }
+            cState.tuberList = [parsed.data, ...cState.tuberList];
+        });
+    }
+    export function manualSourceError() {
+        cState.source?.dispatchEvent(new Event("error"));
+    }
 </script>
 
-<svelte:window bind:scrollY={$windowScrollY} />
-
-<div class="topBar" class:solid={$atTop} class:blurry={!$atTop}>
-    <span>Tubestock</span>
-</div>
-{#if mounted && (!source || source.readyState == 2)}
-    <button on:click={subscribe}>subscribe</button>
+<!-- {#if cState} -->
+{#if !cState.loading && (!cState.source || cState.source.readyState == 2)}
+    <button on:click={subscribe}>open source</button>
 {/if}
-<!-- {#if loading}
-    <img src={spinny} alt='spinner'>
-{/if} -->
+{#if cState.loading}
+    <span> loading... </span>
+{/if}
 <button on:click={updateTubers}>update tubers</button>
+<button
+    on:click={() => {
+        manualSourceError();
+    }}>close source</button
+>
 <h3>User</h3>
-<p>My name : {myNameDisplay}</p>
-<p>My stock : {idleStockDisplay}</p>
+<p>My name : {cState.myNameDisplay}</p>
+<p>My stock : {cState.idleStockDisplay}</p>
 <SimpleForm buttonLabel="Set Username" fire={setName} />
 <br />
 <button on:click={deleteUser}>delete user</button>
 <br />
 <br />
-<h3>Positions</h3>
-<div class="msgs">
-    {#each positionsList as p (p.positionId)}
-        <div>
-            <span>
-                {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
-                    ? "(long)"
-                    : "(short)"} : returns {p.amount + p.returnValue}
-            </span>
-            <button
-                type="button"
-                disabled={loading}
-                on:click={() => {
-                    exitPositionClicked(p.positionId);
-                }}>exit</button
-            >
-        </div>
-    {/each}
-</div>
+{#if cState.positionsList != undefined}
+    <h3>Positions</h3>
+    <div class="msgs">
+        {#each cState.positionsList as p (p.positionId)}
+            <div>
+                <span>
+                    {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
+                        ? "(long)"
+                        : "(short)"} : returns {p.amount + p.returnValue}
+                </span>
+                <button
+                    type="button"
+                    disabled={cState.loading}
+                    on:click={() => {
+                        exitPositionClicked(p.positionId);
+                    }}>exit</button
+                >
+            </div>
+        {/each}
+    </div>
+{/if}
 <br />
 <br />
-
 <h3>Chat</h3>
 <div class="msgs">
-    {#each chatMsgsDisplay as m}
+    {#each cState.chatMsgsDisplay as m (m.msgId)}
         <p>{m.fromUserName} : {m.msgTxt}</p>
     {/each}
 </div>
 <SimpleForm buttonLabel="Send" fire={sendMsg} />
+
 <h3>Users</h3>
 <div class="msgs">
-    {#each userList as u (u.publicId)}
+    {#each cState.userList as u (u.publicId)}
         <p>{u.displayName}</p>
     {/each}
 </div>
@@ -341,31 +344,36 @@
 <SimpleForm buttonLabel="Search" fire={requestTuber} />
 <h3>Tubers</h3>
 <div class="msgs">
-    {#each tuberList as t (t.channelId)}
+    {#each cState.tuberList as t (t.channelId)}
         <div>
             <span>{t.channelName} : {t.count}</span>
-            <button type="button" on:click={() => (selectedTuber = t)}
+            <button type="button" on:click={() => (cState.selectedTuber = t)}
                 >Select</button
             >
         </div>
     {/each}
 </div>
 
-{#if selectedTuber}
-    <h3>{selectedTuber.channelName}</h3>
-    <input type="number" bind:value={putStockAmountInput} disabled={loading} />
+{#if cState.selectedTuber}
+    <h3>{cState.selectedTuber.channelName}</h3>
+    <input
+        type="number"
+        bind:value={cState.putStockAmountInput}
+        disabled={cState.loading}
+    />
     <button
         type="button"
         on:click={longStockClicked}
-        disabled={loading || !putStockAmountInput}>Long Stock</button
+        disabled={!cState.putStockAmountInput}>Long Stock</button
     >
     <button
         type="button"
         on:click={shortStockClicked}
-        disabled={loading || !putStockAmountInput}>Short Stock</button
+        disabled={!cState.putStockAmountInput}>Short Stock</button
     >
 {/if}
 
+<!-- {/if} -->
 <style>
     :global(body) {
         background-color: aliceblue;
@@ -383,11 +391,7 @@
         font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
             sans-serif;
     }
-    .topBar {
-        position: sticky;
-        top: 0px;
-        border: 2px solid black;
-    }
+
     .msgs {
         display: flex;
         flex-direction: column-reverse;
@@ -395,13 +399,5 @@
         overflow-y: auto;
         background-color: burlywood;
         margin: 10px;
-    }
-    .solid {
-        background-color: pink;
-    }
-    .blurry {
-        background-color: transparent;
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
     }
 </style>
