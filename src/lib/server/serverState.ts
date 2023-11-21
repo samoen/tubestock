@@ -129,7 +129,11 @@ export function calcReturnValue(pos: Utils.Position): number | undefined {
 	if (!pos.long) {
 		bonus = bonus * -1
 	}
-	return bonus
+	let ret = pos.amount + bonus
+	if(ret < 0){
+		ret = 0
+	}
+	return ret
 }
 export function positionToPosWithReturnVal(pos: Utils.Position): Utils.PositionWithReturnValue | undefined {
 	const val = calcReturnValue(pos)
@@ -152,7 +156,7 @@ export function positionArrayToPosWithReturnValArray(poses: Utils.Position[]): U
 export async function checkUpdateCount(tuber: Utils.Tuber): Promise<boolean> {
 	let testing = true
 	if (testing) {
-		tuber.count = tuber.count - 500000
+		tuber.count = tuber.count + 50000
 		tuber.countUpdatedAt = new Date().getTime()
 		return true
 	}

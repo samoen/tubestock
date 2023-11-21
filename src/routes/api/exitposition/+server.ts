@@ -28,12 +28,11 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(400, 'position not found');
     }
     
-    const bonus = ServerState.calcReturnValue(toExit)
-    if (bonus == undefined){
+    const returnValue = ServerState.calcReturnValue(toExit)
+    if (returnValue == undefined){
         throw Kit.error(500, 'Failed to calculate stock return value');
     }
-    const refund = toExit.amount + bonus
-    foundUser.idleStock += refund
+    foundUser.idleStock += returnValue
     foundUser.positions = foundUser.positions.filter(p => p.positionId !== parsed.data.positionId)
 
 

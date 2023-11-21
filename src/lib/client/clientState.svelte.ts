@@ -1,5 +1,4 @@
 import * as Utils from '$lib/utils'
-import { getContext, hasContext, setContext } from "svelte"
 import * as z from 'zod'
 
 console.log('running clientstate')
@@ -20,10 +19,9 @@ export type ClientAppState = {
     putStockAmountInput: string;
     loading: boolean;
 }
-export const CLIENT_STATE_CTX = 'state'
 
-let stateSingleton : ReturnType<typeof stateFactory>;
-export const getCState = () => stateSingleton ?? (stateSingleton = stateFactory());
+let appState: ReturnType<typeof stateFactory>;
+export const getAppState = () => appState ?? (appState = stateFactory());
 const stateFactory = () => {
     const as: ClientAppState = {
         source: undefined,
@@ -37,17 +35,21 @@ const stateFactory = () => {
         putStockAmountInput: "",
         loading: false,
     };
-    let back = $state(as)
-	return {
-		get back () { return back; },
-		set back (val) { 
-            back = val
-            // return value; 
+    let value = $state(as)
+    return {
+        get value() { return value; },
+        // set back (val) { 
+        // back = val
+        // return value; 
+        // },
+        dirty() {
+            value = value
         },
-        dirty(){
-            back = back
+        update(mod: (s: ClientAppState) => void) {
+            mod(value)
+            this.dirty()
         }
-	};
+    };
 };
 
 
@@ -61,37 +63,35 @@ export async function setName(inputTxt: string) {
         Utils.setNameResponseSchema
     );
     if (fSafe.failed) return;
-    console.log('got new name ' + fSafe.value.yourName)
-    // let r = createStateRune()
-    // r.value.myNameDisplay = fSafe.value.yourName; 
-    // r.value = r.value
-    stateSingleton.back.myNameDisplay = fSafe.value.yourName;
-    stateSingleton.dirty()
-    // cState = cState
-    
+    // appState.update(mod => {
+    //     mod.myNameDisplay = fSafe.value.yourName
+    // })
+    appState.value.myNameDisplay = fSafe.value.yourName;
+    appState.dirty()
 }
+
 export async function subscribe() {
-    stateSingleton.back.loading = true;
-    stateSingleton.dirty()
+    appState.value.loading = true;
+    appState.dirty()
     console.log("subscribing to events");
-    if (stateSingleton.back.source != undefined) {
+    if (appState.value.source != undefined) {
         // for some reason if we navigate back to this page the source fires but the ui doesnt update. so resubscribe
         // console.log("closing old source to resubscribe");
-        // stateSingleton.back.source.close();
+        // stateSingleton.value.source.close();
         // await new Promise((r) => setTimeout(r, 500));
 
-        console.log("already subscribed with status " + stateSingleton.back.source.readyState);
-        stateSingleton.back.loading = false;
-        stateSingleton.dirty()
+        console.log("already subscribed with status " + appState.value.source.readyState);
+        appState.value.loading = false;
+        appState.dirty()
         return;
     }
     // window.onunload = () => {
     //     manualSourceError();
     // };
-    // try {
 
-    stateSingleton.back.source = new EventSource("/api/events");
-    if (!stateSingleton.back.source) {
+    // try {
+    appState.value.source = new EventSource("/api/events");
+    if (!appState.value.source) {
         console.log("source still undef after updated");
         return;
     }
@@ -101,23 +101,19 @@ export async function subscribe() {
     //     return;
     // }
 
-    stateSingleton.back.source.addEventListener("open", function (ev) {
+    appState.value.source.addEventListener("open", function (ev) {
         console.log("source opened");
-        stateSingleton.back.loading = false;
+        appState.value.loading = false;
     });
-    stateSingleton.back.source.addEventListener("error", function (ev) {
+    appState.value.source.addEventListener("error", function (ev) {
         console.log("source error");
-        // console.log('this readystate ' + this.readyState)
-        // const sReady = source ? source.readyState : 'undefined'
-        // console.log('source readystate ' + sReady)
         this.close();
-        stateSingleton.back.source?.close();
-        stateSingleton.back.source = undefined;
-        stateSingleton.back = stateSingleton.back
-        // cState = cState
+        appState.value.source?.close();
+        appState.value.source = undefined;
+        appState.dirty()
     });
 
-    stateSingleton.back.source.addEventListener("chatmsg", (ev) => {
+    appState.value.source.addEventListener("chatmsg", (ev) => {
         console.log("got chatmsg event");
         const parsed = Utils.chatMsgBroadcastSchema.safeParse(
             JSON.parse(ev.data)
@@ -126,16 +122,11 @@ export async function subscribe() {
             console.log("bad update from server");
             return;
         }
-        stateSingleton.back.chatMsgsDisplay = [
-            parsed.data.newMsg,
-            ...stateSingleton.back.chatMsgsDisplay,
-        ];
-
-        stateSingleton.back = stateSingleton.back
-
+        appState.value.chatMsgsDisplay.unshift(parsed.data.newMsg)
+        appState.dirty()
     });
 
-    stateSingleton.back.source.addEventListener("userJoined", (e) => {
+    appState.value.source.addEventListener("userJoined", (e) => {
         const parsed = Utils.userOnClientSchema.safeParse(
             JSON.parse(e.data)
         );
@@ -144,49 +135,49 @@ export async function subscribe() {
             return;
         }
         console.log("got user joined " + JSON.stringify(parsed.data));
-        stateSingleton.back.userList = [parsed.data, ...stateSingleton.back.userList];
+        appState.value.userList.unshift(parsed.data)
     });
 
-    stateSingleton.back.source.addEventListener("world", (e) => {
+    appState.value.source.addEventListener("world", (e) => {
         const parsed = Utils.worldEventSchema.safeParse(JSON.parse(e.data));
         if (!parsed.success) {
             console.log(JSON.parse(e.data));
-            console.log("bad welcome sub update from server");
+            console.log("bad world update from server");
             return;
         }
         if (parsed.data.users) {
-            stateSingleton.back.userList = parsed.data.users;
+            appState.value.userList = parsed.data.users;
         }
         if (parsed.data.tubers) {
-            stateSingleton.back.tuberList = parsed.data.tubers;
+            appState.value.tuberList = parsed.data.tubers;
         }
         if (parsed.data.msgs) {
-            stateSingleton.back.chatMsgsDisplay = parsed.data.msgs.reverse();
+            appState.value.chatMsgsDisplay = parsed.data.msgs.reverse();
         }
         if (parsed.data.positions) {
-            stateSingleton.back.positionsList = parsed.data.positions;
+            appState.value.positionsList = parsed.data.positions;
         }
         if (parsed.data.yourName) {
-            stateSingleton.back.myNameDisplay = parsed.data.yourName;
+            appState.value.myNameDisplay = parsed.data.yourName;
         }
         if (parsed.data.yourIdleStock !== undefined) {
-            stateSingleton.back.idleStockDisplay = parsed.data.yourIdleStock;
+            appState.value.idleStockDisplay = parsed.data.yourIdleStock;
         }
-        stateSingleton.dirty()
+        appState.dirty()
     });
 
-    stateSingleton.back.source.addEventListener("tuberAdded", (e) => {
+    appState.value.source.addEventListener("tuberAdded", (e) => {
         const parsed = Utils.tuberSchema.safeParse(JSON.parse(e.data));
         if (!parsed.success) {
             console.log("bad tuber added update from server");
             return;
         }
-        stateSingleton.back.tuberList = [parsed.data, ...stateSingleton.back.tuberList];
-        stateSingleton.dirty()
+        appState.value.tuberList.push(parsed.data)
+        appState.dirty()
     });
 }
 export function manualSourceError() {
-    stateSingleton.back.source?.dispatchEvent(new Event("error"));
+    appState.value.source?.dispatchEvent(new Event("error"));
 }
 
 
@@ -208,23 +199,23 @@ export async function requestTuber(searchTxt: string) {
     await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
 }
 export async function shortStockClicked() {
-    if (!stateSingleton.back.selectedTuber) return;
-    if (!stateSingleton.back.putStockAmountInput) return;
-    const intVal = Number.parseInt(stateSingleton.back.putStockAmountInput);
+    if (!appState.value.selectedTuber) return;
+    if (!appState.value.putStockAmountInput) return;
+    const intVal = Number.parseInt(appState.value.putStockAmountInput);
     if (!intVal) {
         return;
     }
-    await putStock(stateSingleton.back.selectedTuber.channelId, intVal, false);
+    await putStock(appState.value.selectedTuber.channelId, intVal, false);
 }
 
 export async function longStockClicked() {
-    if (!stateSingleton.back.selectedTuber) return;
-    if (!stateSingleton.back.putStockAmountInput) return;
-    const intVal = Number.parseInt(stateSingleton.back.putStockAmountInput);
+    if (!appState.value.selectedTuber) return;
+    if (!appState.value.putStockAmountInput) return;
+    const intVal = Number.parseInt(appState.value.putStockAmountInput);
     if (!intVal) {
         return;
     }
-    await putStock(stateSingleton.back.selectedTuber.channelId, intVal, true);
+    await putStock(appState.value.selectedTuber.channelId, intVal, true);
 }
 export async function putStock(channelId: string, amt: number, long: boolean) {
     const toSend: Utils.PutStockRequest = {
@@ -238,10 +229,10 @@ export async function putStock(channelId: string, amt: number, long: boolean) {
         Utils.putStockResponseSchema
     );
     if (resp.failed) return;
-    stateSingleton.back.putStockAmountInput = "";
-    stateSingleton.back.idleStockDisplay = resp.value.idleStock;
-    stateSingleton.back.positionsList = resp.value.positions;
-    stateSingleton.dirty()
+    appState.value.putStockAmountInput = "";
+    appState.value.idleStockDisplay = resp.value.idleStock;
+    appState.value.positionsList = resp.value.positions;
+    appState.dirty()
 }
 export function exitPositionClicked(positionId: string) {
     exitPosition(positionId);
@@ -257,9 +248,9 @@ export async function exitPosition(positionId: string) {
     );
     if (fSafe.failed) return;
 
-    stateSingleton.back.idleStockDisplay = fSafe.value.idleStock;
-    stateSingleton.back.positionsList = fSafe.value.positions;
-    stateSingleton.dirty()
+    appState.value.idleStockDisplay = fSafe.value.idleStock;
+    appState.value.positionsList = fSafe.value.positions;
+    appState.dirty()
 }
 
 export async function updateTubers() {
