@@ -6,6 +6,7 @@ import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'
 
 export const POST: RequestHandler = async (r) => {
+    await ServerState.fakeLatency()
     const uid = r.cookies.get('uid')
     if(!uid){
         return json({ error: 'no uid cookie' }, { status: 401 });

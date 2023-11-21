@@ -1,13 +1,14 @@
 <script lang="ts">
     import spinny from "$lib/client/svg/spinny.svg";
 
-    export let buttonLabel: string;
+    let {buttonLabel, fire} = $props<{buttonLabel:string,fire: (inputTxt:string) => Promise<void>}>()
+    // export const buttonLabel: string;
     // export let loading: boolean;
-    export let fire: (inputTxt:string) => Promise<void>;
+    // export let fire: (inputTxt:string) => Promise<void>;
     // export let formProps: ClientState.SimpleFormProps;
 
-    let meLoad = false
-    let meInputTxt : string
+    let meLoad = $state(false)
+    let meInputTxt = $state('')
 
     function inputSubmit(
         event: KeyboardEvent & {

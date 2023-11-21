@@ -9,15 +9,17 @@
     let windowScrollY = $state(0);
     let atTop = $derived(windowScrollY < 35);
 
-    // let cap = ClientState.getClientAppStateRune().value
-    let cap = ClientState.clientAppStateRune.value
-    cap.chatMsgsDisplay = data.msgs.reverse()
-    cap.userList = data.users
-    cap.positionsList = data.positions
-    cap.tuberList = data.tubers
-    cap.myNameDisplay = data.yourName
-    cap.idleStockDisplay = data.yourIdleStock
-    ClientState.clientAppStateRune.value = cap
+    let cap = ClientState.getCState()
+    // let cap = ClientState.clientAppStateRune.value
+    cap.back.chatMsgsDisplay = data.msgs.reverse()
+    cap.back.userList = data.users
+    cap.back.positionsList = data.positions
+    cap.back.tuberList = data.tubers
+    cap.back.myNameDisplay = data.yourName
+    cap.back.idleStockDisplay = data.yourIdleStock
+    cap.dirty()
+    // cap.back = cap.back
+    // ClientState.clientAppStateRune.value = cap
     // let clientAppStateRune = $state(as)
 
     // remove warning about rune never updated

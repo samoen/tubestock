@@ -3,9 +3,11 @@ import * as Utils from '$lib/utils';
 import type { PageServerLoad } from './$types';
 
 export let ssr = false
+// let { ...d } = $props<object>();
 
 // This runs on the server once when the page is first requested
 export const load = (async (r) => {
+	// console.log(JSON.stringify(d))
 	console.log('running page server load');
 	// const dfl: Utils.DataFirstLoad = {
 	// 	users: ServerState.usersOnServerToClient(),
