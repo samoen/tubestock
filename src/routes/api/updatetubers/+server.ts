@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     updateThem()
-    ServerState.broadcast('positionsUpdated', {})
+    ServerState.broadcastEveryoneEverything()
 
     return json({ good: true });
 };
@@ -29,6 +29,4 @@ async function updateThem() {
         if (!didUpdate) continue
         gotUpdated.push(tuber)
     }
-    ServerState.broadcastEveryoneEverything()
-    
 }

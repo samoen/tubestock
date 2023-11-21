@@ -156,7 +156,7 @@ export function positionArrayToPosWithReturnValArray(poses: Utils.Position[]): U
 export async function checkUpdateCount(tuber: Utils.Tuber): Promise<boolean> {
 	let testing = true
 	if (testing) {
-		tuber.count = tuber.count + 50000
+		tuber.count = tuber.count + 500000
 		tuber.countUpdatedAt = new Date().getTime()
 		return true
 	}

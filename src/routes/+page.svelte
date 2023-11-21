@@ -13,6 +13,20 @@
     });
 
     const appState = ClientState.getAppState();
+    let netWorth = $derived(calcNetWorth());
+
+    function calcNetWorth(): number | undefined {
+        if (appState.value.idleStockDisplay == undefined) return undefined;
+        let res: number = appState.value.idleStockDisplay;
+        if (!appState.value.positionsList) {
+            return res;
+        }
+        for (const pos of appState.value.positionsList) {
+            res += pos.returnValue;
+        }
+
+        return res;
+    }
 </script>
 
 <button
@@ -20,10 +34,10 @@
         console.log("dev");
     }}>dev</button
 >
-{#if !appState.value.loading && (!appState.value.source || appState.value.source.readyState == 2)}
+{#if !appState.value.subscribing && (!appState.value.source || appState.value.source.readyState == 2)}
     <button on:click={ClientState.subscribe}>open source</button>
 {/if}
-{#if appState.value.loading}
+{#if appState.value.subscribing}
     <span> loading... </span>
 {/if}
 <button on:click={ClientState.updateTubers}>update tubers</button>
@@ -31,6 +45,8 @@
 <h3>User</h3>
 <p>My name : {appState.value.myNameDisplay}</p>
 <p>Idle stock : {appState.value.idleStockDisplay}</p>
+<p>Net worth : {netWorth}</p>
+
 <SimpleForm buttonLabel="Set Username" fire={ClientState.setName} />
 <br />
 <button on:click={ClientState.deleteUser}>delete user</button>
@@ -59,7 +75,10 @@
             <span>{t.channelName} : {t.count}</span>
             <button
                 type="button"
-                on:click={() => (appState.value.selectedTuber = t)}
+                on:click={() => {
+                    appState.value.selectedTuber = t;
+                    appState.dirty();
+                }}
             >
                 Select
             </button>
@@ -69,21 +88,24 @@
 
 {#if appState.value.selectedTuber}
     <h3>{appState.value.selectedTuber.channelName}</h3>
-    <input
-        type="number"
-        bind:value={appState.value.putStockAmountInput}
-        disabled={appState.value.loading}
-    />
-    <button
-        type="button"
-        on:click={ClientState.longStockClicked}
-        disabled={!appState.value.putStockAmountInput}>Long Stock</button
+    <SimpleForm
+        buttonLabel="Place stock"
+        fire={async (inTxt) => {
+            await ClientState.placeStockClicked(
+                appState.value.putStockChecked,
+                inTxt
+            );
+        }}
+        inputType="number"
     >
-    <button
-        type="button"
-        on:click={ClientState.shortStockClicked}
-        disabled={!appState.value.putStockAmountInput}>Short Stock</button
-    >
+        <input
+            type="checkbox"
+            id="long"
+            bind:checked={appState.value.putStockChecked}
+            disabled={appState.value.putStockLoading}
+        />
+        <label for="long">Long</label>
+    </SimpleForm>
 {/if}
 {#if appState.value.positionsList != undefined}
     <h3>Positions</h3>
@@ -97,7 +119,7 @@
                 </span>
                 <button
                     type="button"
-                    disabled={appState.value.loading}
+                    disabled={appState.value.subscribing}
                     on:click={() => {
                         ClientState.exitPositionClicked(p.positionId);
                     }}>exit</button

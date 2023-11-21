@@ -10,7 +10,7 @@
     ClientState.getAppState().update((s) => {
         s.chatMsgsDisplay = data.msgs.reverse();
         s.userList = data.users;
-        s.positionsList = data.positions;
+        s.positionsList = data.positions?.reverse();
         s.tuberList = data.tubers;
         s.myNameDisplay = data.yourName;
         s.idleStockDisplay = data.yourIdleStock;

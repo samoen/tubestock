@@ -1,20 +1,24 @@
 <script lang="ts">
     import spinny from "$lib/client/svg/spinny.svg";
+    type Props = {
+        buttonLabel: string;
+        fire: (inputTxt: string) => Promise<void>;
+        inputType?: "text" | "number";
+    };
 
-    let {buttonLabel, fire} = $props<{buttonLabel:string,fire: (inputTxt:string) => Promise<void>}>()
+    let { buttonLabel, fire, inputType } = $props<Props>();
     // export const buttonLabel: string;
     // export let loading: boolean;
     // export let fire: (inputTxt:string) => Promise<void>;
     // export let formProps: ClientState.SimpleFormProps;
-
-    let meLoad = $state(false)
-    let meInputTxt = $state('')
+    const iType = inputType ? inputType : "text";
+    let meLoad = $state(false);
+    let meInputTxt = $state("");
 
     function inputSubmit(
         event: KeyboardEvent & {
             currentTarget: EventTarget & HTMLInputElement;
-        },
-        
+        }
     ) {
         if (event.key === "Enter") {
             itClicked();
@@ -22,25 +26,33 @@
         }
     }
 
-    async function itClicked(){
+    async function itClicked() {
         if (!meInputTxt) return;
-        meLoad = true
+        meLoad = true;
         await fire(meInputTxt);
-        meLoad = false
+        meLoad = false;
         meInputTxt = "";
     }
 </script>
 
 <!-- placeholder="Type your name" -->
 <!-- disabled={formProps.loading} -->
-<input
-    type="text"
-    disabled={meLoad}
-    bind:value={meInputTxt}
-    on:keydown={inputSubmit}
-/>
-<!-- disabled={formProps.loading} -->
-<!-- class:transparentText={formProps.loading} -->
+{#if iType == "text"}
+    <input
+        type="text"
+        disabled={meLoad}
+        bind:value={meInputTxt}
+        on:keydown={inputSubmit}
+    />
+{:else}
+    <input
+        type="number"
+        disabled={meLoad}
+        bind:value={meInputTxt}
+        on:keydown={inputSubmit}
+    />
+{/if}
+<slot></slot>
 <button
     type="button"
     on:click={itClicked}

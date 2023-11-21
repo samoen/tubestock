@@ -17,7 +17,9 @@ export type ClientAppState = {
     idleStockDisplay: number | undefined;
     selectedTuber: Utils.Tuber | undefined;
     putStockAmountInput: string;
-    loading: boolean;
+    putStockLoading:boolean;
+    putStockChecked:boolean;
+    subscribing: boolean;
 }
 
 let appState: ReturnType<typeof stateFactory>;
@@ -33,7 +35,9 @@ const stateFactory = () => {
         idleStockDisplay: undefined,
         selectedTuber: undefined,
         putStockAmountInput: "",
-        loading: false,
+        putStockLoading:false,
+        putStockChecked:true,
+        subscribing: false,
     };
     let value = $state(as)
     return {
@@ -71,7 +75,7 @@ export async function setName(inputTxt: string) {
 }
 
 export async function subscribe() {
-    appState.value.loading = true;
+    appState.value.subscribing = true;
     appState.dirty()
     console.log("subscribing to events");
     if (appState.value.source != undefined) {
@@ -81,7 +85,7 @@ export async function subscribe() {
         // await new Promise((r) => setTimeout(r, 500));
 
         console.log("already subscribed with status " + appState.value.source.readyState);
-        appState.value.loading = false;
+        appState.value.subscribing = false;
         appState.dirty()
         return;
     }
@@ -103,7 +107,7 @@ export async function subscribe() {
 
     appState.value.source.addEventListener("open", function (ev) {
         console.log("source opened");
-        appState.value.loading = false;
+        appState.value.subscribing = false;
     });
     appState.value.source.addEventListener("error", function (ev) {
         console.log("source error");
@@ -155,7 +159,7 @@ export async function subscribe() {
             appState.value.chatMsgsDisplay = parsed.data.msgs.reverse();
         }
         if (parsed.data.positions) {
-            appState.value.positionsList = parsed.data.positions;
+            appState.value.positionsList = parsed.data.positions.reverse();
         }
         if (parsed.data.yourName) {
             appState.value.myNameDisplay = parsed.data.yourName;
@@ -198,40 +202,41 @@ export async function requestTuber(searchTxt: string) {
     };
     await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
 }
-export async function shortStockClicked() {
+
+export async function placeStockClicked(long:boolean, inTxt:string) {
     if (!appState.value.selectedTuber) return;
-    if (!appState.value.putStockAmountInput) return;
-    const intVal = Number.parseInt(appState.value.putStockAmountInput);
+    // if (!appState.value.putStockAmountInput) return;
+    // const intVal = Number.parseInt(appState.value.putStockAmountInput);
+    const intVal = Number.parseInt(inTxt);
     if (!intVal) {
         return;
     }
-    await putStock(appState.value.selectedTuber.channelId, intVal, false);
+    appState.value.putStockLoading = true
+    appState.dirty()
+    await putStock(appState.value.selectedTuber.channelId, intVal, long);
+    appState.value.putStockLoading = false
+    appState.dirty()
 }
 
-export async function longStockClicked() {
-    if (!appState.value.selectedTuber) return;
-    if (!appState.value.putStockAmountInput) return;
-    const intVal = Number.parseInt(appState.value.putStockAmountInput);
-    if (!intVal) {
-        return;
-    }
-    await putStock(appState.value.selectedTuber.channelId, intVal, true);
-}
 export async function putStock(channelId: string, amt: number, long: boolean) {
     const toSend: Utils.PutStockRequest = {
         channelId: channelId,
         amount: amt,
         long: long,
     };
+    console.log('putstock req ' + JSON.stringify(toSend))
     let resp = await hitEndpoint(
         "putstock",
         toSend,
         Utils.putStockResponseSchema
     );
-    if (resp.failed) return;
-    appState.value.putStockAmountInput = "";
+    if (resp.failed) {
+        console.log(resp.error.message)
+        return
+    };
+    // appState.value.putStockAmountInput = "";
     appState.value.idleStockDisplay = resp.value.idleStock;
-    appState.value.positionsList = resp.value.positions;
+    appState.value.positionsList = resp.value.positions.reverse();
     appState.dirty()
 }
 export function exitPositionClicked(positionId: string) {
@@ -249,7 +254,7 @@ export async function exitPosition(positionId: string) {
     if (fSafe.failed) return;
 
     appState.value.idleStockDisplay = fSafe.value.idleStock;
-    appState.value.positionsList = fSafe.value.positions;
+    appState.value.positionsList = fSafe.value.positions.reverse();
     appState.dirty()
 }
 
