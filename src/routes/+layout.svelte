@@ -2,10 +2,12 @@
     import * as ClientState from "$lib/client/clientState.svelte";
     import * as Utils from "$lib/utils";
 
-    console.log("init layout");
     let { data } = $props<{ data: Utils.DataFirstLoad }>();
     let windowScrollY = $state(0);
     let atTop = $derived(windowScrollY < 35);
+    if(data.yourName){
+        console.log(`init layout with existing user ${data.yourName}`);
+    }
 
     ClientState.getAppState().update((s) => {
         s.chatMsgs = data.msgs.reverse();

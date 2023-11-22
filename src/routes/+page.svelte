@@ -14,9 +14,8 @@
 
     const appState = ClientState.getAppState();
     let netWorth = $derived(myNetWorth());
-    let putStockChecked = $state(false);
-    let putStockLoading = $state(false);
-    
+    // let putStockChecked = $state(false);
+    // let putStockLoading = $state(false);
 
     function myNetWorth(): number | undefined {
         if (appState.value.myIdleStock == undefined) return undefined;
@@ -39,22 +38,27 @@
         }
         return res;
     }
-    async function placeStockClicked(inTxt: string) : Promise<Utils.SamResult<{}>> {
-        if (!appState.value.selectedTuber) return {failed:true,error:new Error('blank field')};
+    async function placeStockClicked(
+        inTxt: string,
+        short: string
+    ): Promise<Utils.SamResult<{}>> {
+        if (!appState.value.selectedTuber)
+            return { failed: true, error: new Error("no tuber selected") };
         const intVal = Number.parseInt(inTxt);
         if (!intVal) {
-            return {failed:true,error:new Error('must be number')};;
+            return { failed: true, error: new Error("must be number") };
         }
-        putStockLoading = true;
+        const shortBool = short == "true" ? true : false;
+        // putStockLoading = true;
         const r = await ClientState.putStock(
             appState.value.selectedTuber.channelId,
             intVal,
-            !putStockChecked
+            !shortBool
         );
-        putStockLoading = false;
-        return r
+        // putStockLoading = false;
+        return r;
     }
-    
+
     let exitPositionLoading = $state(false);
     async function exitPositionClicked(positionId: string) {
         exitPositionLoading = true;
@@ -62,19 +66,12 @@
         exitPositionLoading = false;
     }
 
-    let restoreUserNameInput = $state("");
-    let restoreLoading = $state(false);
-    let restoreSimpleForm: SimpleForm;
-    $effect(()=>{
-        restoreUserNameInput
-        restoreSimpleForm.clearError()
-    })
-    async function restoreClicked(pIdTxt: string) : Promise<Utils.SamResult<unknown>> {
-        if (!restoreUserNameInput) return {error:new Error('blank field'),failed:true};
-        restoreLoading = true;
-        let r = await ClientState.restoreUser(pIdTxt, restoreUserNameInput);
-        restoreLoading = false;
-        return r
+    async function restoreClicked(
+        pIdTxt: string,
+        nameTxt: string
+    ): Promise<Utils.SamResult<{}>> {
+        let r = await ClientState.restoreUser(pIdTxt, nameTxt);
+        return r;
     }
 </script>
 
@@ -96,24 +93,21 @@
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
 <p class="selectableText">Private Id : {appState.value.myPrivateId}</p>
-<SimpleForm buttonLabel="Update Display Name" fire={ClientState.setName} />
+<!-- fire={ClientState.setName}  -->
+<SimpleForm
+    buttonLabel="Update Display Name"
+    coolfire={ClientState.setName}
+    things={[{ itype: "text", placeHold: "name" }]}
+/>
 <br />
 <SimpleForm
-    bind:this={restoreSimpleForm}
     buttonLabel="Restore Session"
-    fire={restoreClicked}
-    placeholder="private id"
->
-    <input
-        type="text"
-        bind:value={restoreUserNameInput}
-        placeholder="display name"
-        disabled={restoreLoading}
-        on:keydown={(e) => {
-            restoreSimpleForm.inputSubmit(e);
-        }}
-    />
-</SimpleForm>
+    coolfire={restoreClicked}
+    things={[
+        { itype: "text", placeHold: "id" },
+        { itype: "text", placeHold: "name" },
+    ]}
+/>
 <br />
 <button on:click={ClientState.deleteUser}>delete user</button>
 <br />
@@ -124,7 +118,11 @@
         <p>{m.fromUserName} : {m.msgTxt}</p>
     {/each}
 </div>
-<SimpleForm buttonLabel="Send" fire={ClientState.sendMsg} />
+<SimpleForm
+    buttonLabel="Send"
+    coolfire={ClientState.sendMsg}
+    things={[{ itype: "text" }]}
+/>
 <br />
 <br />
 <h3>Users</h3>
@@ -150,16 +148,20 @@
         )}
     </h4>
     {#each appState.value.selectedUser.positions as p (p.positionId)}
-        <span>
-            {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
+        <p>
+            {p.tuberName} : {p.long
                 ? "(long)"
-                : "(short)"} : returns {p.returnValue}
-        </span>
+                : "(short)"} : value {p.returnValue}
+        </p>
     {/each}
 {/if}
 <br />
 <h3>Tubers</h3>
-<SimpleForm buttonLabel="Search" fire={ClientState.requestTuber} />
+<SimpleForm
+    buttonLabel="Search"
+    coolfire={ClientState.requestTuber}
+    things={[{ itype: "text" }]}
+/>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
         <div>
@@ -182,17 +184,13 @@
     <h3>{appState.value.selectedTuber.channelName}</h3>
     <SimpleForm
         buttonLabel="Place stock"
-        fire={placeStockClicked}
+        coolfire={placeStockClicked}
         inputType="number"
-    >
-        <input
-            type="checkbox"
-            id="putStockCheck"
-            bind:checked={putStockChecked}
-            disabled={putStockLoading}
-        />
-        <label for="putStockCheck">Short</label>
-    </SimpleForm>
+        things={[
+            { itype: "number" },
+            { itype: "checkbox", placeHold: "short" },
+        ]}
+    />
 {/if}
 {#if appState.value.positionsList != undefined}
     <h3>Positions</h3>

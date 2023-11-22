@@ -71,9 +71,7 @@ export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknow
 }
 
 export async function subscribe() {
-    appState.value.subscribing = true;
-    appState.dirty()
-    console.log("subscribing to events");
+    console.log("maybe subscribing to events");
     if (appState.value.source != undefined) {
         // for some reason if we navigate back to this page the source fires but the ui doesnt update. so resubscribe
         // console.log("closing old source to resubscribe");
@@ -86,10 +84,12 @@ export async function subscribe() {
         return;
     }
     // window.onunload = () => {
-    //     manualSourceError();
-    // };
-
-    // try {
+        //     manualSourceError();
+        // };
+        
+        // try {
+    appState.value.subscribing = true;
+    appState.dirty()
     appState.value.source = new EventSource("/api/events");
     if (!appState.value.source) {
         console.log("source still undef after updated");

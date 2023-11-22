@@ -34,8 +34,9 @@ export const GET: Kit.RequestHandler = async (event) => {
 		}
 	}
 
-	// let userCreated = false
-	if (!uidCookie) {
+	let userCreated = false
+	if (!foundDbUser) {
+		userCreated = true
 		uidCookie = Uuid.v4();
 		usernameCookie = `Guest1`;
 		for (let num = 1; num < 100; num++) {
@@ -89,7 +90,25 @@ export const GET: Kit.RequestHandler = async (event) => {
 				con:c,
 			}
 			ServerState.state.usersInMemory.push(newMemUsr)
-			ServerState.broadcastEveryoneWorld()
+			// ServerState.broadcastEveryoneWorld()
+			// console.log('created user subscribed and started')
+			let world : Utils.WorldEvent = {
+				
+			}
+			if(userCreated){
+				world.positions=ServerState.positionArrayToPosWithReturnValArray(constFoundUser.positions)
+				world.yourIdleStock=constFoundUser.idleStock
+				world.yourName=constFoundUser.displayName
+				world.yourPrivateId=constFoundUser.privateId
+			}
+			ServerState.sendToUser(newMemUsr,'world',world)
+
+			if(userCreated){
+				let worldBroad : Utils.WorldEvent = {
+					users : ServerState.usersOnServerToClient()
+				}
+				ServerState.broadcast('world',worldBroad)
+			}
 		},
 		cancel(reason) {
 			console.log(`stream cancel handle for hero ${constFoundUser.displayName}`);

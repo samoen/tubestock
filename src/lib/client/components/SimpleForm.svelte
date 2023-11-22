@@ -3,29 +3,36 @@
     import type { SamResult } from "$lib/utils";
     type Props = {
         buttonLabel: string;
-        fire: (inputTxt: string) => Promise<SamResult<unknown>>;
+        coolfire?: (...args: any[]) => Promise<SamResult<unknown>>;
         inputType?: "text" | "number";
-        placeholder?: string;
+        things?: InputShape[];
+    };
+    type InputShape = {
+        itype: "text" | "number" | "checkbox";
+        placeHold?: string;
     };
 
-    let { buttonLabel, fire, inputType, placeholder } = $props<Props>();
-    const pHold = placeholder ? placeholder : ''
+    let { buttonLabel, inputType, things, coolfire } = $props<Props>();
 
-    const iType = inputType ? inputType : "text";
     let meLoad = $state(false);
-    let meInputTxt = $state("");
     let errTxt = $state("");
 
-    $effect(()=>{
-        meInputTxt
-        clearError()
-    })
-    
-    export function clearError(){
-        errTxt = ''
+    type EleThing = {
+        ishape: InputShape;
+        ele: HTMLElement | undefined;
+    };
+    let inputEles: EleThing[] = !things
+        ? []
+        : things.map((t) => {
+              return {
+                  ishape: t,
+                  ele: undefined,
+              };
+          });
 
+    export function clearError() {
+        errTxt = "";
     }
-
 
     export function inputSubmit(
         event: KeyboardEvent & {
@@ -39,43 +46,61 @@
     }
 
     async function itClicked() {
-        if (!meInputTxt) {
-            errTxt = 'blank field'
-            return
-        };
+        if (!coolfire) return;
         meLoad = true;
-        let res = await fire(meInputTxt);
-        meLoad = false;
-        if(res.failed){
-            errTxt = res.error.message
-            return
+        let vals: string[] = [];
+        for (const ie of inputEles) {
+            if (!ie.ele) continue;
+            let child = ie.ele.firstElementChild;
+            if (!child || !(child instanceof HTMLInputElement)) continue;
+            console.log("input checked is " + child.checked);
+            if (child.type == "checkbox") {
+                vals.push(child.checked ? "true" : "false");
+                continue;
+            }
+            if (!child.value) {
+                errTxt = "blank field";
+                meLoad = false;
+                return;
+            }
+            vals.push(child.value);
         }
-        meInputTxt = "";
+        let res = await coolfire(...vals);
+        meLoad = false;
+        if (res.failed) {
+            errTxt = res.error.message;
+            return;
+        }
+        for (const ie of inputEles) {
+            if (!ie.ele) continue;
+            let child = ie.ele.firstElementChild;
+            if (!child || !(child instanceof HTMLInputElement)) continue;
+            child.value = "";
+        }
+    }
+    function inputChanged() {
+        console.log("input changed");
+        errTxt = "";
     }
 </script>
 
-<!-- placeholder="Type your name" -->
-<!-- disabled={formProps.loading} -->
-{#if iType == "text"}
-    <input
-        type="text"
-        disabled={meLoad}
-        bind:value={meInputTxt}
-        on:keydown={inputSubmit}
-        placeholder="{pHold}"
-    />
-{:else}
-    <input
-        type="number"
-        disabled={meLoad}
-        bind:value={meInputTxt}
-        on:keydown={inputSubmit}
-        placeholder="{pHold}"
-    />
+{#if things}
+    {#each inputEles as t}
+        <div class="inputHolder" bind:this={t.ele}>
+            <input
+                on:input={inputChanged}
+                type={t.ishape.itype}
+                disabled={meLoad}
+                on:keydown={inputSubmit}
+                placeholder={t.ishape.placeHold}
+            />
+        </div>
+        {#if t.ishape.itype == "checkbox"}
+            {t.ishape.placeHold}
+        {/if}
+    {/each}
 {/if}
-<div class='slotHold'>
-    <slot></slot>
-</div>
+
 <button
     type="button"
     on:click={itClicked}
@@ -88,11 +113,11 @@
     {/if}
     {buttonLabel}
 </button>
-<span class='err'>{errTxt}</span>
+<span class="err">{errTxt}</span>
 
 <style>
-    .err{
-        color:red;
+    .err {
+        color: red;
     }
     .transparentText {
         color: transparent;
@@ -110,15 +135,10 @@
         transform: translate(-50%, -50%);
         height: 1em;
     }
-    input {
+    input[type="text"] {
         padding-block: 2px;
     }
-    .slotHold {
-        display: inline-block;
-        /* background-color: blue; */
-        /* padding:3px; */
-    }
-    .slotHold :global(input){
-        padding-block: 2px;
+    .inputHolder {
+        display: inline;
     }
 </style>
