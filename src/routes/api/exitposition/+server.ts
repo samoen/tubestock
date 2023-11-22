@@ -3,6 +3,7 @@ import * as Utils from '$lib/utils'
 import * as Kit from '@sveltejs/kit';
 
 export const POST: Kit.RequestHandler = async (event) => {
+    await ServerState.fakeLatency()
     const uidCookie = event.cookies.get('uid')
     if (!uidCookie) {
         throw Kit.error(401, 'need a uid cookie to exit position');

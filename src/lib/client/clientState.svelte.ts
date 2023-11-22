@@ -9,16 +9,13 @@ export type SimpleFormProps = {
 }
 export type ClientAppState = {
     source: EventSource | undefined
-    chatMsgsDisplay: Utils.SavedChatMsg[];
+    chatMsgs: Utils.SavedChatMsg[];
     userList: Utils.UserOnClient[];
     tuberList: Utils.Tuber[];
     positionsList: Utils.PositionWithReturnValue[] | undefined;
-    myNameDisplay: string | undefined;
-    idleStockDisplay: number | undefined;
+    myUsername: string | undefined;
+    myIdleStock: number | undefined;
     selectedTuber: Utils.Tuber | undefined;
-    putStockAmountInput: string;
-    putStockLoading:boolean;
-    putStockChecked:boolean;
     subscribing: boolean;
 }
 
@@ -27,16 +24,13 @@ export const getAppState = () => appState ?? (appState = stateFactory());
 const stateFactory = () => {
     const as: ClientAppState = {
         source: undefined,
-        chatMsgsDisplay: [],
+        chatMsgs: [],
         userList: [],
         positionsList: undefined,
         tuberList: [],
-        myNameDisplay: undefined,
-        idleStockDisplay: undefined,
+        myUsername: undefined,
+        myIdleStock: undefined,
         selectedTuber: undefined,
-        putStockAmountInput: "",
-        putStockLoading:false,
-        putStockChecked:true,
         subscribing: false,
     };
     let value = $state(as)
@@ -70,7 +64,7 @@ export async function setName(inputTxt: string) {
     // appState.update(mod => {
     //     mod.myNameDisplay = fSafe.value.yourName
     // })
-    appState.value.myNameDisplay = fSafe.value.yourName;
+    appState.value.myUsername = fSafe.value.yourName;
     appState.dirty()
 }
 
@@ -126,7 +120,7 @@ export async function subscribe() {
             console.log("bad update from server");
             return;
         }
-        appState.value.chatMsgsDisplay.unshift(parsed.data.newMsg)
+        appState.value.chatMsgs.unshift(parsed.data.newMsg)
         appState.dirty()
     });
 
@@ -156,16 +150,16 @@ export async function subscribe() {
             appState.value.tuberList = parsed.data.tubers;
         }
         if (parsed.data.msgs) {
-            appState.value.chatMsgsDisplay = parsed.data.msgs.reverse();
+            appState.value.chatMsgs = parsed.data.msgs.reverse();
         }
         if (parsed.data.positions) {
             appState.value.positionsList = parsed.data.positions.reverse();
         }
         if (parsed.data.yourName) {
-            appState.value.myNameDisplay = parsed.data.yourName;
+            appState.value.myUsername = parsed.data.yourName;
         }
         if (parsed.data.yourIdleStock !== undefined) {
-            appState.value.idleStockDisplay = parsed.data.yourIdleStock;
+            appState.value.myIdleStock = parsed.data.yourIdleStock;
         }
         appState.dirty()
     });
@@ -203,20 +197,7 @@ export async function requestTuber(searchTxt: string) {
     await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
 }
 
-export async function placeStockClicked(long:boolean, inTxt:string) {
-    if (!appState.value.selectedTuber) return;
-    // if (!appState.value.putStockAmountInput) return;
-    // const intVal = Number.parseInt(appState.value.putStockAmountInput);
-    const intVal = Number.parseInt(inTxt);
-    if (!intVal) {
-        return;
-    }
-    appState.value.putStockLoading = true
-    appState.dirty()
-    await putStock(appState.value.selectedTuber.channelId, intVal, long);
-    appState.value.putStockLoading = false
-    appState.dirty()
-}
+
 
 export async function putStock(channelId: string, amt: number, long: boolean) {
     const toSend: Utils.PutStockRequest = {
@@ -235,13 +216,11 @@ export async function putStock(channelId: string, amt: number, long: boolean) {
         return
     };
     // appState.value.putStockAmountInput = "";
-    appState.value.idleStockDisplay = resp.value.idleStock;
+    appState.value.myIdleStock = resp.value.idleStock;
     appState.value.positionsList = resp.value.positions.reverse();
     appState.dirty()
 }
-export function exitPositionClicked(positionId: string) {
-    exitPosition(positionId);
-}
+
 export async function exitPosition(positionId: string) {
     const toSend: Utils.ExitPositionRequest = {
         positionId: positionId,
@@ -253,7 +232,7 @@ export async function exitPosition(positionId: string) {
     );
     if (fSafe.failed) return;
 
-    appState.value.idleStockDisplay = fSafe.value.idleStock;
+    appState.value.myIdleStock = fSafe.value.idleStock;
     appState.value.positionsList = fSafe.value.positions.reverse();
     appState.dirty()
 }

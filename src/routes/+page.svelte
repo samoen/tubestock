@@ -14,10 +14,12 @@
 
     const appState = ClientState.getAppState();
     let netWorth = $derived(calcNetWorth());
+    let putStockChecked = $state(false);
+    let putStockLoading = $state(false);
 
     function calcNetWorth(): number | undefined {
-        if (appState.value.idleStockDisplay == undefined) return undefined;
-        let res: number = appState.value.idleStockDisplay;
+        if (appState.value.myIdleStock == undefined) return undefined;
+        let res: number = appState.value.myIdleStock;
         if (!appState.value.positionsList) {
             return res;
         }
@@ -26,6 +28,26 @@
         }
 
         return res;
+    }
+    async function placeStockClicked(inTxt: string) {
+        if (!appState.value.selectedTuber) return;
+        const intVal = Number.parseInt(inTxt);
+        if (!intVal) {
+            return;
+        }
+        putStockLoading = true;
+        await ClientState.putStock(
+            appState.value.selectedTuber.channelId,
+            intVal,
+            !putStockChecked
+        );
+        putStockLoading = false;
+    }
+    let exitPositionLoading = $state(false)
+    async function exitPositionClicked(positionId: string) {
+        exitPositionLoading = true
+        await ClientState.exitPosition(positionId);
+        exitPositionLoading = false
     }
 </script>
 
@@ -43,8 +65,8 @@
 <button on:click={ClientState.updateTubers}>update tubers</button>
 <button on:click={ClientState.manualSourceError}>close source</button>
 <h3>User</h3>
-<p>My name : {appState.value.myNameDisplay}</p>
-<p>Idle stock : {appState.value.idleStockDisplay}</p>
+<p>My name : {appState.value.myUsername}</p>
+<p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
 
 <SimpleForm buttonLabel="Set Username" fire={ClientState.setName} />
@@ -54,7 +76,7 @@
 <br />
 <h3>Chat</h3>
 <div class="msgs">
-    {#each appState.value.chatMsgsDisplay as m (m.msgId)}
+    {#each appState.value.chatMsgs as m (m.msgId)}
         <p>{m.fromUserName} : {m.msgTxt}</p>
     {/each}
 </div>
@@ -74,6 +96,7 @@
         <div>
             <span>{t.channelName} : {t.count}</span>
             <button
+                class="itemButton yellow"
                 type="button"
                 on:click={() => {
                     appState.value.selectedTuber = t;
@@ -90,21 +113,16 @@
     <h3>{appState.value.selectedTuber.channelName}</h3>
     <SimpleForm
         buttonLabel="Place stock"
-        fire={async (inTxt) => {
-            await ClientState.placeStockClicked(
-                appState.value.putStockChecked,
-                inTxt
-            );
-        }}
+        fire={placeStockClicked}
         inputType="number"
     >
         <input
             type="checkbox"
-            id="long"
-            bind:checked={appState.value.putStockChecked}
-            disabled={appState.value.putStockLoading}
+            id="putStockCheck"
+            bind:checked={putStockChecked}
+            disabled={putStockLoading}
         />
-        <label for="long">Long</label>
+        <label for="putStockCheck">Short</label>
     </SimpleForm>
 {/if}
 {#if appState.value.positionsList != undefined}
@@ -118,11 +136,12 @@
                         : "(short)"} : returns {p.returnValue}
                 </span>
                 <button
+                    class="itemButton red"
                     type="button"
-                    disabled={appState.value.subscribing}
+                    disabled={exitPositionLoading}
                     on:click={() => {
-                        ClientState.exitPositionClicked(p.positionId);
-                    }}>exit</button
+                        exitPositionClicked(p.positionId);
+                    }}>Exit</button
                 >
             </div>
         {/each}
@@ -156,4 +175,20 @@
         background-color: burlywood;
         margin: 10px;
     }
+    .itemButton{
+        border-radius: 6px;
+        padding-inline:4px;
+        padding-block:2px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .red{
+        background-color: red;
+        color: white;
+        border-color: white;
+    }
+    .yellow{
+        background-color: yellow;
+    }
+    
 </style>

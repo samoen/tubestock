@@ -8,12 +8,12 @@
     let atTop = $derived(windowScrollY < 35);
 
     ClientState.getAppState().update((s) => {
-        s.chatMsgsDisplay = data.msgs.reverse();
+        s.chatMsgs = data.msgs.reverse();
         s.userList = data.users;
         s.positionsList = data.positions?.reverse();
         s.tuberList = data.tubers;
-        s.myNameDisplay = data.yourName;
-        s.idleStockDisplay = data.yourIdleStock;
+        s.myUsername = data.yourName;
+        s.myIdleStock = data.yourIdleStock;
     });
 </script>
 
