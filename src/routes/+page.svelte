@@ -13,20 +13,23 @@
     });
 
     const appState = ClientState.getAppState();
-    let netWorth = $derived(calcNetWorth());
+    let netWorth = $derived(myNetWorth());
     let putStockChecked = $state(false);
     let putStockLoading = $state(false);
 
-    function calcNetWorth(): number | undefined {
+    function myNetWorth() : number | undefined{
         if (appState.value.myIdleStock == undefined) return undefined;
-        let res: number = appState.value.myIdleStock;
         if (!appState.value.positionsList) {
-            return res;
+            return undefined;
         }
-        for (const pos of appState.value.positionsList) {
+        return calcNetWorth(appState.value.myIdleStock,appState.value.positionsList)
+    }
+
+    function calcNetWorth(idle:number,positions:Utils.PositionWithReturnValue[]): number | undefined {
+        let res: number = idle;
+        for (const pos of positions) {
             res += pos.returnValue;
         }
-
         return res;
     }
     async function placeStockClicked(inTxt: string) {
@@ -68,8 +71,9 @@
 <p>My name : {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
+<p class="selectableText">Private Id : {appState.value.myPrivateId}</p>
 
-<SimpleForm buttonLabel="Set Username" fire={ClientState.setName} />
+<SimpleForm buttonLabel="Update Display Name" fire={ClientState.setName} />
 <br />
 <button on:click={ClientState.deleteUser}>delete user</button>
 <br />
@@ -86,9 +90,29 @@
 <h3>Users</h3>
 <div class="msgs">
     {#each appState.value.userList as u (u.publicId)}
-        <p>{u.displayName}</p>
+        <div>
+            <span>{u.displayName}</span>
+            <button 
+                class="itemButton yellow"
+            on:click={()=>{
+                appState.value.selectedUser = u
+                appState.dirty()
+            }}>details</button>
+
+        </div>
     {/each}
 </div>
+{#if appState.value.selectedUser}
+    <h4>{appState.value.selectedUser.displayName} : {calcNetWorth(appState.value.selectedUser.idleStock,appState.value.selectedUser.positions)}</h4>
+    {#each appState.value.selectedUser.positions as p (p.positionId)}
+        <span>
+            {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
+                ? "(long)"
+                : "(short)"} : returns {p.returnValue}
+        </span>
+    {/each}
+{/if}
+<br/>
 <h3>Tubers</h3>
 <SimpleForm buttonLabel="Search" fire={ClientState.requestTuber} />
 <div class="msgs">
@@ -165,6 +189,10 @@
         touch-action: manipulation;
         font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
             sans-serif;
+    }
+
+    .selectableText {
+        user-select: text;
     }
 
     .msgs {

@@ -21,25 +21,25 @@ export const GET: Kit.RequestHandler = async (event) => {
 		removeCookies()
 	}
 
-	let foundUser : ServerState.UserOnServer | undefined = undefined
+	let foundDbUser : ServerState.UserInDb | undefined = undefined
 	if (uidCookie && usernameCookie) {
-		foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
-		if (!foundUser) {
+		foundDbUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie);
+		if (!foundDbUser) {
 			console.log('cant subscribe user not found')
 			removeCookies()
-		}else if (foundUser.displayName != usernameCookie) {
+		}else if (foundDbUser.displayName != usernameCookie) {
 			console.log('user not match ')
 			removeCookies()
-			foundUser = undefined
+			foundDbUser = undefined
 		}
 	}
 
-	let userCreated = false
+	// let userCreated = false
 	if (!uidCookie) {
 		uidCookie = Uuid.v4();
 		usernameCookie = `Guest1`;
 		for (let num = 1; num < 100; num++) {
-			const nameTaken = ServerState.state.users.some((p) => p.displayName == `Guest${num}`);
+			const nameTaken = ServerState.state.usersInDb.some((p) => p.displayName == `Guest${num}`);
 			if (!nameTaken) {
 				usernameCookie = `Guest${num}`;
 				break;
@@ -47,58 +47,57 @@ export const GET: Kit.RequestHandler = async (event) => {
 		}
 		event.cookies.set('uid', uidCookie, { path: '/', secure: false });
 		event.cookies.set('username', usernameCookie, { path: '/', secure: false });
-		const userJoined: ServerState.UserOnServer = {
-			stream: undefined,
-			con: undefined,
-			displayName: usernameCookie,
-			uid: uidCookie,
+		let dbId = Uuid.v4() 
+		const dbUsr: ServerState.UserInDb = {
+			dbId: dbId,
+			privateId: uidCookie,
 			publicId: Uuid.v4(),
+			displayName: usernameCookie,
 			idleStock: 100,
 			positions: [],
 		}
 
-		ServerState.state.users.push(userJoined)
-		userCreated = true
-		foundUser = userJoined
-		// ServerState.broadcastUserJoined(userJoined)
-		// return json({ error: 'need uid cookie to start a stream' }, { status: 401 });
+		
+		ServerState.state.usersInDb.push(dbUsr)
+		foundDbUser = dbUsr
 	}
-	// const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
-	if (!foundUser) {
+	if (!foundDbUser) {
 		console.log('that should be impossible')
 		throw Kit.error(401, 'the impossible happened');
 	}
-	const constFoundUser : ServerState.UserOnServer = foundUser
-	if (
-		constFoundUser.con != undefined
-	) {
-		console.log('subscriber is already subscribed, closing old one')
-		// closing here causes infinite subscribe loops?
-		try {
-			foundUser.con?.close();
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		} catch (e) {
-			console.log('failed to close already subber');
-			throw Kit.error(500, 'failed to close your old connection');
+	const constFoundUser : ServerState.UserInDb = foundDbUser
+
+
+	const didFind = Utils.findRunRemove(
+		ServerState.state.usersInMemory,
+		(u)=>u.dbId == constFoundUser.dbId,
+		(u)=>{
+			Utils.runCatching(()=>u.con?.close())
 		}
+	)
+
+	if (didFind) {
+		console.log('subscriber was already subscribed, closed old one')
+		// wait a bit?
+		// await new Promise((resolve) => setTimeout(resolve, 100));
 	}
-	foundUser.con = undefined
-	foundUser.stream = undefined
 
 	const rs = new ReadableStream({
 		start(c) {
-			constFoundUser.con = c;
-			ServerState.broadcastEveryoneEverything()
+			let newMemUsr : ServerState.UserInMemory = {
+				dbId:constFoundUser.dbId,
+				con:c,
+			}
+			ServerState.state.usersInMemory.push(newMemUsr)
+			ServerState.broadcastEveryoneWorld()
 		},
 		cancel(reason) {
 			console.log(`stream cancel handle for hero ${constFoundUser.displayName}`);
 			if (reason) console.log(`reason: ${reason}`);
-			constFoundUser.con = undefined;
-			constFoundUser.stream = undefined;
-			// ServerState.broadcastUserSentMessage();
+			ServerState.state.usersInMemory.filter(u => u.dbId != constFoundUser.dbId);	
 		}
 	});
-	foundUser.stream = rs;
+	// foundMemUser.stream = rs;
 	return new Response(rs, {
 		headers: {
 			// connection: 'keep-alive',

@@ -24,6 +24,7 @@ export const POST: Kit.RequestHandler = async (requestEvent) => {
         throw Kit.error(400,'failed to get tuber')
     }
     ServerState.state.tubers.push(t)
+    
     ServerState.broadcast('tuberAdded',t)
     const response: Utils.TubeResponse = {
         count: t.count

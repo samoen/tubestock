@@ -28,7 +28,7 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
 	}
 
-    const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie);
+    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie);
     if (!foundUser) {
         removeCookies()
         return dfl
@@ -42,5 +42,6 @@ export const load : LayoutServerLoad = async(event)=>{
     dfl.positions = ServerState.positionArrayToPosWithReturnValArray(foundUser.positions)
     dfl.yourName = foundUser.displayName
     dfl.yourIdleStock = foundUser.idleStock
+    dfl.yourPrivateId = foundUser.privateId
     return dfl
 }

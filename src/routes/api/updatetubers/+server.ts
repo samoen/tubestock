@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     updateThem()
-    ServerState.broadcastEveryoneEverything()
+    ServerState.broadcastEveryoneWorld()
 
     return json({ good: true });
 };

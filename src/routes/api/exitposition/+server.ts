@@ -13,7 +13,7 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(401, 'need a username cookie to exit position');
     }
 
-    const foundUser = ServerState.state.users.findLast(u => u.uid == uidCookie && u.displayName == usernameCookie)
+    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie && u.displayName == usernameCookie)
     if (!foundUser) {
         throw Kit.error(401, 'user not found');
     }

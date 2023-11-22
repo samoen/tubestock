@@ -5,13 +5,13 @@ import * as Utils from '$lib/utils'
 export const POST: Kit.RequestHandler = async (event) => {
     const uid = event.cookies.get('uid')
     if (!uid) {
-        throw Kit.error(401,'no uid cookie');
+        throw Kit.error(401, 'no uid cookie');
     }
     const usernameCookie = event.cookies.get('username')
     if (!usernameCookie) {
-        throw Kit.error(401,'no username cookie');
+        throw Kit.error(401, 'no username cookie');
     }
-    const foundUser = ServerState.state.users.findLast(u => u.uid == uid)
+    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uid)
     if (!foundUser) {
         event.cookies.delete('uid', { path: '/' })
         event.cookies.delete('username', { path: '/' })
@@ -22,8 +22,27 @@ export const POST: Kit.RequestHandler = async (event) => {
         event.cookies.delete('username', { path: '/' })
         throw Kit.error(401, 'user not match');
     }
-    foundUser.con?.close()
-    ServerState.state.users = ServerState.state.users.filter(u => u.uid != uid)
+    Utils.findRunRemove(
+        ServerState.state.usersInMemory,
+        (u) => u.dbId == foundUser.dbId,
+        (u) => {
+            try{
+                u.con?.close()
+            }catch(e){}
+        },
+    )
+    Utils.findRunRemove(
+        ServerState.state.usersInDb,
+        (u) => u.dbId == foundUser.dbId,
+        (u) => {
+            console.log(`user ${u.displayName} removed from db`)
+        },
+    )
+    
+    let w : Utils.WorldEvent = {
+        users:ServerState.usersOnServerToClient()
+    }
+    ServerState.broadcast('world',w)
 
     return Kit.json({});
 };

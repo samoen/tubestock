@@ -14,6 +14,7 @@
         s.tuberList = data.tubers;
         s.myUsername = data.yourName;
         s.myIdleStock = data.yourIdleStock;
+        s.myPrivateId = data.yourPrivateId;
     });
 </script>
 

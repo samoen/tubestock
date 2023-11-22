@@ -15,7 +15,7 @@ export const POST: RequestHandler = async (event) => {
     if(!usernameCookie){
         return json({ error: 'no username cookie' }, { status: 401 });
     }
-    const foundUser = ServerState.state.users.findLast(u=>u.uid == uidCookie)
+    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == uidCookie)
     if(!foundUser){
         return json({ error: 'user not found' }, { status: 401 });
     }

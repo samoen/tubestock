@@ -15,7 +15,7 @@ export const POST: Kit.RequestHandler = async (event) => {
     if(!existingUid){
         throw Kit.error(400, 'need a uid cookie to set your name');
     }
-    const foundUser = ServerState.state.users.findLast(u=>u.uid == existingUid)
+    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == existingUid)
     if(!foundUser){
         throw Kit.error(400, 'user not found');
     }

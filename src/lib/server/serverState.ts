@@ -1,13 +1,18 @@
 import * as Utils from "$lib/utils";
 
-export type UserOnServer = {
-	uid: string;
+export type UserInDb = {
+	dbId: string;
+	privateId: string;
 	publicId: string;
 	displayName: string;
-	con: ReadableStreamController<unknown> | undefined;
-	stream: ReadableStream | undefined;
 	idleStock: number;
 	positions: Utils.Position[]
+}
+
+export type UserInMemory = {
+	dbId:string
+	con: ReadableStreamController<unknown> | undefined;
+	// stream: ReadableStream | undefined;
 }
 
 const USE_FAKE_LATENCY = true
@@ -18,21 +23,25 @@ export async function fakeLatency(){
 }
 
 type ServerAppState = {
-	users: UserOnServer[]
+	usersInDb: UserInDb[]
+	usersInMemory: UserInMemory[]
 	msgs: Utils.SavedChatMsg[]
 	tubers: Utils.Tuber[]
 }
 export const state: ServerAppState = {
-	users: [],
+	usersInDb: [],
+	usersInMemory: [],
 	msgs: [],
 	tubers: [],
 }
 
-export function usersOnServerToClient():Utils.UserOnClient[]{
-	const usersOnClient: Utils.UserOnClient[] = state.users.map(u => {
-		const onClient: Utils.UserOnClient = {
+export function usersOnServerToClient():Utils.OtherUserOnClient[]{
+	const usersOnClient: Utils.OtherUserOnClient[] = state.usersInDb.map(u => {
+		const onClient: Utils.OtherUserOnClient = {
 			displayName: u.displayName,
 			publicId: u.publicId,
+			idleStock: u.idleStock,
+			positions: positionArrayToPosWithReturnValArray(u.positions)
 		}
 		return onClient
 	})
@@ -40,75 +49,50 @@ export function usersOnServerToClient():Utils.UserOnClient[]{
 }
 
 export function broadcast(event: string, data: object) {
-	for (const user of state.users) {
-		if (user.stream && user.con) {
-			let fail = false;
-			try {
-				user.con.enqueue(encode(event, data));
-			} catch (e) {
-				console.log(user.displayName + ' failed to enqeue ' + e);
-				fail = true;
-			}
-			if (fail) {
-				try {
-					user.con?.close();
-				} catch (e) {
-					console.log('failed to enque and failed to close!');
-				}
-				try {
-					// user.connectionState.stream?.cancel()
-				} catch (e) {
-					console.log('failed to enque and failed to cancel stream!');
-				}
-				user.con = undefined;
-				user.stream = undefined;
-			}
-		}
+	for (const user of state.usersInMemory) {
+		sendToUser(user,event,data)
 	}
+	removeClosedConnections()
 }
 
 
-export function sendToUser(user: UserOnServer, payload: Utils.WorldEvent) {
+export function sendToUser(user: UserInMemory, key:string, payload: object) {
 	const con = user.con
 	if (!con) return
 	const res = Utils.runCatching(()=>{
-		con.enqueue(encode('world', payload));
+		con.enqueue(encode(key, payload));
 	})
 	if(res.failed){
-		console.log(user.displayName + ' failed to enqeue');
+		console.log(' failed to enqeue');
 		Utils.runCatching(()=>con.close())
 		user.con = undefined;
-		user.stream = undefined;
 	}
 }
 
-export function broadcastUserSentMessage(chatMsg: Utils.ChatMsgBroadcast) {
-	broadcast('chatmsg', chatMsg)
+function removeClosedConnections(){
+	state.usersInMemory = state.usersInMemory.filter(u=>u.con)
 }
 
-export function broadcastEveryoneEverything(){
+export function broadcastEveryoneWorld(){
 	const usrsOnClient = usersOnServerToClient()
-	for (const user of state.users) {
-        if (!user.con) continue
-        const welcomeSub: Utils.WorldEvent = {
+	for (const memUser of state.usersInMemory) {
+        if (!memUser.con) continue
+		const dbUser = state.usersInDb.findLast(u=>u.dbId == memUser.dbId)
+		if(!dbUser)continue
+        const worldEvent: Utils.WorldEvent = {
             tubers: state.tubers,
-            positions: positionArrayToPosWithReturnValArray(user.positions),
+            positions: positionArrayToPosWithReturnValArray(dbUser.positions),
 			msgs: state.msgs,
 			users: usrsOnClient,
-			yourIdleStock:user.idleStock,
-			yourName:user.displayName,
+			yourIdleStock:dbUser.idleStock,
+			yourPrivateId:dbUser.privateId,
+			yourName:dbUser.displayName,
         }
-        sendToUser(user, welcomeSub)
+        sendToUser(memUser, 'world', worldEvent)
     }
+	removeClosedConnections()
 }
 
-export function broadcastUserJoined(joined: UserOnServer) {
-	const toSend: Utils.UserOnClient = {
-		displayName: joined.displayName,
-		publicId: joined.publicId
-	};
-	broadcast('userJoined', toSend)
-}
 
 const textEncoder = new TextEncoder();
 export function encode(event: string, data: object, noretry = false) {

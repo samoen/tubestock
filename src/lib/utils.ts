@@ -37,12 +37,7 @@ export const chatMsgBroadcastSchema = z.object({
 })
 export type ChatMsgBroadcast = z.infer<typeof chatMsgBroadcastSchema>
 
-export const userOnClientSchema = z.object({
-    displayName: z.string(),
-    publicId: z.string(),
-})
 
-export type UserOnClient = z.infer<typeof userOnClientSchema>
 
 export const tubeRequestSchema = z.object({
     channelName: z.string()
@@ -108,14 +103,36 @@ export const tuberSchema = z.object({
 })
 export type Tuber = z.infer<typeof tuberSchema>
 
+export const otherUserOnClientSchema = z.object({
+    displayName: z.string(),
+    publicId: z.string(),
+    idleStock:z.number(),
+    positions: z.array(positionWithReturnValueSchema)
+})
+
+export type OtherUserOnClient = z.infer<typeof otherUserOnClientSchema>
+
+export function findRunRemove<T>(arr:T[],find:(f:T)=>boolean,run:(f:T)=>void):boolean{
+    let didFind = false
+    for (let i = arr.length - 1; i >= 0; i--) {
+        const item = arr[i];
+        if (find(item)) {
+            run(item)
+            arr.splice(i, 1);
+            didFind = true
+        }
+    }
+    return didFind
+}
 
 export const worldEventSchema = z.object({
-    users: z.array(userOnClientSchema).optional(),
+    users: z.array(otherUserOnClientSchema).optional(),
     tubers: z.array(tuberSchema).optional(),
     msgs: z.array(savedChatMsgSchema).optional(),
     positions: z.array(positionWithReturnValueSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
+    yourPrivateId: z.string().optional(),
 })
 export type WorldEvent = z.infer<typeof worldEventSchema>
 
@@ -130,12 +147,13 @@ export type WorldEvent = z.infer<typeof worldEventSchema>
 // };
 
 export const dataFirstLoadSchema = z.object({
-    users: z.array(userOnClientSchema),
+    users: z.array(otherUserOnClientSchema),
     tubers: z.array(tuberSchema),
     msgs: z.array(savedChatMsgSchema),
     positions: z.array(positionWithReturnValueSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
+    yourPrivateId: z.string().optional(),
 })
 
 export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
@@ -155,15 +173,17 @@ export function runCatching<T>(toRun:()=>T):SamResult<T>{
 			value:ran,
 		}
 	}catch(e){
-		console.log('runcatching caught')
+        let error : Error
+        if(e instanceof Error){
+            error = e
+        }else{
+            error = new Error(String(e))
+        }
+        console.log('run catching caught ' + error.message)
+
 		return {
             failed:true,
-            error:((a:unknown)=>{
-                if(a instanceof Error){
-                    return a
-                }
-                return new Error(String(a))
-            })(e),
+            error:error,
         }
 	}
 }

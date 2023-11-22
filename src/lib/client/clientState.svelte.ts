@@ -10,12 +10,14 @@ export type SimpleFormProps = {
 export type ClientAppState = {
     source: EventSource | undefined
     chatMsgs: Utils.SavedChatMsg[];
-    userList: Utils.UserOnClient[];
+    userList: Utils.OtherUserOnClient[];
     tuberList: Utils.Tuber[];
     positionsList: Utils.PositionWithReturnValue[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
+    myPrivateId: string | undefined;
     selectedTuber: Utils.Tuber | undefined;
+    selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
 }
 
@@ -30,7 +32,9 @@ const stateFactory = () => {
         tuberList: [],
         myUsername: undefined,
         myIdleStock: undefined,
+        myPrivateId: undefined,
         selectedTuber: undefined,
+        selectedUser:undefined,
         subscribing: false,
     };
     let value = $state(as)
@@ -125,7 +129,7 @@ export async function subscribe() {
     });
 
     appState.value.source.addEventListener("userJoined", (e) => {
-        const parsed = Utils.userOnClientSchema.safeParse(
+        const parsed = Utils.otherUserOnClientSchema.safeParse(
             JSON.parse(e.data)
         );
         if (!parsed.success) {
@@ -137,6 +141,7 @@ export async function subscribe() {
     });
 
     appState.value.source.addEventListener("world", (e) => {
+        console.log('got world event')
         const parsed = Utils.worldEventSchema.safeParse(JSON.parse(e.data));
         if (!parsed.success) {
             console.log(JSON.parse(e.data));
@@ -160,6 +165,9 @@ export async function subscribe() {
         }
         if (parsed.data.yourIdleStock !== undefined) {
             appState.value.myIdleStock = parsed.data.yourIdleStock;
+        }
+        if (parsed.data.yourPrivateId !== undefined) {
+            appState.value.myPrivateId = parsed.data.yourPrivateId;
         }
         appState.dirty()
     });
