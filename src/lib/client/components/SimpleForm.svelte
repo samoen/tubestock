@@ -1,21 +1,33 @@
 <script lang="ts">
     import spinny from "$lib/client/svg/spinny.svg";
+    import type { SamResult } from "$lib/utils";
     type Props = {
         buttonLabel: string;
-        fire: (inputTxt: string) => Promise<void>;
+        fire: (inputTxt: string) => Promise<SamResult<unknown>>;
         inputType?: "text" | "number";
+        placeholder?: string;
     };
 
-    let { buttonLabel, fire, inputType } = $props<Props>();
-    // export const buttonLabel: string;
-    // export let loading: boolean;
-    // export let fire: (inputTxt:string) => Promise<void>;
-    // export let formProps: ClientState.SimpleFormProps;
+    let { buttonLabel, fire, inputType, placeholder } = $props<Props>();
+    const pHold = placeholder ? placeholder : ''
+
     const iType = inputType ? inputType : "text";
     let meLoad = $state(false);
     let meInputTxt = $state("");
+    let errTxt = $state("");
 
-    function inputSubmit(
+    $effect(()=>{
+        meInputTxt
+        clearError()
+    })
+    
+    export function clearError(){
+        errTxt = ''
+
+    }
+
+
+    export function inputSubmit(
         event: KeyboardEvent & {
             currentTarget: EventTarget & HTMLInputElement;
         }
@@ -27,10 +39,17 @@
     }
 
     async function itClicked() {
-        if (!meInputTxt) return;
+        if (!meInputTxt) {
+            errTxt = 'blank field'
+            return
+        };
         meLoad = true;
-        await fire(meInputTxt);
+        let res = await fire(meInputTxt);
         meLoad = false;
+        if(res.failed){
+            errTxt = res.error.message
+            return
+        }
         meInputTxt = "";
     }
 </script>
@@ -43,6 +62,7 @@
         disabled={meLoad}
         bind:value={meInputTxt}
         on:keydown={inputSubmit}
+        placeholder="{pHold}"
     />
 {:else}
     <input
@@ -50,9 +70,12 @@
         disabled={meLoad}
         bind:value={meInputTxt}
         on:keydown={inputSubmit}
+        placeholder="{pHold}"
     />
 {/if}
-<slot></slot>
+<div class='slotHold'>
+    <slot></slot>
+</div>
 <button
     type="button"
     on:click={itClicked}
@@ -65,8 +88,12 @@
     {/if}
     {buttonLabel}
 </button>
+<span class='err'>{errTxt}</span>
 
 <style>
+    .err{
+        color:red;
+    }
     .transparentText {
         color: transparent;
     }
@@ -84,6 +111,14 @@
         height: 1em;
     }
     input {
+        padding-block: 2px;
+    }
+    .slotHold {
+        display: inline-block;
+        /* background-color: blue; */
+        /* padding:3px; */
+    }
+    .slotHold :global(input){
         padding-block: 2px;
     }
 </style>

@@ -17,6 +17,12 @@ export const setNameResponseSchema = z.object({
 })
 export type SetNameResponse = z.infer<typeof setNameResponseSchema>
 
+export const restoreRequestSchema = z.object({
+    displayName: z.string(),
+    privateId:z.string(),
+})
+export type RestoreRequest = z.infer<typeof restoreRequestSchema>
+
 
 export const sendMsgRequestSchema = z.object({
     msgTxt: safeString

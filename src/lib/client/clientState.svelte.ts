@@ -55,7 +55,7 @@ const stateFactory = () => {
 };
 
 
-export async function setName(inputTxt: string) {
+export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
     const toSend: Utils.SetNameRequest = {
         wantName: inputTxt,
     };
@@ -64,12 +64,10 @@ export async function setName(inputTxt: string) {
         toSend,
         Utils.setNameResponseSchema
     );
-    if (fSafe.failed) return;
-    // appState.update(mod => {
-    //     mod.myNameDisplay = fSafe.value.yourName
-    // })
+    if (fSafe.failed) return fSafe;
     appState.value.myUsername = fSafe.value.yourName;
     appState.dirty()
+    return fSafe
 }
 
 export async function subscribe() {
@@ -187,27 +185,29 @@ export function manualSourceError() {
 }
 
 
-export async function sendMsg(chatInputTxt: string) {
+export async function sendMsg(chatInputTxt: string) : Promise<Utils.SamResult<{}>> {
     const toSend: Utils.SendMsgRequest = {
         msgTxt: chatInputTxt,
     };
-    await hitEndpoint("sendMsg", toSend, Utils.emptyObject);
+    let r = await hitEndpoint("sendMsg", toSend, Utils.emptyObject);
+    return r
 }
 
 export async function deleteUser() {
     await hitEndpoint("delete", {}, Utils.emptyObject);
 }
 
-export async function requestTuber(searchTxt: string) {
+export async function requestTuber(searchTxt: string) : Promise<Utils.SamResult<{}>> {
     const toSend: Utils.TubeRequest = {
         channelName: searchTxt,
     };
-    await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
+    let r = await hitEndpoint("tube", toSend, Utils.tubeResponseSchema);
+    return r
 }
 
 
 
-export async function putStock(channelId: string, amt: number, long: boolean) {
+export async function putStock(channelId: string, amt: number, long: boolean) : Promise<Utils.SamResult<Utils.PutStockResponse>> {
     const toSend: Utils.PutStockRequest = {
         channelId: channelId,
         amount: amt,
@@ -220,13 +220,12 @@ export async function putStock(channelId: string, amt: number, long: boolean) {
         Utils.putStockResponseSchema
     );
     if (resp.failed) {
-        console.log(resp.error.message)
-        return
+        return resp
     };
-    // appState.value.putStockAmountInput = "";
     appState.value.myIdleStock = resp.value.idleStock;
     appState.value.positionsList = resp.value.positions.reverse();
     appState.dirty()
+    return resp
 }
 
 export async function exitPosition(positionId: string) {
@@ -243,6 +242,23 @@ export async function exitPosition(positionId: string) {
     appState.value.myIdleStock = fSafe.value.idleStock;
     appState.value.positionsList = fSafe.value.positions.reverse();
     appState.dirty()
+}
+
+export async function restoreUser(pId:string,displayName: string) : Promise<Utils.SamResult<{}>> {
+    const toSend: Utils.RestoreRequest = {
+        displayName: displayName,
+        privateId:pId,
+    };
+    let res = await hitEndpoint(
+        "restore",
+        toSend,
+        Utils.emptyObject
+    );
+    if (res.failed) return res;
+    
+    manualSourceError()
+    subscribe()
+    return res
 }
 
 export async function updateTubers() {

@@ -16,41 +16,65 @@
     let netWorth = $derived(myNetWorth());
     let putStockChecked = $state(false);
     let putStockLoading = $state(false);
+    
 
-    function myNetWorth() : number | undefined{
+    function myNetWorth(): number | undefined {
         if (appState.value.myIdleStock == undefined) return undefined;
         if (!appState.value.positionsList) {
             return undefined;
         }
-        return calcNetWorth(appState.value.myIdleStock,appState.value.positionsList)
+        return calcNetWorth(
+            appState.value.myIdleStock,
+            appState.value.positionsList
+        );
     }
 
-    function calcNetWorth(idle:number,positions:Utils.PositionWithReturnValue[]): number | undefined {
+    function calcNetWorth(
+        idle: number,
+        positions: Utils.PositionWithReturnValue[]
+    ): number | undefined {
         let res: number = idle;
         for (const pos of positions) {
             res += pos.returnValue;
         }
         return res;
     }
-    async function placeStockClicked(inTxt: string) {
-        if (!appState.value.selectedTuber) return;
+    async function placeStockClicked(inTxt: string) : Promise<Utils.SamResult<{}>> {
+        if (!appState.value.selectedTuber) return {failed:true,error:new Error('blank field')};
         const intVal = Number.parseInt(inTxt);
         if (!intVal) {
-            return;
+            return {failed:true,error:new Error('must be number')};;
         }
         putStockLoading = true;
-        await ClientState.putStock(
+        const r = await ClientState.putStock(
             appState.value.selectedTuber.channelId,
             intVal,
             !putStockChecked
         );
         putStockLoading = false;
+        return r
     }
-    let exitPositionLoading = $state(false)
+    
+    let exitPositionLoading = $state(false);
     async function exitPositionClicked(positionId: string) {
-        exitPositionLoading = true
+        exitPositionLoading = true;
         await ClientState.exitPosition(positionId);
-        exitPositionLoading = false
+        exitPositionLoading = false;
+    }
+
+    let restoreUserNameInput = $state("");
+    let restoreLoading = $state(false);
+    let restoreSimpleForm: SimpleForm;
+    $effect(()=>{
+        restoreUserNameInput
+        restoreSimpleForm.clearError()
+    })
+    async function restoreClicked(pIdTxt: string) : Promise<Utils.SamResult<unknown>> {
+        if (!restoreUserNameInput) return {error:new Error('blank field'),failed:true};
+        restoreLoading = true;
+        let r = await ClientState.restoreUser(pIdTxt, restoreUserNameInput);
+        restoreLoading = false;
+        return r
     }
 </script>
 
@@ -72,8 +96,24 @@
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
 <p class="selectableText">Private Id : {appState.value.myPrivateId}</p>
-
 <SimpleForm buttonLabel="Update Display Name" fire={ClientState.setName} />
+<br />
+<SimpleForm
+    bind:this={restoreSimpleForm}
+    buttonLabel="Restore Session"
+    fire={restoreClicked}
+    placeholder="private id"
+>
+    <input
+        type="text"
+        bind:value={restoreUserNameInput}
+        placeholder="display name"
+        disabled={restoreLoading}
+        on:keydown={(e) => {
+            restoreSimpleForm.inputSubmit(e);
+        }}
+    />
+</SimpleForm>
 <br />
 <button on:click={ClientState.deleteUser}>delete user</button>
 <br />
@@ -92,18 +132,23 @@
     {#each appState.value.userList as u (u.publicId)}
         <div>
             <span>{u.displayName}</span>
-            <button 
+            <button
                 class="itemButton yellow"
-            on:click={()=>{
-                appState.value.selectedUser = u
-                appState.dirty()
-            }}>details</button>
-
+                on:click={() => {
+                    appState.value.selectedUser = u;
+                    appState.dirty();
+                }}>details</button
+            >
         </div>
     {/each}
 </div>
 {#if appState.value.selectedUser}
-    <h4>{appState.value.selectedUser.displayName} : {calcNetWorth(appState.value.selectedUser.idleStock,appState.value.selectedUser.positions)}</h4>
+    <h4>
+        {appState.value.selectedUser.displayName} : {calcNetWorth(
+            appState.value.selectedUser.idleStock,
+            appState.value.selectedUser.positions
+        )}
+    </h4>
     {#each appState.value.selectedUser.positions as p (p.positionId)}
         <span>
             {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
@@ -112,7 +157,7 @@
         </span>
     {/each}
 {/if}
-<br/>
+<br />
 <h3>Tubers</h3>
 <SimpleForm buttonLabel="Search" fire={ClientState.requestTuber} />
 <div class="msgs">
@@ -194,7 +239,6 @@
     .selectableText {
         user-select: text;
     }
-
     .msgs {
         display: flex;
         flex-direction: column-reverse;
@@ -203,20 +247,19 @@
         background-color: burlywood;
         margin: 10px;
     }
-    .itemButton{
+    .itemButton {
         border-radius: 6px;
-        padding-inline:4px;
-        padding-block:2px;
+        padding-inline: 4px;
+        padding-block: 2px;
         cursor: pointer;
         font-weight: bold;
     }
-    .red{
+    .red {
         background-color: red;
         color: white;
         border-color: white;
     }
-    .yellow{
+    .yellow {
         background-color: yellow;
     }
-    
 </style>
