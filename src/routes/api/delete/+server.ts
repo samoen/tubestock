@@ -1,28 +1,16 @@
 import * as Kit from '@sveltejs/kit';
 import * as ServerState from '$lib/server/serverState'
+import * as Schema from '$lib/server/schema'
 import * as Utils from '$lib/utils'
 
 export const POST: Kit.RequestHandler = async (event) => {
-    const uid = event.cookies.get('uid')
-    if (!uid) {
-        throw Kit.error(401, 'no uid cookie');
-    }
-    const usernameCookie = event.cookies.get('username')
-    if (!usernameCookie) {
-        throw Kit.error(401, 'no username cookie');
-    }
-    // const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uid)
-    const foundUser = await ServerState.dbGetUserByPrivateId(uid)
-    if (!foundUser) {
-        event.cookies.delete('uid', { path: '/' })
-        event.cookies.delete('username', { path: '/' })
-        throw Kit.error(401, 'user not found');
-    }
-    if (foundUser.displayName != usernameCookie) {
-        event.cookies.delete('uid', { path: '/' })
-        event.cookies.delete('username', { path: '/' })
-        throw Kit.error(401, 'user not match');
-    }
+
+    const foundUser = await ServerState.getUserFromEvent(event)
+    
+    // delete user from db
+    await ServerState.dbDeleteUser(foundUser.id)
+
+    // delete user from memory
     Utils.findRunRemove(
         ServerState.state.usersInMemory,
         (u) => u.dbId == foundUser.id,
@@ -32,8 +20,8 @@ export const POST: Kit.RequestHandler = async (event) => {
             }catch(e){}
         },
     )
-    await ServerState.dbDeleteUser(foundUser.id)
     
+    // broadcast new user list
     const cUsrs = await ServerState.usersOnServerToClient()
     const w : Utils.WorldEvent = {
         users:cUsrs

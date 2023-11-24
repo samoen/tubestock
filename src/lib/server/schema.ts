@@ -6,7 +6,6 @@ export const appusers = pgTable("appusers", {
   id: serial("id").primaryKey().unique(),
   displayName: text("display_name").notNull(),
   secret:text("secret").notNull(),
-  publicId:text("public_id").notNull(),
   idleStock:integer("idle_stock").notNull()
 });
 export type AppUser = typeof appusers.$inferSelect

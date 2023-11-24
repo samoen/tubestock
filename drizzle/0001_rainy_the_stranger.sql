@@ -1,0 +1,1 @@
+ALTER TABLE "appusers" DROP COLUMN IF EXISTS "public_id";

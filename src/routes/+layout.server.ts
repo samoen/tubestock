@@ -2,6 +2,7 @@ import * as Kit from '@sveltejs/kit'
 import type { LayoutServerLoad } from './$types'
 import * as ServerState from '$lib/server/serverState';
 import * as Utils from '$lib/utils';
+import * as Schema from '$lib/server/schema'
 
 export const ssr = false;
 
@@ -16,28 +17,14 @@ export const load : LayoutServerLoad = async(event)=>{
 		tubers: allTubers,
 		msgs: allMsgs,
 	}
-    let usernameCookie = event.cookies.get('username');
-	let uidCookie = event.cookies.get('uid');
-    const removeCookies = ()=>{
-		event.cookies.delete('uid', { path: '/' })
-		event.cookies.delete('username', { path: '/' })
-		uidCookie = undefined
-		usernameCookie = undefined
-	}
 
-	if(!uidCookie || !usernameCookie){
-		removeCookies()
-        return dfl
-	}
-
-    const foundUser = await ServerState.dbGetUserByPrivateId(uidCookie)
-    if (!foundUser) {
-        removeCookies()
-        return dfl
+    let foundUser : Schema.AppUser | undefined = undefined
+    try{
+        foundUser = await ServerState.getUserFromEvent(event)
+    }catch(e){
+        console.log('serving layout without user')
     }
-    if (foundUser.displayName != usernameCookie) {
-        console.log('user not match ')
-        removeCookies()
+    if (!foundUser) {
         return dfl
     }
 

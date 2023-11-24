@@ -5,6 +5,7 @@ import { Client } from "pg";
 import * as Schema from '$lib/server/schema';
 import { eq } from "drizzle-orm";
 import { env } from '$env/dynamic/private';
+import * as Kit from '@sveltejs/kit'
 
 
 const client = new Client({
@@ -242,6 +243,31 @@ export async function fetchTuberSubsFromId(id: string): Promise<number | undefin
 
 	return count
 }
+type KitEvent = Kit.RequestEvent<Partial<Record<string, string>>, string | null>
+export async function getUserFromEvent(event:KitEvent) : Promise<Schema.AppUser>{
+	const uidCookie = event.cookies.get('uid')
+    if (!uidCookie) {
+        throw Kit.error(401, 'need a secret cookie');
+    }
+    const usernameCookie = event.cookies.get('username')
+    if (!usernameCookie) {
+        throw Kit.error(401, 'need a username cookie');
+    }
+
+    const foundUser = await dbGetUserBySecret(uidCookie)
+    if (!foundUser) {
+        throw Kit.error(401, 'user not found');
+    }
+    if (foundUser.displayName != usernameCookie) {
+        throw Kit.error(401, 'username not match');
+    }
+	return foundUser
+}
+
+export function removeCookiesFromEvent(event:KitEvent){
+	event.cookies.delete('uid', { path: '/' })
+	event.cookies.delete('username', { path: '/' })
+}
 
 export async function dbDeletePositionById(id: number) {
 	await db.delete(Schema.positions).where(eq(Schema.positions.id, id))
@@ -259,7 +285,7 @@ export async function dbGetAllTubers(): Promise<Schema.DbTuber[]> {
 	return db.query.tubers.findMany()
 }
 
-export async function dbGetUserByPrivateId(pId: string): Promise<Schema.AppUser | undefined> {
+export async function dbGetUserBySecret(pId: string): Promise<Schema.AppUser | undefined> {
 	// let usr = state.usersInDb.findLast(u => u.secret == pId);
 	// let usr = await db.query.appusers.findFirst({where:{secret:pId}});
 	const usrs = await db.select().from(Schema.appusers).where(eq(Schema.appusers.secret, pId));
@@ -380,9 +406,9 @@ export async function dbGetAllMsgs(): Promise<Schema.DbChatMsg[]> {
 	let selected = await db.select().from(Schema.chatMessages)
 	return selected
 }
-export async function dbInsertMsg(msg: Schema.InsertDbChatMsg) {
-	// state.msgs.push(msg)
+export async function dbInsertMsg(msg: Schema.InsertDbChatMsg) : Promise<Schema.DbChatMsg> {
 	const inserted = await db.insert(Schema.chatMessages).values(msg).returning()
 	const fInserted = inserted.at(0)
+	if(!fInserted)throw Kit.error(500,'failed to insert chat message')
 	return fInserted
 }

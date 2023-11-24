@@ -6,29 +6,15 @@ import { eq } from 'drizzle-orm';
 
 export const POST: Kit.RequestHandler = async (event) => {
     await ServerState.fakeLatency()
-    const uidCookie = event.cookies.get('uid')
-    if (!uidCookie) {
-        throw Kit.error(401, 'need a uid cookie to exit position');
-    }
-    const usernameCookie = event.cookies.get('username')
-    if (!usernameCookie) {
-        throw Kit.error(401, 'need a username cookie to exit position');
-    }
 
-    // const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie && u.displayName == usernameCookie)
-    const foundUser = await ServerState.dbGetUserByPrivateId(uidCookie)
-    if (!foundUser) {
-        throw Kit.error(401, 'user not found');
-    }
-    if (foundUser.displayName != usernameCookie) {
-        throw Kit.error(401, 'username not match');
-    }
-
+    const foundUser = await ServerState.getUserFromEvent(event)
+    
     const msg = await event.request.json();
     const parsed = Utils.exitPositionRequestSchema.safeParse(msg)
     if (!parsed.success) {
         throw Kit.error(400, 'malformed request');
     }
+
     const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
     const toExit = poses.findLast(p => p.id == parsed.data.positionId)
     if (!toExit) {
