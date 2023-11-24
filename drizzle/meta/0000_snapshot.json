@@ -1,5 +1,5 @@
 {
-  "id": "992ca963-b9a1-4636-80ec-7fbb79be6fe8",
+  "id": "acd618ec-4d57-44f0-a9bd-fb0ad20f9d79",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -68,15 +68,29 @@
           "primaryKey": false,
           "notNull": true
         },
-        "from_username": {
-          "name": "from_username",
-          "type": "text",
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "chatmsgs_user_id_appusers_id_fk": {
+          "name": "chatmsgs_user_id_appusers_id_fk",
+          "tableFrom": "chatmsgs",
+          "tableTo": "appusers",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "chatmsgs_id_unique": {
@@ -147,7 +161,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "positions_tuber_id_tubers_id_fk": {
@@ -160,7 +174,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -205,7 +219,7 @@
         },
         "count_updated_at": {
           "name": "count_updated_at",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true
         }

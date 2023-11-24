@@ -44,7 +44,7 @@
             return { failed: true, error: new Error("no tuber selected") };
         const intVal = Number.parseInt(inTxt);
         if (!intVal) {
-            return { failed: true, error: new Error("must be number") };
+            return { failed: true, error: new Error("Must be number greater than 0") };
         }
         const shortBool = short == "true" ? true : false;
         // putStockLoading = true;

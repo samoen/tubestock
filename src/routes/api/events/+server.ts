@@ -40,8 +40,18 @@ export const GET: Kit.RequestHandler = async (event) => {
 	if (!foundDbUser) {
 		console.log('creating user')
 		userCreated = true
-		uidCookie = Uuid.v4();
-		usernameCookie = `Guest`;
+		let genSecret = Uuid.v4()
+		let guestName = 'Guest'
+		const usrCreate: Schema.InsertAppUser = {
+			secret: genSecret,
+			displayName: guestName,
+			idleStock:100,
+			publicId:Uuid.v4(),
+		}
+
+		foundDbUser = await ServerState.dbInsertUser(usrCreate)
+		// uidCookie = Uuid.v4();
+		// usernameCookie = `Guest`;
 		// for (let num = 1; num < 100; num++) {
 		// 	const nameTaken = ServerState.state.usersInDb.some((p) => p.displayName == `Guest${num}`);
 		// 	if (!nameTaken) {
@@ -49,16 +59,8 @@ export const GET: Kit.RequestHandler = async (event) => {
 		// 		break;
 		// 	}
 		// }
-		event.cookies.set('uid', uidCookie, { path: '/', secure: false });
-		event.cookies.set('username', usernameCookie, { path: '/', secure: false });
-		const usrCreate: Schema.InsertAppUser = {
-			secret: uidCookie,
-			displayName: usernameCookie,
-			idleStock:100,
-			publicId:Uuid.v4(),
-		}
-
-		foundDbUser = await ServerState.dbInsertUser(usrCreate)
+		event.cookies.set('uid', foundDbUser.secret, { path: '/', secure: false });
+		event.cookies.set('username', foundDbUser.displayName, { path: '/', secure: false });
 	}
 
 	if (!foundDbUser) {

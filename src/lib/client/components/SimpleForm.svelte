@@ -53,7 +53,6 @@
             if (!ie.ele) continue;
             let child = ie.ele.firstElementChild;
             if (!child || !(child instanceof HTMLInputElement)) continue;
-            console.log("input checked is " + child.checked);
             if (child.type == "checkbox") {
                 vals.push(child.checked ? "true" : "false");
                 continue;

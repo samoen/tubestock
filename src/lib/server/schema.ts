@@ -26,7 +26,7 @@ export type InsertDbTuber = typeof tubers.$inferInsert
 export const chatMessages = pgTable("chatmsgs", {
   id: serial("id").primaryKey().unique(),
   msgTxt: text("msg_txt").notNull(),
-  fromUsername:text("from_username").notNull(),
+  userfk:integer('user_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull()
 });
 
 export type DbChatMsg = typeof chatMessages.$inferSelect
@@ -34,8 +34,8 @@ export type InsertDbChatMsg = typeof chatMessages.$inferInsert
 
 export const positions = pgTable("positions", {
   id: serial("id").primaryKey().unique(),
-  userfk:integer('user_id').references(() => appusers.id).notNull(),
-  tuberfk:integer('tuber_id').references(() => tubers.id).notNull(),
+  userfk:integer('user_id').references(() => appusers.id,{onDelete:'cascade'}).notNull(),
+  tuberfk:integer('tuber_id').references(() => tubers.id,{onDelete:'cascade'}).notNull(),
   tuberName: text('tuber_name').notNull(),
   amount: integer('amount').notNull(),
   subsAtStart: integer('subs_at_start').notNull(),

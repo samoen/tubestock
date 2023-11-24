@@ -58,7 +58,7 @@ export type TubeResponse = z.infer<typeof tubeResponseSchema>
 
 export const putStockRequestSchema = z.object({
     channelId: z.string().min(1).max(255),
-    amount: z.number(),
+    amount: z.number().gt(0),
     long: z.boolean(),
 })
 export type PutStockRequest = z.infer<typeof putStockRequestSchema>
@@ -122,7 +122,7 @@ export type TuberInClient = z.infer<typeof tuberInClientSchema>
 
 export const otherUserOnClientSchema = z.object({
     displayName: z.string(),
-    publicId: z.string(),
+    publicId: z.number(),
     idleStock:z.number(),
     positions: z.array(positionInClientSchema)
 })

@@ -39,7 +39,8 @@ export const POST: Kit.RequestHandler = async (event) => {
     if (returnValue == undefined){
         throw Kit.error(500, 'Failed to calculate stock return value');
     }
-    await ServerState.db.update(Schema.appusers).set({idleStock:foundUser.idleStock+returnValue}).where(eq(Schema.appusers.id,foundUser.id))
+    const idleAfterExit = foundUser.idleStock+returnValue
+    await ServerState.db.update(Schema.appusers).set({idleStock:idleAfterExit}).where(eq(Schema.appusers.id,foundUser.id))
     // foundUser.idleStock += returnValue
     console.log('deleting position id ' + toExit.id)
     await ServerState.dbDeletePositionById(toExit.id)
@@ -47,7 +48,7 @@ export const POST: Kit.RequestHandler = async (event) => {
     const cPosesAfter = await ServerState.positionArrayToPosWithReturnValArray(posesAfter)
 
     const response: Utils.ExitPositionResponse = {
-        idleStock: foundUser.idleStock,
+        idleStock: idleAfterExit,
         positions: cPosesAfter,
     }
 

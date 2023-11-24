@@ -25,8 +25,8 @@ export const POST: RequestHandler = async (r) => {
     }
     console.log(`server received chat ${JSON.stringify(msg)}`);
     const toSave : Schema.InsertDbChatMsg = {
-        fromUsername: foundUser.displayName,
         msgTxt: sentMsg.data.msgTxt,
+        userfk: foundUser.id,
     }
     let inserted = await ServerState.dbInsertMsg(toSave)
     if(!inserted){
