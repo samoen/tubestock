@@ -11,7 +11,7 @@ export const POST: RequestHandler = async (r) => {
     if(!uid){
         return json({ error: 'no uid cookie' }, { status: 401 });
     }
-    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == uid)
+    const foundUser = ServerState.dbGetUserByPrivateId(uid)
     if(!foundUser){
         return json({ error: 'user not found' }, { status: 401 });
     }
@@ -31,8 +31,7 @@ export const POST: RequestHandler = async (r) => {
     const toBroadCast : Utils.ChatMsgBroadcast = {
         newMsg:toSave
     }
-    ServerState.state.msgs.push(toSave)
-    // ServerState.broadcastUserSentMessage(toBroadCast)
+    ServerState.dbInsertMsg(toSave)
     ServerState.broadcast('chatmsg',toBroadCast)
 
     return json({});

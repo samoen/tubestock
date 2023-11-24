@@ -69,7 +69,9 @@ export const exitPositionRequestSchema = z.object({
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 
 export const positionSchema = z.object({
+    userfk:z.string(),
     positionId:z.string(),
+    tuberfk:z.string(),
     tuberId: z.string(),
     tuberName: z.string(),
     amount: z.number(),
@@ -101,13 +103,12 @@ export const putStockResponseSchema = z.object({
 })
 export type PutStockResponse = z.infer<typeof putStockResponseSchema>
 
-export const tuberSchema = z.object({
+export const tuberInClientSchema = z.object({
     channelName: z.string(),
     channelId: z.string(),
     count: z.number(),
-    countUpdatedAt: z.number(),
 })
-export type Tuber = z.infer<typeof tuberSchema>
+export type TuberInClient = z.infer<typeof tuberInClientSchema>
 
 export const otherUserOnClientSchema = z.object({
     displayName: z.string(),
@@ -133,7 +134,7 @@ export function findRunRemove<T>(arr:T[],find:(f:T)=>boolean,run:(f:T)=>void):bo
 
 export const worldEventSchema = z.object({
     users: z.array(otherUserOnClientSchema).optional(),
-    tubers: z.array(tuberSchema).optional(),
+    tubers: z.array(tuberInClientSchema).optional(),
     msgs: z.array(savedChatMsgSchema).optional(),
     positions: z.array(positionWithReturnValueSchema).optional(),
     yourName: z.string().optional(),
@@ -154,7 +155,7 @@ export type WorldEvent = z.infer<typeof worldEventSchema>
 
 export const dataFirstLoadSchema = z.object({
     users: z.array(otherUserOnClientSchema),
-    tubers: z.array(tuberSchema),
+    tubers: z.array(tuberInClientSchema),
     msgs: z.array(savedChatMsgSchema),
     positions: z.array(positionWithReturnValueSchema).optional(),
     yourName: z.string().optional(),

@@ -11,12 +11,12 @@ export type ClientAppState = {
     source: EventSource | undefined
     chatMsgs: Utils.SavedChatMsg[];
     userList: Utils.OtherUserOnClient[];
-    tuberList: Utils.Tuber[];
+    tuberList: Utils.TuberInClient[];
     positionsList: Utils.PositionWithReturnValue[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
     myPrivateId: string | undefined;
-    selectedTuber: Utils.Tuber | undefined;
+    selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
 }
@@ -171,7 +171,7 @@ export async function subscribe() {
     });
 
     appState.value.source.addEventListener("tuberAdded", (e) => {
-        const parsed = Utils.tuberSchema.safeParse(JSON.parse(e.data));
+        const parsed = Utils.tuberInClientSchema.safeParse(JSON.parse(e.data));
         if (!parsed.success) {
             console.log("bad tuber added update from server");
             return;

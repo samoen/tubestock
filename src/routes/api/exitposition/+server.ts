@@ -13,9 +13,13 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(401, 'need a username cookie to exit position');
     }
 
-    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie && u.displayName == usernameCookie)
+    // const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie && u.displayName == usernameCookie)
+    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
     if (!foundUser) {
         throw Kit.error(401, 'user not found');
+    }
+    if (foundUser.displayName != usernameCookie) {
+        throw Kit.error(401, 'username not match');
     }
 
     const msg = await event.request.json();
@@ -23,8 +27,8 @@ export const POST: Kit.RequestHandler = async (event) => {
     if (!parsed.success) {
         throw Kit.error(400, 'malformed request');
     }
-
-    const toExit = foundUser.positions.findLast(p => p.positionId == parsed.data.positionId)
+    const poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
+    const toExit = poses.findLast(p => p.positionId == parsed.data.positionId)
     if (!toExit) {
         throw Kit.error(400, 'position not found');
     }
@@ -34,12 +38,13 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(500, 'Failed to calculate stock return value');
     }
     foundUser.idleStock += returnValue
-    foundUser.positions = foundUser.positions.filter(p => p.positionId !== parsed.data.positionId)
+    ServerState.dbDeletePositionById(toExit.positionId)
+    const posesAfter = ServerState.dbGetPositionsForUser(foundUser.pKey)
 
 
     const response: Utils.ExitPositionResponse = {
         idleStock: foundUser.idleStock,
-        positions: ServerState.positionArrayToPosWithReturnValArray(foundUser.positions),
+        positions: ServerState.positionArrayToPosWithReturnValArray(posesAfter),
     }
 
     return Kit.json(response);

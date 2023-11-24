@@ -15,7 +15,8 @@ export const POST: RequestHandler = async (event) => {
     if(!usernameCookie){
         return json({ error: 'no username cookie' }, { status: 401 });
     }
-    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == uidCookie)
+    // const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == uidCookie)
+    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
     if(!foundUser){
         return json({ error: 'user not found' }, { status: 401 });
     }
@@ -30,23 +31,30 @@ export const POST: RequestHandler = async (event) => {
     if(foundUser.idleStock < putStockRequest.data.amount){
         return json({ error: 'not enough idle stock' }, { status: 400 });
     }
-    const foundTuber = ServerState.state.tubers.findLast(t=>t.channelId == putStockRequest.data.channelId)
+    // const foundTuber = ServerState.state.tubers.findLast(t=>t.channelId == putStockRequest.data.channelId)
+    const foundTuber = ServerState.dbGetTuberByChannelId(putStockRequest.data.channelId)
+
     if(!foundTuber){
         return json({ error: 'tuber not found' }, { status: 400 });
     }
     const position : Utils.Position = {
+        userfk: foundUser.pKey,
         positionId: Uuid.v4(),
         amount:putStockRequest.data.amount,
         subsAtStart:foundTuber.count,
         tuberId:foundTuber.channelId,
+        tuberfk:foundTuber.pKey,
         tuberName:foundTuber.channelName,
         long:putStockRequest.data.long,
     }
-    foundUser.positions.push(position)
+
+    // ServerState.state.positions.push(position)
+    ServerState.dbInsertPosition(position)
     foundUser.idleStock -= putStockRequest.data.amount
+    let poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
     const response : Utils.PutStockResponse = {
         idleStock:foundUser.idleStock,
-        positions: ServerState.positionArrayToPosWithReturnValArray(foundUser.positions),
+        positions: ServerState.positionArrayToPosWithReturnValArray(poses),
     }
 
     return json(response);

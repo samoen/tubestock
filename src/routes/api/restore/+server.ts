@@ -11,7 +11,7 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(400,'malformed request')
     }
     console.log('restoring id ' + parsed.data.privateId)
-    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == parsed.data.privateId)
+    const foundUser = ServerState.dbGetUserByPrivateId(parsed.data.privateId)
     if(!foundUser){
         throw Kit.error(400, 'user not found');
     }

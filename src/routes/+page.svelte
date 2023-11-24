@@ -1,4 +1,5 @@
 <script lang="ts">
+
     import * as Svelte from "svelte";
     import * as Utils from "$lib/utils";
     import * as ClientState from "$lib/client/clientState.svelte";
@@ -19,12 +20,9 @@
 
     function myNetWorth(): number | undefined {
         if (appState.value.myIdleStock == undefined) return undefined;
-        if (!appState.value.positionsList) {
-            return undefined;
-        }
         return calcNetWorth(
             appState.value.myIdleStock,
-            appState.value.positionsList
+            appState.value.positionsList || []
         );
     }
 
@@ -73,11 +71,15 @@
         let r = await ClientState.restoreUser(pIdTxt, nameTxt);
         return r;
     }
+    async function gogo(){
+        ClientState.hitEndpoint('rando',{},Utils.emptyObject)
+    }
 </script>
 
 <button
     on:click={async () => {
         console.log("dev");
+        gogo()
     }}>dev</button
 >
 {#if !appState.value.subscribing && (!appState.value.source || appState.value.source.readyState == 2)}

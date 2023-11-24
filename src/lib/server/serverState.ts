@@ -1,12 +1,44 @@
 import * as Utils from "$lib/utils";
+import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { Client } from "pg";
+import * as Schema from '$lib/server/schema';
+import * as Uuid from 'uuid'
+ 
+const client = new Client({
+  host: "127.0.0.1",
+  port: 5432,
+  user: "postgres",
+  password: "password",
+  database: "tubestock",
+});
+ 
+await client.connect();
+export const db = drizzle(client,{ schema:Schema });
+process.on('exit',()=>{
+	console.log('server exit')
+	client.end()
+})
+process.on('SIGINT',()=>{
+	console.log('server SIGINT')
+	client.end()
+})
 
 export type UserInDb = {
-	dbId: string;
+	pKey: string;
 	privateId: string;
 	publicId: string;
 	displayName: string;
 	idleStock: number;
-	positions: Utils.Position[]
+}
+
+export type TuberInDb = {
+	pKey:string,
+    channelName: string,
+    channelId: string,
+    count: number,
+    countUpdatedAt: number,
 }
 
 export type UserInMemory = {
@@ -26,25 +58,34 @@ type ServerAppState = {
 	usersInDb: UserInDb[]
 	usersInMemory: UserInMemory[]
 	msgs: Utils.SavedChatMsg[]
-	tubers: Utils.Tuber[]
+	tubers: TuberInDb[]
+	positions: Utils.Position[]
 }
 export const state: ServerAppState = {
 	usersInDb: [],
 	usersInMemory: [],
 	msgs: [],
 	tubers: [],
+	positions:[]
 }
 
 export function usersOnServerToClient():Utils.OtherUserOnClient[]{
-	const usersOnClient: Utils.OtherUserOnClient[] = state.usersInDb.map(u => {
+	const dbUsers = dbGetAllUsers()
+
+	const usersOnClient: Utils.OtherUserOnClient[] = []
+
+	for(const dbusr of dbUsers){
+		const usrPoses = dbGetPositionsForUser(dbusr.pKey)
 		const onClient: Utils.OtherUserOnClient = {
-			displayName: u.displayName,
-			publicId: u.publicId,
-			idleStock: u.idleStock,
-			positions: positionArrayToPosWithReturnValArray(u.positions)
+			displayName: dbusr.displayName,
+			publicId: dbusr.publicId,
+			idleStock: dbusr.idleStock,
+			positions: positionArrayToPosWithReturnValArray(usrPoses)
 		}
-		return onClient
-	})
+		usersOnClient.push(onClient)
+
+	}
+	
 	return usersOnClient
 }
 
@@ -77,12 +118,15 @@ export function broadcastEveryoneWorld(){
 	const usrsOnClient = usersOnServerToClient()
 	for (const memUser of state.usersInMemory) {
         if (!memUser.con) continue
-		const dbUser = state.usersInDb.findLast(u=>u.dbId == memUser.dbId)
+		const dbUser = dbGetUserByPrimaryKey(memUser.dbId)
 		if(!dbUser)continue
+		const poses = dbGetPositionsForUser(dbUser.pKey)
+		const allTubers = dbGetAllTubers()
+		const msgs = dbGetAllMsgs()
         const worldEvent: Utils.WorldEvent = {
-            tubers: state.tubers,
-            positions: positionArrayToPosWithReturnValArray(dbUser.positions),
-			msgs: state.msgs,
+            tubers: allTubers,
+            positions: positionArrayToPosWithReturnValArray(poses),
+			msgs: msgs,
 			users: usrsOnClient,
 			yourIdleStock:dbUser.idleStock,
 			yourPrivateId:dbUser.privateId,
@@ -92,6 +136,8 @@ export function broadcastEveryoneWorld(){
     }
 	removeClosedConnections()
 }
+
+
 
 
 const textEncoder = new TextEncoder();
@@ -104,7 +150,8 @@ export function encode(event: string, data: object, noretry = false) {
 	return textEncoder.encode(toEncode);
 }
 export function calcReturnValue(pos: Utils.Position): number | undefined {
-	const foundTuber = state.tubers.findLast(t => t.channelId == pos.tuberId)
+	// const foundTuber = state.tubers.findLast(t => t.channelId == pos.tuberId)
+	const foundTuber = dbGetTuberByPrimaryKey(pos.tuberfk)
 	if (!foundTuber) return undefined
 
 	const subsGained = foundTuber.count - pos.subsAtStart
@@ -137,11 +184,12 @@ export function positionArrayToPosWithReturnValArray(poses: Utils.Position[]): U
 	}
 	return result
 }
-export async function checkUpdateCount(tuber: Utils.Tuber): Promise<boolean> {
+export async function checkUpdateCount(tuber: TuberInDb): Promise<boolean> {
 	let testing = true
 	if (testing) {
-		tuber.count = tuber.count + 500000
-		tuber.countUpdatedAt = new Date().getTime()
+		const newCount = tuber.count + 500000
+		const newAt = new Date().getTime()
+		dbUpdateTuberCountByPKey(tuber.pKey, newCount, newAt)
 		return true
 	}
 
@@ -154,8 +202,7 @@ export async function checkUpdateCount(tuber: Utils.Tuber): Promise<boolean> {
 	if (fetchedCount == undefined) {
 		return false
 	}
-	tuber.count = fetchedCount
-	tuber.countUpdatedAt = today
+	dbUpdateTuberCountByPKey(tuber.pKey,fetchedCount,today)
 	return true
 }
 
@@ -185,4 +232,97 @@ export async function fetchTuberSubsFromId(id: string): Promise<number | undefin
 	}
 
 	return count
+}
+
+export function dbDeletePositionById(id:string){
+	state.positions = state.positions.filter(p => p.positionId !== id)
+}
+
+export function dbGetPositionsForUser(usrPrimKey:string):Utils.Position[]{
+	return state.positions.filter(p=>p.userfk == usrPrimKey)
+}
+
+export function dbGetAllTubers():TuberInDb[]{
+	return state.tubers
+}
+
+export function dbGetUserByPrivateId(pId:string):UserInDb | undefined{
+	let usr = state.usersInDb.findLast(u => u.privateId == pId);
+	return usr
+}
+
+export function dbGetAllUsers():UserInDb[]{
+	return state.usersInDb
+}
+
+export function dbGetTuberByPrimaryKey(tuberPKey:string):TuberInDb | undefined{
+	// return state.tubers.findLast(t => t.channelId == pos.tuberId)
+	return state.tubers.findLast(t => t.pKey == tuberPKey)
+}
+export function dbGetTuberByChannelId(chanId:string):TuberInDb | undefined{
+	return state.tubers.findLast(t=>t.channelId == chanId)
+}
+export function dbGetTuberByChannelName(chanName:string):TuberInDb | undefined{
+	return state.tubers.findLast(t=>t.channelName == chanName)
+}
+export type TuberCreateProps = {
+	channelName: string,
+    channelId: string,
+    count: number,
+    countUpdatedAt: number,
+}
+export function dbInsertTuber(tuber:TuberCreateProps){
+	let tuberInDb : TuberInDb = {
+		pKey: Uuid.v4(),
+		...tuber
+	}
+	state.tubers.push(tuberInDb)
+}
+
+export function dbUpdateTuberCountByPKey(pKey:string,count:number,at:number){
+	const tuber = state.tubers.findLast(t=>t.pKey == pKey)
+	if(tuber){
+		tuber.count = count
+		tuber.countUpdatedAt = at
+	}
+}
+
+export function dbGetUserByPrimaryKey(pKey:string) : UserInDb | undefined{
+	const dbUser = state.usersInDb.findLast(u=>u.pKey == pKey)
+	return dbUser
+}
+
+export function dbDeleteUser(pKey:string){
+	Utils.findRunRemove(
+        state.usersInDb,
+        (u) => u.pKey == pKey,
+        (u) => {
+            console.log(`user ${u.displayName} removed from db`)
+        },
+    )
+}
+export type UserCreateProps = {
+	privateId:string;
+	displayName: string;
+}
+export async function dbInsertUser(usrCreate:UserCreateProps): Promise<UserInDb>{
+	let dbUsr : UserInDb = {
+		pKey:Uuid.v4(),
+		publicId: Uuid.v4(),
+		idleStock:100,
+		...usrCreate
+	}
+	state.usersInDb.push(dbUsr)
+	return dbUsr
+}
+
+export function dbInsertPosition(dbPosition:Utils.Position){
+	state.positions.push(dbPosition)
+}
+
+export function dbGetAllMsgs():Utils.SavedChatMsg[]{
+	return state.msgs
+}
+export function dbInsertMsg(msg:Utils.SavedChatMsg){
+	state.msgs.push(msg)
 }

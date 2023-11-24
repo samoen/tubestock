@@ -5,17 +5,19 @@ import * as Utils from '$lib/utils'
 export const POST: Kit.RequestHandler = async (event) => {
     await ServerState.fakeLatency()
     
+    const existingUid = event.cookies.get('uid')
+    if(!existingUid){
+        throw Kit.error(401, 'need a uid cookie to set your name');
+    }
+
     const msg = await event.request.json();
     const parsed = Utils.setNameRequestSchema.safeParse(msg)
     if (!parsed.success) {
         throw Kit.error(400,'malformed setname request')
     }
     
-    const existingUid = event.cookies.get('uid')
-    if(!existingUid){
-        throw Kit.error(400, 'need a uid cookie to set your name');
-    }
-    const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == existingUid)
+    // const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == existingUid)
+    const foundUser = ServerState.dbGetUserByPrivateId(existingUid)
     if(!foundUser){
         throw Kit.error(400, 'user not found');
     }

@@ -2,6 +2,7 @@ import * as Kit from '@sveltejs/kit';
 import * as Utils from '$lib/utils'
 import * as ServerState from '$lib/server/serverState'
 import * as z from 'zod'
+import * as Uuid from 'uuid'
 
 const searchResult = z.object({
     t: z.number(),
@@ -23,9 +24,7 @@ export const POST: Kit.RequestHandler = async (requestEvent) => {
     if(!t){
         throw Kit.error(400,'failed to get tuber')
     }
-    ServerState.state.tubers.push(t)
-    
-    ServerState.broadcast('tuberAdded',t)
+
     const response: Utils.TubeResponse = {
         count: t.count
     }
@@ -33,8 +32,9 @@ export const POST: Kit.RequestHandler = async (requestEvent) => {
     return Kit.json(response);
 };
 
-async function getTuuber(chanName:string) : Promise< Utils.Tuber | undefined>{
-    const foundTuber = ServerState.state.tubers.findLast(t=>t.channelName == chanName)
+async function getTuuber(chanName:string) : Promise< Utils.TuberInClient | undefined>{
+    // const foundTuber = ServerState.state.tubers.findLast(t=>t.channelName == chanName)
+    const foundTuber = ServerState.dbGetTuberByChannelName(chanName)
     if(foundTuber){
         console.log('got tuber from cache')
         return foundTuber
@@ -62,11 +62,13 @@ async function getTuuber(chanName:string) : Promise< Utils.Tuber | undefined>{
     if(tuberSubs == undefined){
         return undefined
     }
-    const tuberAdded : Utils.Tuber = {
+    const tuberCreate : ServerState.TuberCreateProps = {
         channelName:tuberNameFromSearch,
         channelId:tubeId,
         count:tuberSubs,
         countUpdatedAt: new Date().getTime()
     }
-    return tuberAdded
+    ServerState.dbInsertTuber(tuberCreate)
+    ServerState.broadcast('tuberAdded',tuberCreate)
+    return tuberCreate
 }

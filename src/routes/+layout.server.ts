@@ -8,11 +8,12 @@ export const ssr = false;
 export const load : LayoutServerLoad = async(event)=>{
     
     await ServerState.fakeLatency()
-    
+    const allTubers = ServerState.dbGetAllTubers()
+    const allMsgs = ServerState.dbGetAllMsgs()
     const dfl: Utils.DataFirstLoad = {
 		users: ServerState.usersOnServerToClient(),
-		tubers: ServerState.state.tubers,
-		msgs: ServerState.state.msgs,
+		tubers: allTubers,
+		msgs: allMsgs,
 	}
     let usernameCookie = event.cookies.get('username');
 	let uidCookie = event.cookies.get('uid');
@@ -28,7 +29,7 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
 	}
 
-    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie);
+    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
     if (!foundUser) {
         removeCookies()
         return dfl
@@ -39,7 +40,9 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
     }
 
-    dfl.positions = ServerState.positionArrayToPosWithReturnValArray(foundUser.positions)
+    const poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
+
+    dfl.positions = ServerState.positionArrayToPosWithReturnValArray(poses)
     dfl.yourName = foundUser.displayName
     dfl.yourIdleStock = foundUser.idleStock
     dfl.yourPrivateId = foundUser.privateId

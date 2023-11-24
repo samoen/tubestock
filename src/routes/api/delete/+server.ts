@@ -11,7 +11,8 @@ export const POST: Kit.RequestHandler = async (event) => {
     if (!usernameCookie) {
         throw Kit.error(401, 'no username cookie');
     }
-    const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uid)
+    // const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uid)
+    const foundUser = ServerState.dbGetUserByPrivateId(uid)
     if (!foundUser) {
         event.cookies.delete('uid', { path: '/' })
         event.cookies.delete('username', { path: '/' })
@@ -24,20 +25,15 @@ export const POST: Kit.RequestHandler = async (event) => {
     }
     Utils.findRunRemove(
         ServerState.state.usersInMemory,
-        (u) => u.dbId == foundUser.dbId,
+        (u) => u.dbId == foundUser.pKey,
         (u) => {
             try{
                 u.con?.close()
             }catch(e){}
         },
     )
-    Utils.findRunRemove(
-        ServerState.state.usersInDb,
-        (u) => u.dbId == foundUser.dbId,
-        (u) => {
-            console.log(`user ${u.displayName} removed from db`)
-        },
-    )
+    ServerState.dbDeleteUser(foundUser.pKey)
+    
     
     let w : Utils.WorldEvent = {
         users:ServerState.usersOnServerToClient()
