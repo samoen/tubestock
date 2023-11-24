@@ -1,6 +1,8 @@
 import * as Kit from '@sveltejs/kit';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
+import * as Schema  from '$lib/server/schema';
+import { eq } from 'drizzle-orm';
 
 export const POST: Kit.RequestHandler = async (event) => {
     await ServerState.fakeLatency()
@@ -17,15 +19,16 @@ export const POST: Kit.RequestHandler = async (event) => {
     }
     
     // const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == existingUid)
-    const foundUser = ServerState.dbGetUserByPrivateId(existingUid)
+    const foundUser = await ServerState.dbGetUserByPrivateId(existingUid)
     if(!foundUser){
         throw Kit.error(400, 'user not found');
     }
-    foundUser.displayName = parsed.data.wantName
+    await ServerState.db.update(Schema.appusers).set({displayName:parsed.data.wantName}).where(eq(Schema.appusers.id,foundUser.id))
+    // foundUser.displayName = parsed.data.wantName
     event.cookies.set('username', parsed.data.wantName, { path: '/', secure: false });
-
+    const cUsrs = await ServerState.usersOnServerToClient()
     const worldEvent : Utils.WorldEvent = {
-        users:ServerState.usersOnServerToClient()
+        users:cUsrs
     }
     ServerState.broadcast('world',worldEvent)
 

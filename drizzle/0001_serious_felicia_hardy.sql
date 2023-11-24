@@ -1,0 +1,1 @@
+ALTER TABLE "tubers" ALTER COLUMN "count_updated_at" SET DATA TYPE bigint;

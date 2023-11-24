@@ -9,10 +9,10 @@ export type SimpleFormProps = {
 }
 export type ClientAppState = {
     source: EventSource | undefined
-    chatMsgs: Utils.SavedChatMsg[];
+    chatMsgs: Utils.ChatMsgOnClient[];
     userList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
-    positionsList: Utils.PositionWithReturnValue[] | undefined;
+    positionsList: Utils.PositionInClient[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
     myPrivateId: string | undefined;
@@ -228,7 +228,7 @@ export async function putStock(channelId: string, amt: number, long: boolean) : 
     return resp
 }
 
-export async function exitPosition(positionId: string) {
+export async function exitPosition(positionId: number) {
     const toSend: Utils.ExitPositionRequest = {
         positionId: positionId,
     };

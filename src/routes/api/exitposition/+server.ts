@@ -1,6 +1,8 @@
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Kit from '@sveltejs/kit';
+import * as Schema from '$lib/server/schema'
+import { eq } from 'drizzle-orm';
 
 export const POST: Kit.RequestHandler = async (event) => {
     await ServerState.fakeLatency()
@@ -14,7 +16,7 @@ export const POST: Kit.RequestHandler = async (event) => {
     }
 
     // const foundUser = ServerState.state.usersInDb.findLast(u => u.privateId == uidCookie && u.displayName == usernameCookie)
-    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
+    const foundUser = await ServerState.dbGetUserByPrivateId(uidCookie)
     if (!foundUser) {
         throw Kit.error(401, 'user not found');
     }
@@ -27,24 +29,26 @@ export const POST: Kit.RequestHandler = async (event) => {
     if (!parsed.success) {
         throw Kit.error(400, 'malformed request');
     }
-    const poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
-    const toExit = poses.findLast(p => p.positionId == parsed.data.positionId)
+    const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
+    const toExit = poses.findLast(p => p.id == parsed.data.positionId)
     if (!toExit) {
         throw Kit.error(400, 'position not found');
     }
     
-    const returnValue = ServerState.calcReturnValue(toExit)
+    const returnValue = await ServerState.calcReturnValue(toExit)
     if (returnValue == undefined){
         throw Kit.error(500, 'Failed to calculate stock return value');
     }
-    foundUser.idleStock += returnValue
-    ServerState.dbDeletePositionById(toExit.positionId)
-    const posesAfter = ServerState.dbGetPositionsForUser(foundUser.pKey)
-
+    await ServerState.db.update(Schema.appusers).set({idleStock:foundUser.idleStock+returnValue}).where(eq(Schema.appusers.id,foundUser.id))
+    // foundUser.idleStock += returnValue
+    console.log('deleting position id ' + toExit.id)
+    await ServerState.dbDeletePositionById(toExit.id)
+    const posesAfter = await ServerState.dbGetPositionsForUser(foundUser.id)
+    const cPosesAfter = await ServerState.positionArrayToPosWithReturnValArray(posesAfter)
 
     const response: Utils.ExitPositionResponse = {
         idleStock: foundUser.idleStock,
-        positions: ServerState.positionArrayToPosWithReturnValArray(posesAfter),
+        positions: cPosesAfter,
     }
 
     return Kit.json(response);

@@ -29,17 +29,17 @@ export const sendMsgRequestSchema = z.object({
 })
 export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
 
-export const savedChatMsgSchema = z.object({
-    msgId:z.string(),
+export const chatMsgOnClientSchema = z.object({
+    msgId:z.number(),
     msgTxt: z.string(),
     fromUserName: z.string(),
 })
 
-export type SavedChatMsg = z.infer<typeof savedChatMsgSchema>
+export type ChatMsgOnClient = z.infer<typeof chatMsgOnClientSchema>
 
 export const chatMsgBroadcastSchema = z.object({
     // yourName:z.string(),
-    newMsg: savedChatMsgSchema
+    newMsg: chatMsgOnClientSchema
 })
 export type ChatMsgBroadcast = z.infer<typeof chatMsgBroadcastSchema>
 
@@ -64,42 +64,52 @@ export const putStockRequestSchema = z.object({
 export type PutStockRequest = z.infer<typeof putStockRequestSchema>
 
 export const exitPositionRequestSchema = z.object({
-    positionId:z.string(),
+    positionId:z.number(),
 })
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 
-export const positionSchema = z.object({
-    userfk:z.string(),
-    positionId:z.string(),
-    tuberfk:z.string(),
-    tuberId: z.string(),
+// export const positionSchema = z.object({
+//     userfk:z.string(),
+//     id:z.string(),
+//     tuberfk:z.string(),
+//     tuberId: z.string(),
+//     tuberName: z.string(),
+//     amount: z.number(),
+//     subsAtStart: z.number(),
+//     long: z.boolean(),
+// })
+// export type Position = z.infer<typeof positionSchema>
+// export const positionWithReturnValueSchema = z.intersection(
+//     positionSchema,
+//     z.object({
+//         returnValue: z.number()
+//     })
+// )
+// export type PositionWithReturnValue = z.infer<typeof positionWithReturnValueSchema>
+export const positionInClientSchema = z.object({
+    id:z.number(),
     tuberName: z.string(),
     amount: z.number(),
     subsAtStart: z.number(),
     long: z.boolean(),
+    returnValue:z.number(),
 })
-export type Position = z.infer<typeof positionSchema>
-export const positionWithReturnValueSchema = z.intersection(
-    positionSchema,
-    z.object({
-        returnValue: z.number()
-    })
-)
-export type PositionWithReturnValue = z.infer<typeof positionWithReturnValueSchema>
+export type PositionInClient = z.infer<typeof positionInClientSchema>
+
 
 export const exitPositionResponseSchema = z.object({
     idleStock: z.number(),
-    positions: z.array(positionWithReturnValueSchema),
+    positions: z.array(positionInClientSchema),
 })
 export type ExitPositionResponse = z.infer<typeof exitPositionResponseSchema>
 
 export const positionUpdateEventSchema = z.object({
-    positions:z.array(positionWithReturnValueSchema)
+    positions:z.array(positionInClientSchema)
 })
 
 export const putStockResponseSchema = z.object({
     idleStock: z.number(),
-    positions: z.array(positionWithReturnValueSchema),
+    positions: z.array(positionInClientSchema),
 })
 export type PutStockResponse = z.infer<typeof putStockResponseSchema>
 
@@ -114,7 +124,7 @@ export const otherUserOnClientSchema = z.object({
     displayName: z.string(),
     publicId: z.string(),
     idleStock:z.number(),
-    positions: z.array(positionWithReturnValueSchema)
+    positions: z.array(positionInClientSchema)
 })
 
 export type OtherUserOnClient = z.infer<typeof otherUserOnClientSchema>
@@ -135,8 +145,8 @@ export function findRunRemove<T>(arr:T[],find:(f:T)=>boolean,run:(f:T)=>void):bo
 export const worldEventSchema = z.object({
     users: z.array(otherUserOnClientSchema).optional(),
     tubers: z.array(tuberInClientSchema).optional(),
-    msgs: z.array(savedChatMsgSchema).optional(),
-    positions: z.array(positionWithReturnValueSchema).optional(),
+    msgs: z.array(chatMsgOnClientSchema).optional(),
+    positions: z.array(positionInClientSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
     yourPrivateId: z.string().optional(),
@@ -156,8 +166,8 @@ export type WorldEvent = z.infer<typeof worldEventSchema>
 export const dataFirstLoadSchema = z.object({
     users: z.array(otherUserOnClientSchema),
     tubers: z.array(tuberInClientSchema),
-    msgs: z.array(savedChatMsgSchema),
-    positions: z.array(positionWithReturnValueSchema).optional(),
+    msgs: z.array(chatMsgOnClientSchema),
+    positions: z.array(positionInClientSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
     yourPrivateId: z.string().optional(),

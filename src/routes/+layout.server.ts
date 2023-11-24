@@ -8,10 +8,11 @@ export const ssr = false;
 export const load : LayoutServerLoad = async(event)=>{
     
     await ServerState.fakeLatency()
-    const allTubers = ServerState.dbGetAllTubers()
-    const allMsgs = ServerState.dbGetAllMsgs()
+    const allTubers = await ServerState.dbGetAllTubers()
+    const allMsgs = await ServerState.messagesToClient()
+    const allUsrs = await ServerState.usersOnServerToClient()
     const dfl: Utils.DataFirstLoad = {
-		users: ServerState.usersOnServerToClient(),
+		users: allUsrs,
 		tubers: allTubers,
 		msgs: allMsgs,
 	}
@@ -29,7 +30,7 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
 	}
 
-    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
+    const foundUser = await ServerState.dbGetUserByPrivateId(uidCookie)
     if (!foundUser) {
         removeCookies()
         return dfl
@@ -40,11 +41,11 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
     }
 
-    const poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
-
-    dfl.positions = ServerState.positionArrayToPosWithReturnValArray(poses)
+    const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
+    const cPoses = await ServerState.positionArrayToPosWithReturnValArray(poses)
+    dfl.positions = cPoses
     dfl.yourName = foundUser.displayName
     dfl.yourIdleStock = foundUser.idleStock
-    dfl.yourPrivateId = foundUser.privateId
+    dfl.yourPrivateId = foundUser.secret
     return dfl
 }

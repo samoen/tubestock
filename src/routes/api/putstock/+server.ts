@@ -4,6 +4,8 @@ import { sendMsgRequestSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'
+import * as Schema from '$lib/server/schema'
+import { eq } from 'drizzle-orm';
 
 export const POST: RequestHandler = async (event) => {
     await ServerState.fakeLatency()
@@ -16,7 +18,7 @@ export const POST: RequestHandler = async (event) => {
         return json({ error: 'no username cookie' }, { status: 401 });
     }
     // const foundUser = ServerState.state.usersInDb.findLast(u=>u.privateId == uidCookie)
-    const foundUser = ServerState.dbGetUserByPrivateId(uidCookie)
+    const foundUser = await ServerState.dbGetUserByPrivateId(uidCookie)
     if(!foundUser){
         return json({ error: 'user not found' }, { status: 401 });
     }
@@ -32,29 +34,30 @@ export const POST: RequestHandler = async (event) => {
         return json({ error: 'not enough idle stock' }, { status: 400 });
     }
     // const foundTuber = ServerState.state.tubers.findLast(t=>t.channelId == putStockRequest.data.channelId)
-    const foundTuber = ServerState.dbGetTuberByChannelId(putStockRequest.data.channelId)
+    const foundTuber = await ServerState.dbGetTuberByChannelId(putStockRequest.data.channelId)
 
     if(!foundTuber){
         return json({ error: 'tuber not found' }, { status: 400 });
     }
-    const position : Utils.Position = {
-        userfk: foundUser.pKey,
-        positionId: Uuid.v4(),
+    const position : Schema.InsertDbPosition = {
+        userfk: foundUser.id,
+        tuberfk: foundTuber.id,
         amount:putStockRequest.data.amount,
         subsAtStart:foundTuber.count,
-        tuberId:foundTuber.channelId,
-        tuberfk:foundTuber.pKey,
         tuberName:foundTuber.channelName,
         long:putStockRequest.data.long,
     }
 
     // ServerState.state.positions.push(position)
-    ServerState.dbInsertPosition(position)
-    foundUser.idleStock -= putStockRequest.data.amount
-    let poses = ServerState.dbGetPositionsForUser(foundUser.pKey)
+    await ServerState.dbInsertPosition(position)
+    const newIdle = foundUser.idleStock - putStockRequest.data.amount
+    await ServerState.db.update(Schema.appusers).set({idleStock: newIdle}).where(eq(Schema.appusers.id,foundUser.id))
+    // foundUser.idleStock -= putStockRequest.data.amount
+    const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
+    const cPoses = await ServerState.positionArrayToPosWithReturnValArray(poses)
     const response : Utils.PutStockResponse = {
-        idleStock:foundUser.idleStock,
-        positions: ServerState.positionArrayToPosWithReturnValArray(poses),
+        idleStock:newIdle,
+        positions: cPoses,
     }
 
     return json(response);

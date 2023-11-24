@@ -9,11 +9,11 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 
 export const POST: RequestHandler = async (event) => {
     // event.request.json
-    try{
-        let r = await migrate(ServerState.db, { migrationsFolder: './drizzle' });
-    }catch(e){
-        console.log('failed to migrate ' + String(e))
-    }
+    // try{
+    //     let r = await migrate(ServerState.db, { migrationsFolder: './drizzle' });
+    // }catch(e){
+    //     console.log('failed to migrate ' + String(e))
+    // }
     // try{
     //     await ServerState.db.insert(Schema.appusers).values({name:'ted'})
 
@@ -29,6 +29,7 @@ export const POST: RequestHandler = async (event) => {
     // }catch(e){
     //     console.log('caught error during select')
     // }
+    await ServerState.db.delete(Schema.appusers)
 
     return json({});
 };

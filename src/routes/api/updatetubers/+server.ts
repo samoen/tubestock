@@ -24,7 +24,7 @@ export const POST: RequestHandler = async (event) => {
 
 async function updateThem() {
     // const gotUpdated: Utils.TuberInClient[] = []
-    const existingTubers = ServerState.dbGetAllTubers()
+    const existingTubers = await ServerState.dbGetAllTubers()
     for (const tuber of existingTubers) {
         await ServerState.checkUpdateCount(tuber)
         // if (!didUpdate) continue

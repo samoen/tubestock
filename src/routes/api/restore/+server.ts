@@ -11,14 +11,14 @@ export const POST: Kit.RequestHandler = async (event) => {
         throw Kit.error(400,'malformed request')
     }
     console.log('restoring id ' + parsed.data.privateId)
-    const foundUser = ServerState.dbGetUserByPrivateId(parsed.data.privateId)
+    const foundUser = await ServerState.dbGetUserByPrivateId(parsed.data.privateId)
     if(!foundUser){
         throw Kit.error(400, 'user not found');
     }
     if(foundUser.displayName != parsed.data.displayName){
         throw Kit.error(400, 'user not match');
     }
-    event.cookies.set('uid', foundUser.privateId, { path: '/', secure: false });
+    event.cookies.set('uid', foundUser.secret, { path: '/', secure: false });
 	event.cookies.set('username', foundUser.displayName, { path: '/', secure: false });
 
     return Kit.json({});

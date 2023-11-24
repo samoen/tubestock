@@ -28,7 +28,7 @@
 
     function calcNetWorth(
         idle: number,
-        positions: Utils.PositionWithReturnValue[]
+        positions: Utils.PositionInClient[]
     ): number | undefined {
         let res: number = idle;
         for (const pos of positions) {
@@ -58,7 +58,7 @@
     }
 
     let exitPositionLoading = $state(false);
-    async function exitPositionClicked(positionId: string) {
+    async function exitPositionClicked(positionId: number) {
         exitPositionLoading = true;
         await ClientState.exitPosition(positionId);
         exitPositionLoading = false;
@@ -149,7 +149,7 @@
             appState.value.selectedUser.positions
         )}
     </h4>
-    {#each appState.value.selectedUser.positions as p (p.positionId)}
+    {#each appState.value.selectedUser.positions as p (p.id)}
         <p>
             {p.tuberName} : {p.long
                 ? "(long)"
@@ -197,7 +197,7 @@
 {#if appState.value.positionsList != undefined}
     <h3>Positions</h3>
     <div class="msgs">
-        {#each appState.value.positionsList as p (p.positionId)}
+        {#each appState.value.positionsList as p (p.id)}
             <div>
                 <span>
                     {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
@@ -209,7 +209,7 @@
                     type="button"
                     disabled={exitPositionLoading}
                     on:click={() => {
-                        exitPositionClicked(p.positionId);
+                        exitPositionClicked(p.id);
                     }}>Exit</button
                 >
             </div>

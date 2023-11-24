@@ -2,7 +2,7 @@ import * as Kit from '@sveltejs/kit';
 import * as Utils from '$lib/utils'
 import * as ServerState from '$lib/server/serverState'
 import * as z from 'zod'
-import * as Uuid from 'uuid'
+import * as Schema from '$lib/server/schema'
 
 const searchResult = z.object({
     t: z.number(),
@@ -34,7 +34,7 @@ export const POST: Kit.RequestHandler = async (requestEvent) => {
 
 async function getTuuber(chanName:string) : Promise< Utils.TuberInClient | undefined>{
     // const foundTuber = ServerState.state.tubers.findLast(t=>t.channelName == chanName)
-    const foundTuber = ServerState.dbGetTuberByChannelName(chanName)
+    const foundTuber = await ServerState.dbGetTuberByChannelName(chanName)
     if(foundTuber){
         console.log('got tuber from cache')
         return foundTuber
@@ -62,7 +62,7 @@ async function getTuuber(chanName:string) : Promise< Utils.TuberInClient | undef
     if(tuberSubs == undefined){
         return undefined
     }
-    const tuberCreate : ServerState.TuberCreateProps = {
+    const tuberCreate : Schema.InsertDbTuber = {
         channelName:tuberNameFromSearch,
         channelId:tubeId,
         count:tuberSubs,

@@ -1,6 +1,6 @@
 {
-  "id": "992ca963-b9a1-4636-80ec-7fbb79be6fe8",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "f082e0ea-cf49-4dbe-b2fc-7921f4302eff",
+  "prevId": "992ca963-b9a1-4636-80ec-7fbb79be6fe8",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -205,7 +205,7 @@
         },
         "count_updated_at": {
           "name": "count_updated_at",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true
         }

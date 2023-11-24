@@ -2,6 +2,7 @@ import * as Kit from '@sveltejs/kit';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'
+import * as Schema from '$lib/server/schema';
 
 export const GET: Kit.RequestHandler = async (event) => {
 	// try {
@@ -21,9 +22,9 @@ export const GET: Kit.RequestHandler = async (event) => {
 		removeCookies()
 	}
 
-	let foundDbUser : ServerState.UserInDb | undefined = undefined
+	let foundDbUser : Schema.AppUser | undefined = undefined
 	if (uidCookie && usernameCookie) {
-		foundDbUser = ServerState.dbGetUserByPrivateId(uidCookie);
+		foundDbUser = await ServerState.dbGetUserByPrivateId(uidCookie);
 		
 		if (!foundDbUser) {
 			console.log('user not found from cookies')
@@ -50,11 +51,11 @@ export const GET: Kit.RequestHandler = async (event) => {
 		// }
 		event.cookies.set('uid', uidCookie, { path: '/', secure: false });
 		event.cookies.set('username', usernameCookie, { path: '/', secure: false });
-		const usrCreate: ServerState.UserCreateProps = {
-			privateId: uidCookie,
-			// publicId: Uuid.v4(),
+		const usrCreate: Schema.InsertAppUser = {
+			secret: uidCookie,
 			displayName: usernameCookie,
-			// idleStock: 100,
+			idleStock:100,
+			publicId:Uuid.v4(),
 		}
 
 		foundDbUser = await ServerState.dbInsertUser(usrCreate)
@@ -66,12 +67,12 @@ export const GET: Kit.RequestHandler = async (event) => {
 	}
 
 	
-	const constFoundUser : ServerState.UserInDb = foundDbUser
+	const constFoundUser : Schema.AppUser = foundDbUser
 
 
 	const didFind = Utils.findRunRemove(
 		ServerState.state.usersInMemory,
-		(u)=>u.dbId == constFoundUser.pKey,
+		(u)=>u.dbId == constFoundUser.id,
 		(u)=>{
 			Utils.runCatching(()=>u.con?.close())
 			console.log('subscriber was already subscribed, closed old one')
@@ -84,9 +85,9 @@ export const GET: Kit.RequestHandler = async (event) => {
 	// }
 
 	const rs = new ReadableStream({
-		start(c) {
+		async start(c) {
 			let newMemUsr : ServerState.UserInMemory = {
-				dbId:constFoundUser.pKey,
+				dbId:constFoundUser.id,
 				con:c,
 			}
 			ServerState.state.usersInMemory.push(newMemUsr)
@@ -98,13 +99,14 @@ export const GET: Kit.RequestHandler = async (event) => {
 			if(userCreated){
 				world.yourIdleStock=constFoundUser.idleStock
 				world.yourName=constFoundUser.displayName
-				world.yourPrivateId=constFoundUser.privateId
+				world.yourPrivateId=constFoundUser.secret
 			}
 			ServerState.sendToUser(newMemUsr,'world',world)
 
 			if(userCreated){
+				const cUsrs = await ServerState.usersOnServerToClient()
 				let worldBroad : Utils.WorldEvent = {
-					users : ServerState.usersOnServerToClient()
+					users : cUsrs
 				}
 				ServerState.broadcast('world',worldBroad)
 			}
@@ -112,7 +114,7 @@ export const GET: Kit.RequestHandler = async (event) => {
 		cancel(reason) {
 			console.log(`stream cancel handle for hero ${constFoundUser.displayName}`);
 			if (reason) console.log(`reason: ${reason}`);
-			ServerState.state.usersInMemory.filter(u => u.dbId != constFoundUser.pKey);	
+			ServerState.state.usersInMemory.filter(u => u.dbId != constFoundUser.id);	
 		}
 	});
 	// foundMemUser.stream = rs;
