@@ -2,11 +2,12 @@ import * as Utils from "$lib/utils";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import * as DbClient from '$lib/server/dbClient'
-import { Client } from "pg";
 import * as Schema from '$lib/server/schema';
 import { asc, desc, eq } from "drizzle-orm";
+import * as DORM from "drizzle-orm"
 import { env } from '$env/dynamic/private';
 import * as Kit from '@sveltejs/kit'
+import { unionAll } from "drizzle-orm/pg-core";
 
 
 
@@ -50,57 +51,80 @@ export const state: ServerAppState = {
 
 export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnClient[]> {
 
-		const selected = await db.query.appusers.findMany({
-			columns:{
-				id:true,
-				displayName:true,
-				idleStock:true
-			},
-			with: {
-				positions: {
-					columns:{
-						tuberfk:false,
-						userfk:false
-					},
-					with:{
-						forTuber:{
-							columns:{
-								count:true
-							}
+	const selected = await db.query.appusers.findMany({
+		columns: {
+			id: true,
+			displayName: true,
+			idleStock: true
+		},
+		with: {
+			positions: {
+				columns: {
+					tuberfk: false,
+					userfk: false
+				},
+				with: {
+					forTuber: {
+						columns: {
+							count: true
 						}
 					}
-				},
-			},
-		});
-
-		const otherUsers : Utils.OtherUserOnClient[] = []
-		for(const sel of selected){
-
-			const posesInClient : Utils.PositionInClient[] = []
-			for(const selPos of sel.positions){
-				const retVal = fastCalcRetVal(selPos.forTuber.count,selPos.subsAtStart,selPos.amount,selPos.long)
-				const posInClient : Utils.PositionInClient = {
-					id:selPos.id,
-					amount:selPos.amount,
-					long:selPos.long,
-					subsAtStart:selPos.subsAtStart,
-					tuberName:selPos.tuberName,
-					returnValue: retVal,
 				}
-				posesInClient.push(posInClient)
-			}
+			},
+		},
+	});
 
-			const ou : Utils.OtherUserOnClient = {
-				id:sel.id,
-				displayName:sel.displayName,
-				idleStock:sel.idleStock,
-				positions:posesInClient
+	const otherUsers: Utils.OtherUserOnClient[] = []
+	for (const sel of selected) {
+
+		const posesInClient: Utils.PositionInClient[] = []
+		for (const selPos of sel.positions) {
+			const retVal = fastCalcRetVal(selPos.forTuber.count, selPos.subsAtStart, selPos.amount, selPos.long)
+			const posInClient: Utils.PositionInClient = {
+				id: selPos.id,
+				amount: selPos.amount,
+				long: selPos.long,
+				subsAtStart: selPos.subsAtStart,
+				tuberName: selPos.tuberName,
+				returnValue: retVal,
 			}
-			otherUsers.push(ou)
+			posesInClient.push(posInClient)
 		}
+
+		const ou: Utils.OtherUserOnClient = {
+			id: sel.id,
+			displayName: sel.displayName,
+			idleStock: sel.idleStock,
+			positions: posesInClient
+		}
+		otherUsers.push(ou)
+	}
 
 	return otherUsers
 }
+
+// export async function dbGetFreeInfo(){
+// 	const msgsQuery = db
+// 		.select({
+// 			thing:Schema.chatMessages,
+// 			// tubers:Schema.tubers,
+// 		})
+// 		.from(Schema.chatMessages)
+// 		// .unionAll(Schema.tubers)
+// 		// .fullJoin(Schema.tubers)
+
+// 	// const tubersQuery = db.select({thing:Schema.tubers}).from(Schema.tubers)
+// 	// const msgTuberUnion = await unionAll(msgsQuery,tubersQuery)
+
+// 	const q = db.select(
+// 		{
+// 			msgs:Schema.chatMessages,
+// 			tubers:Schema.tubers,
+// 		}
+// 	).from(Schema.chatMessages)
+// 	// .unionAll()
+// 	// .fullJoin(Schema.tubers,DORM.exists())
+// }
 
 export function broadcast(event: string, data: object) {
 	for (const user of state.usersInMemory) {
@@ -135,7 +159,7 @@ export async function broadcastEveryoneWorld() {
 		if (!dbUser) continue
 		const poses = await dbGetPositionsForUser(dbUser.id)
 		const allTubers = await dbGetAllTubers()
-		const msgsOnClient = await messagesToClient()
+		const msgsOnClient = await messagesToClient('latest')
 		const posesOnClient = await positionArrayToPosWithReturnValArray(poses)
 		const worldEvent: Utils.WorldEvent = {
 			tubers: allTubers,
@@ -151,18 +175,19 @@ export async function broadcastEveryoneWorld() {
 	removeClosedConnections()
 }
 
-export async function messagesToClient() {
+export async function messagesToClient(startAtTime: number | 'latest', offset: number = 0) : Promise<Utils.ChatMsgOnClient[]> {
 	// const msgs = await dbGetAllMsgs()
-	const msgsWithUsr = await dbgetMessagesWithUsers()
-	const msgsOnClient = msgsWithUsr.map(m => {
-		const cMsg: Utils.ChatMsgOnClient = {
-			msgId: m.msg.id,
-			msgTxt: m.msg.msgTxt,
-			fromUserName: m.usr.displayName,
-		}
-		return cMsg
-	})
-	return msgsOnClient
+	const msgsWithUsr = await dbgetMessagesWithUsers(startAtTime, offset)
+	// const msgsOnClient = msgsWithUsr.map(m => {
+	// 	const cMsg: Utils.ChatMsgOnClient = {
+	// 		msgId: m.msg.id,
+	// 		msgTxt: m.msg.msgTxt,
+	// 		fromUserName: m.usr.displayName,
+	// 		sentAt: m.msg.sentAt,
+	// 	}
+	// 	return cMsg
+	// })
+	return msgsWithUsr
 }
 
 
@@ -189,7 +214,7 @@ export async function calcReturnValue(pos: Schema.DbPosition): Promise<number | 
 		pos.long,
 	)
 }
-export function fastCalcRetVal(currentCount:number, subsAtPosStart:number, posAmt:number, long:boolean):number{
+export function fastCalcRetVal(currentCount: number, subsAtPosStart: number, posAmt: number, long: boolean): number {
 	const subsGained = currentCount - subsAtPosStart
 	const percentGain = subsGained / subsAtPosStart
 	let bonus = Math.floor(posAmt * percentGain)
@@ -271,27 +296,27 @@ export async function fetchTuberSubsFromId(id: string): Promise<number | undefin
 	return count
 }
 type KitEvent = Kit.RequestEvent<Partial<Record<string, string>>, string | null>
-export async function getUserFromEvent(event:KitEvent) : Promise<Schema.AppUser>{
+export async function getUserFromEvent(event: KitEvent): Promise<Schema.AppUser> {
 	const uidCookie = event.cookies.get('uid')
-    if (!uidCookie) {
-        throw Kit.error(401, 'need a secret cookie');
-    }
-    const usernameCookie = event.cookies.get('username')
-    if (!usernameCookie) {
-        throw Kit.error(401, 'need a username cookie');
-    }
+	if (!uidCookie) {
+		throw Kit.error(401, 'need a secret cookie');
+	}
+	const usernameCookie = event.cookies.get('username')
+	if (!usernameCookie) {
+		throw Kit.error(401, 'need a username cookie');
+	}
 
-    const foundUser = await dbGetUserBySecret(uidCookie)
-    if (!foundUser) {
-        throw Kit.error(401, 'user not found');
-    }
-    if (foundUser.displayName != usernameCookie) {
-        throw Kit.error(401, 'username not match');
-    }
+	const foundUser = await dbGetUserBySecret(uidCookie)
+	if (!foundUser) {
+		throw Kit.error(401, 'user not found');
+	}
+	if (foundUser.displayName != usernameCookie) {
+		throw Kit.error(401, 'username not match');
+	}
 	return foundUser
 }
 
-export function removeCookiesFromEvent(event:KitEvent){
+export function removeCookiesFromEvent(event: KitEvent) {
 	event.cookies.delete('uid', { path: '/' })
 	event.cookies.delete('username', { path: '/' })
 }
@@ -348,20 +373,10 @@ export async function dbGetTuberByChannelName(chanName: string): Promise<Schema.
 }
 export async function dbInsertTuber(tuber: Schema.InsertDbTuber) {
 	await db.insert(Schema.tubers).values(tuber)
-	// let tuberInDb : TuberInDb = {
-	// 	id: Uuid.v4(),
-	// 	...tuber
-	// }
-	// state.tubers.push(tuberInDb)
 }
 
 export async function dbUpdateTuberCountByPKey(pKey: number, count: number, at: number) {
 	await db.update(Schema.tubers).set({ count: count, countUpdatedAt: at }).where(eq(Schema.tubers.id, pKey))
-	// const tuber = state.tubers.findLast(t=>t.id == pKey)
-	// if(tuber){
-	// 	tuber.count = count
-	// 	tuber.countUpdatedAt = at
-	// }
 }
 
 export async function dbGetUserByPrimaryKey(pKey: number): Promise<Schema.AppUser | undefined> {
@@ -373,30 +388,9 @@ export async function dbGetUserByPrimaryKey(pKey: number): Promise<Schema.AppUse
 
 export async function dbDeleteUser(pKey: number) {
 	await db.delete(Schema.appusers).where(eq(Schema.appusers.id, pKey))
-	// Utils.findRunRemove(
-	//     state.usersInDb,
-	//     (u) => u.id == pKey,
-	//     (u) => {
-	//         console.log(`user ${u.displayName} removed from db`)
-	//     },
-	// )
 }
-// export type UserCreateProps = {
-// 	privateId:string;
-// 	displayName: string;
-// }
-export type UserCreateProps = Pick<Schema.AppUser, 'displayName' | 'secret'>
 
 export async function dbInsertUser(usrCreate: Schema.InsertAppUser): Promise<Schema.AppUser> {
-
-	// let dbUsr : Schema.AppUser = {
-	// 	id:Uuid.,
-	// 	publicId: Uuid.v4(),
-	// 	idleStock:100,
-	// 	...usrCreate
-	// }
-	// state.usersInDb.push(dbUsr)
-
 	const ret = await db.insert(Schema.appusers).values(usrCreate).returning()
 	const dbUsr = ret.at(0)
 	if (!dbUsr) throw ' huh'
@@ -411,21 +405,32 @@ export async function dbInsertPosition(posCreate: Schema.InsertDbPosition): Prom
 	return dbPos
 }
 
-export async function dbgetMessagesWithUsers() {
-	let sel = await db
-		.select({
-			usr:{
-				displayName:Schema.appusers.displayName
-			},
-			msg:Schema.chatMessages,
-		})
-		.from(Schema.chatMessages)
-		.innerJoin(
-			Schema.appusers,
-			eq(Schema.appusers.id, Schema.chatMessages.userfk)
-		)
-		.limit(10)
-		.orderBy(desc(Schema.chatMessages.sentAt))
+export async function dbgetMessagesWithUsers(startAtTime: number | 'latest', offset: number = 0) : Promise<Utils.ChatMsgOnClient[]> {
+	let strtat : number = new Date().getTime()
+	if(startAtTime != 'latest'){
+		strtat = startAtTime
+		// qBuild.
+	}
+	const sel = await db.query.chatMessages.findMany({
+		columns:{
+			id:true,
+			msgTxt:true,
+			sentAt:true
+		},
+		with:{
+
+			author:{
+
+				columns:{
+					displayName:true
+				}
+			}
+		},
+		where:(table, clause) => clause.lt(table.sentAt, strtat),
+		orderBy: [desc(Schema.chatMessages.sentAt)],
+		limit:5,
+	})
+
 	return sel
 
 }
@@ -435,9 +440,9 @@ export async function dbGetAllMsgs(): Promise<Schema.DbChatMsg[]> {
 	let selected = await db.select().from(Schema.chatMessages)
 	return selected
 }
-export async function dbInsertMsg(msg: Schema.InsertDbChatMsg) : Promise<Schema.DbChatMsg> {
+export async function dbInsertMsg(msg: Schema.InsertDbChatMsg): Promise<Schema.DbChatMsg> {
 	const inserted = await db.insert(Schema.chatMessages).values(msg).returning()
 	const fInserted = inserted.at(0)
-	if(!fInserted)throw Kit.error(500,'failed to insert chat message')
+	if (!fInserted) throw Kit.error(500, 'failed to insert chat message')
 	return fInserted
 }

@@ -74,6 +74,27 @@
     async function gogo(){
         ClientState.hitEndpoint('rando',{},Utils.emptyObject)
     }
+    async function getEarlierMsgs(){
+        const oldestMsg = appState.value.chatMsgs.reduce(
+            (oldest, current) => {
+            return current.sentAt < oldest.sentAt ? current : oldest;
+            },
+            appState.value.chatMsgs[0]
+        );
+        const toSend : Utils.HistoricalMsgsRequest = {
+            startAtTime: oldestMsg.sentAt,
+            offset:0,
+
+        }
+        const resp = await ClientState.hitEndpoint('historicalMsgs',toSend,Utils.chatMsgsResponseSchema)
+        if(resp.failed){
+            console.log('bad get historical resp format')
+            return
+        }
+        console.log('got earlier ' + JSON.stringify(resp.value.msgs))
+        appState.value.chatMsgs.push(...resp.value.msgs)
+        appState.dirty()
+    }
 </script>
 
 <button
@@ -116,9 +137,10 @@
 <br />
 <h3>Chat</h3>
 <div class="msgs">
-    {#each appState.value.chatMsgs as m (m.msgId)}
-        <p>{m.fromUserName} : {m.msgTxt}</p>
+    {#each appState.value.chatMsgs as m (m.id)}
+        <p>{m.sentAt} : {m.author.displayName} : {m.msgTxt}</p>
     {/each}
+    <button on:click={getEarlierMsgs}>Get earlier</button>
 </div>
 <SimpleForm
     buttonLabel="Send"
@@ -144,8 +166,7 @@
 </div>
 {#if appState.value.selectedUser}
     <h4>
-        {appState.value.selectedUser.displayName} : {calcNetWorth(
-            appState.value.selectedUser.idleStock,
+        {appState.value.selectedUser.displayName} : {calcNetWorth(appState.value.selectedUser.idleStock,
             appState.value.selectedUser.positions
         )}
     </h4>

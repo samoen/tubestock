@@ -30,20 +30,27 @@ export const sendMsgRequestSchema = z.object({
 export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
 
 export const chatMsgOnClientSchema = z.object({
-    msgId:z.number(),
+    id:z.number(),
     msgTxt: z.string(),
-    fromUserName: z.string(),
+    sentAt:z.number(),
+    author:z.object({
+        displayName: z.string(),
+    }),
 })
 
 export type ChatMsgOnClient = z.infer<typeof chatMsgOnClientSchema>
 
-export const chatMsgBroadcastSchema = z.object({
+export const chatMsgsResponseSchema = z.object({
     // yourName:z.string(),
-    newMsg: chatMsgOnClientSchema
+    msgs: z.array(chatMsgOnClientSchema)
 })
-export type ChatMsgBroadcast = z.infer<typeof chatMsgBroadcastSchema>
+export type ChatMsgsResponse = z.infer<typeof chatMsgsResponseSchema>
 
-
+export const historicalMsgsRequestSchema = z.object({
+    startAtTime:z.number(),
+    offset:z.number()
+})
+export type HistoricalMsgsRequest = z.infer<typeof historicalMsgsRequestSchema>
 
 export const tubeRequestSchema = z.object({
     channelName: z.string()

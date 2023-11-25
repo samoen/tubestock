@@ -10,7 +10,7 @@ export const load : LayoutServerLoad = async(event)=>{
     
     await ServerState.fakeLatency()
     const allTubers = await ServerState.dbGetAllTubers()
-    const allMsgs = await ServerState.messagesToClient()
+    const allMsgs = await ServerState.messagesToClient('latest')
     // const allUsrs = await ServerState.usersOnServerToClient()
     const allUsrs = await ServerState.betterUsersOnServerToClient()
     const dfl: Utils.DataFirstLoad = {

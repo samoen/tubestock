@@ -115,14 +115,14 @@ export async function subscribe() {
 
     appState.value.source.addEventListener("chatmsg", (ev) => {
         console.log("got chatmsg event");
-        const parsed = Utils.chatMsgBroadcastSchema.safeParse(
+        const parsed = Utils.chatMsgsResponseSchema.safeParse(
             JSON.parse(ev.data)
         );
         if (!parsed.success) {
             console.log("bad update from server");
             return;
         }
-        appState.value.chatMsgs.unshift(parsed.data.newMsg)
+        appState.value.chatMsgs.unshift(...parsed.data.msgs)
         appState.dirty()
     });
 

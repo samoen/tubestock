@@ -25,12 +25,15 @@ export const POST: RequestHandler = async (event) => {
     const inserted = await ServerState.dbInsertMsg(toSave)
 
     const msgToBroad : Utils.ChatMsgOnClient = {
-        fromUserName:foundUser.displayName,
-        msgTxt:sentMsg.data.msgTxt,
-        msgId:inserted.id
+        id:inserted.id,
+        msgTxt:inserted.msgTxt,
+        sentAt:inserted.sentAt,
+        author:{
+            displayName:foundUser.displayName,
+        },
     }
-    const toBroadCast : Utils.ChatMsgBroadcast = {
-        newMsg:msgToBroad
+    const toBroadCast : Utils.ChatMsgsResponse = {
+        msgs:[msgToBroad]
     }
     ServerState.broadcast('chatmsg',toBroadCast)
 
