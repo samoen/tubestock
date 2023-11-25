@@ -78,7 +78,7 @@ export const GET: Kit.RequestHandler = async (event) => {
 
 			if(userCreated){
 				// broadcast a new user was created
-				const cUsrs = await ServerState.usersOnServerToClient()
+				const cUsrs = await ServerState.betterUsersOnServerToClient()
 				let worldBroad : Utils.WorldEvent = {
 					users : cUsrs
 				}

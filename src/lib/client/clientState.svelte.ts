@@ -153,10 +153,10 @@ export async function subscribe() {
             appState.value.tuberList = parsed.data.tubers;
         }
         if (parsed.data.msgs) {
-            appState.value.chatMsgs = parsed.data.msgs.reverse();
+            appState.value.chatMsgs = parsed.data.msgs;
         }
         if (parsed.data.positions) {
-            appState.value.positionsList = parsed.data.positions.reverse();
+            appState.value.positionsList = parsed.data.positions;
         }
         if (parsed.data.yourName) {
             appState.value.myUsername = parsed.data.yourName;
@@ -223,7 +223,7 @@ export async function putStock(channelId: string, amt: number, long: boolean) : 
         return resp
     };
     appState.value.myIdleStock = resp.value.idleStock;
-    appState.value.positionsList = resp.value.positions.reverse();
+    appState.value.positionsList = resp.value.positions;
     appState.dirty()
     return resp
 }
@@ -240,7 +240,7 @@ export async function exitPosition(positionId: number) {
     if (fSafe.failed) return;
 
     appState.value.myIdleStock = fSafe.value.idleStock;
-    appState.value.positionsList = fSafe.value.positions.reverse();
+    appState.value.positionsList = fSafe.value.positions;
     appState.dirty()
 }
 

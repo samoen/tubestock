@@ -1,37 +1,23 @@
 import * as Utils from "$lib/utils";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import * as DbClient from '$lib/server/dbClient'
 import { Client } from "pg";
 import * as Schema from '$lib/server/schema';
-import { eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { env } from '$env/dynamic/private';
 import * as Kit from '@sveltejs/kit'
 
 
-const client = new Client({
-	host: env.DB_HOST,
-	port: parseInt(env.DB_PORT),
-	user: env.DB_USER,
-	password: env.DB_PASSWORD,
-	database: env.DB_NAME,
-});
 
-await client.connect();
-process.on('exit', () => {
-	console.log('server exit')
-	client.end()
-})
-process.on('SIGINT', () => {
-	console.log('server SIGINT')
-	client.end()
-})
+console.log('running serverstate')
 
-export const db = drizzle(client, { schema: Schema });
+export const db = drizzle(DbClient.client, { schema: Schema });
 try {
 	await migrate(db, { migrationsFolder: './drizzle' });
 } catch (e) {
 	console.log('failed to migrate ' + String(e))
-	process.abort()
+	process.exit()
 }
 
 export type UserInMemory = {
@@ -62,25 +48,58 @@ export const state: ServerAppState = {
 	// positions:[]
 }
 
-export async function usersOnServerToClient(): Promise<Utils.OtherUserOnClient[]> {
-	const dbUsers = await dbGetAllUsers()
+export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnClient[]> {
 
-	const usersOnClient: Utils.OtherUserOnClient[] = []
+		const selected = await db.query.appusers.findMany({
+			columns:{
+				id:true,
+				displayName:true,
+				idleStock:true
+			},
+			with: {
+				positions: {
+					columns:{
+						tuberfk:false,
+						userfk:false
+					},
+					with:{
+						forTuber:{
+							columns:{
+								count:true
+							}
+						}
+					}
+				},
+			},
+		});
 
-	for (const dbusr of dbUsers) {
-		const usrPoses = await dbGetPositionsForUser(dbusr.id)
-		const posesOnClient = await positionArrayToPosWithReturnValArray(usrPoses)
-		const onClient: Utils.OtherUserOnClient = {
-			displayName: dbusr.displayName,
-			publicId: dbusr.id,
-			idleStock: dbusr.idleStock,
-			positions: posesOnClient,
+		const otherUsers : Utils.OtherUserOnClient[] = []
+		for(const sel of selected){
+
+			const posesInClient : Utils.PositionInClient[] = []
+			for(const selPos of sel.positions){
+				const retVal = fastCalcRetVal(selPos.forTuber.count,selPos.subsAtStart,selPos.amount,selPos.long)
+				const posInClient : Utils.PositionInClient = {
+					id:selPos.id,
+					amount:selPos.amount,
+					long:selPos.long,
+					subsAtStart:selPos.subsAtStart,
+					tuberName:selPos.tuberName,
+					returnValue: retVal,
+				}
+				posesInClient.push(posInClient)
+			}
+
+			const ou : Utils.OtherUserOnClient = {
+				id:sel.id,
+				displayName:sel.displayName,
+				idleStock:sel.idleStock,
+				positions:posesInClient
+			}
+			otherUsers.push(ou)
 		}
-		usersOnClient.push(onClient)
 
-	}
-
-	return usersOnClient
+	return otherUsers
 }
 
 export function broadcast(event: string, data: object) {
@@ -109,7 +128,7 @@ function removeClosedConnections() {
 }
 
 export async function broadcastEveryoneWorld() {
-	const usrsOnClient = await usersOnServerToClient()
+	const usrsOnClient = await betterUsersOnServerToClient()
 	for (const memUser of state.usersInMemory) {
 		if (!memUser.con) continue
 		const dbUser = await dbGetUserByPrimaryKey(memUser.dbId)
@@ -163,13 +182,21 @@ export async function calcReturnValue(pos: Schema.DbPosition): Promise<number | 
 	const foundTuber = await dbGetTuberByPrimaryKey(pos.tuberfk)
 	if (!foundTuber) return undefined
 
-	const subsGained = foundTuber.count - pos.subsAtStart
-	const percentGain = subsGained / pos.subsAtStart
-	let bonus = Math.floor(pos.amount * percentGain)
-	if (!pos.long) {
+	return fastCalcRetVal(
+		foundTuber.count,
+		pos.subsAtStart,
+		pos.amount,
+		pos.long,
+	)
+}
+export function fastCalcRetVal(currentCount:number, subsAtPosStart:number, posAmt:number, long:boolean):number{
+	const subsGained = currentCount - subsAtPosStart
+	const percentGain = subsGained / subsAtPosStart
+	let bonus = Math.floor(posAmt * percentGain)
+	if (!long) {
 		bonus = bonus * -1
 	}
-	let ret = pos.amount + bonus
+	let ret = posAmt + bonus
 	if (ret < 0) {
 		ret = 0
 	}
@@ -397,6 +424,8 @@ export async function dbgetMessagesWithUsers() {
 			Schema.appusers,
 			eq(Schema.appusers.id, Schema.chatMessages.userfk)
 		)
+		.limit(10)
+		.orderBy(desc(Schema.chatMessages.sentAt))
 	return sel
 
 }

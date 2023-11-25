@@ -129,7 +129,7 @@
 <br />
 <h3>Users</h3>
 <div class="msgs">
-    {#each appState.value.userList as u (u.publicId)}
+    {#each appState.value.userList as u (u.id)}
         <div>
             <span>{u.displayName}</span>
             <button

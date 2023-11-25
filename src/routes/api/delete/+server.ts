@@ -22,7 +22,7 @@ export const POST: Kit.RequestHandler = async (event) => {
     )
     
     // broadcast new user list
-    const cUsrs = await ServerState.usersOnServerToClient()
+    const cUsrs = await ServerState.betterUsersOnServerToClient()
     const w : Utils.WorldEvent = {
         users:cUsrs
     }

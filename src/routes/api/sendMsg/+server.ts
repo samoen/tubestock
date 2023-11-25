@@ -16,9 +16,11 @@ export const POST: RequestHandler = async (event) => {
     if (!sentMsg.success) {
         return Kit.json({ error: 'malformed request' }, { status: 400 });
     }
+    const sentAt : number = new Date().getTime()
     const toSave : Schema.InsertDbChatMsg = {
         msgTxt: sentMsg.data.msgTxt,
         userfk: foundUser.id,
+        sentAt: sentAt,
     }
     const inserted = await ServerState.dbInsertMsg(toSave)
 

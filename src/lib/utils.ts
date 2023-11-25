@@ -122,7 +122,7 @@ export type TuberInClient = z.infer<typeof tuberInClientSchema>
 
 export const otherUserOnClientSchema = z.object({
     displayName: z.string(),
-    publicId: z.number(),
+    id: z.number(),
     idleStock:z.number(),
     positions: z.array(positionInClientSchema)
 })

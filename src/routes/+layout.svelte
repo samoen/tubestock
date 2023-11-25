@@ -10,9 +10,9 @@
     }
 
     ClientState.getAppState().update((s) => {
-        s.chatMsgs = data.msgs.reverse();
+        s.chatMsgs = data.msgs;
         s.userList = data.users;
-        s.positionsList = data.positions?.reverse();
+        s.positionsList = data.positions;
         s.tuberList = data.tubers;
         s.myUsername = data.yourName;
         s.myIdleStock = data.yourIdleStock;
@@ -41,6 +41,7 @@
         position: sticky;
         top: 0px;
         border: 2px solid black;
+        z-index: 1;
     }
     .solid {
         background-color: pink;
