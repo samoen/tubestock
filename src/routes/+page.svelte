@@ -138,7 +138,7 @@
 <h3>Chat</h3>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
-        <p>{m.sentAt} : {m.author.displayName} : {m.msgTxt}</p>
+        <p> {m.author.displayName} : {m.msgTxt}</p>
     {/each}
     <button on:click={getEarlierMsgs}>Get earlier</button>
 </div>

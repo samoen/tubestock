@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     updateThem()
-    ServerState.broadcastEveryoneWorld()
+    ServerState.broadcastTubersUpdated()
 
     return json({ good: true });
 };

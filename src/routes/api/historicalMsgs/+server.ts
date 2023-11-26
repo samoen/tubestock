@@ -10,7 +10,7 @@ export const POST: RequestHandler = async (event) => {
     const requestJson = await event.request.json()
     const parsed = Utils.historicalMsgsRequestSchema.parse(requestJson)
     
-    const got = await ServerState.messagesToClient(parsed.startAtTime)
+    const got = await ServerState.dbgetMessagesWithUsers(parsed.startAtTime)
 
     const resp : Utils.ChatMsgsResponse = {
         msgs:got

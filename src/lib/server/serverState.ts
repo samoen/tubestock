@@ -151,45 +151,20 @@ function removeClosedConnections() {
 	state.usersInMemory = state.usersInMemory.filter(u => u.con)
 }
 
-export async function broadcastEveryoneWorld() {
-	const usrsOnClient = await betterUsersOnServerToClient()
+export async function broadcastTubersUpdated() {
+	const allTubers = await dbGetAllTubers()
+	const allPosesWithRetVals = await getPositionsWithRetVals()
 	for (const memUser of state.usersInMemory) {
 		if (!memUser.con) continue
-		const dbUser = await dbGetUserByPrimaryKey(memUser.dbId)
-		if (!dbUser) continue
-		const poses = await dbGetPositionsForUser(dbUser.id)
-		const allTubers = await dbGetAllTubers()
-		const msgsOnClient = await messagesToClient('latest')
-		const posesOnClient = await positionArrayToPosWithReturnValArray(poses)
+		const posesForThisUser = allPosesWithRetVals.filter(p=>p.id == memUser.dbId)
 		const worldEvent: Utils.WorldEvent = {
 			tubers: allTubers,
-			positions: posesOnClient,
-			msgs: msgsOnClient,
-			users: usrsOnClient,
-			yourIdleStock: dbUser.idleStock,
-			yourPrivateId: dbUser.secret,
-			yourName: dbUser.displayName,
+			positions: posesForThisUser,
 		}
 		sendToUser(memUser, 'world', worldEvent)
 	}
 	removeClosedConnections()
 }
-
-export async function messagesToClient(startAtTime: number | 'latest', offset: number = 0) : Promise<Utils.ChatMsgOnClient[]> {
-	// const msgs = await dbGetAllMsgs()
-	const msgsWithUsr = await dbgetMessagesWithUsers(startAtTime, offset)
-	// const msgsOnClient = msgsWithUsr.map(m => {
-	// 	const cMsg: Utils.ChatMsgOnClient = {
-	// 		msgId: m.msg.id,
-	// 		msgTxt: m.msg.msgTxt,
-	// 		fromUserName: m.usr.displayName,
-	// 		sentAt: m.msg.sentAt,
-	// 	}
-	// 	return cMsg
-	// })
-	return msgsWithUsr
-}
-
 
 
 
@@ -333,6 +308,35 @@ export async function dbGetPositionsForUser(usrPrimKey: number): Promise<Schema.
 
 }
 
+export async function getPositionsWithRetVals():Promise<Utils.PositionInClient[]>{
+	let selected = await db.query.positions.findMany({
+		
+		with:{
+			forTuber:true
+		}
+	})
+	const posesInClient : Utils.PositionInClient[] = []
+	for(const sel of selected){
+		const retVal = fastCalcRetVal(
+			sel.forTuber.count,
+			sel.subsAtStart,
+			sel.amount,
+			sel.long
+		)
+
+		const p : Utils.PositionInClient = {
+			id:sel.id,
+			amount:sel.amount,
+			long:sel.long,
+			tuberName:sel.forTuber.channelName,
+			subsAtStart:sel.subsAtStart,
+			returnValue:retVal,
+		}
+		posesInClient.push(p)
+	}
+	return posesInClient
+}
+
 export async function dbGetAllTubers(): Promise<Schema.DbTuber[]> {
 	return db.query.tubers.findMany()
 }
@@ -405,12 +409,14 @@ export async function dbInsertPosition(posCreate: Schema.InsertDbPosition): Prom
 	return dbPos
 }
 
-export async function dbgetMessagesWithUsers(startAtTime: number | 'latest', offset: number = 0) : Promise<Utils.ChatMsgOnClient[]> {
-	let strtat : number = new Date().getTime()
+export async function dbgetMessagesWithUsers(startAtTime: number | 'latest') : Promise<Utils.ChatMsgOnClient[]> {
+	let strtat : number | undefined
 	if(startAtTime != 'latest'){
 		strtat = startAtTime
-		// qBuild.
+	}else{
+		strtat = new Date().getTime()
 	}
+	const numStrtAt : number = strtat
 	const sel = await db.query.chatMessages.findMany({
 		columns:{
 			id:true,
@@ -426,7 +432,7 @@ export async function dbgetMessagesWithUsers(startAtTime: number | 'latest', off
 				}
 			}
 		},
-		where:(table, clause) => clause.lt(table.sentAt, strtat),
+		where:(table, clause) => clause.lt(table.sentAt, numStrtAt),
 		orderBy: [desc(Schema.chatMessages.sentAt)],
 		limit:5,
 	})
