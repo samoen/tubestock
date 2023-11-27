@@ -72,6 +72,7 @@ export const GET: Kit.RequestHandler = async (event) => {
 				world.yourIdleStock=constFoundUser.idleStock
 				world.yourName=constFoundUser.displayName
 				world.yourPrivateId=constFoundUser.secret
+				world.positions=[]
 			}
 			// send at least an empty event to open their EventSource
 			ServerState.sendToUser(newMemUsr,'world',world)

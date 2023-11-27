@@ -452,3 +452,41 @@ export async function dbInsertMsg(msg: Schema.InsertDbChatMsg): Promise<Schema.D
 	if (!fInserted) throw Kit.error(500, 'failed to insert chat message')
 	return fInserted
 }
+
+export async function dbGetInvites(forUserId:number){
+	const res = await db.query.roomInvites.findMany({
+        where:eq(Schema.roomInvites.userfk,forUserId),
+        columns:{
+            id:true,
+            joined:true,
+			userfk:true,
+        },
+        with:{
+            toRoom:{
+                columns:{
+					id:true,
+                    roomName:true,
+					ownerId:true,
+                },
+				with:{
+					msgs:{
+						columns:{
+							id:true,
+							msgTxt:true,
+							sentAt:true,
+
+						},
+						with:{
+							author:{
+								columns:{
+									displayName:true
+								}
+							}
+						}
+					},
+				}
+            }
+        }
+    })
+	return res
+}

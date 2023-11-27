@@ -25,9 +25,21 @@ export type RestoreRequest = z.infer<typeof restoreRequestSchema>
 
 
 export const sendMsgRequestSchema = z.object({
-    msgTxt: safeString
+    msgTxt: safeString,
+    toRoomId:z.number().optional(),
 })
 export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
+
+export const createRoomRequestSchema = z.object({
+    roomName: safeString
+})
+export type CreateRoomRequest = z.infer<typeof createRoomRequestSchema>
+
+export const inviteToRoomRequestSchema = z.object({
+    userToInviteId: z.number(),
+    roomId:z.number()
+})
+export type InviteToRoomRequest = z.infer<typeof inviteToRoomRequestSchema>
 
 export const chatMsgOnClientSchema = z.object({
     id:z.number(),
@@ -41,10 +53,16 @@ export const chatMsgOnClientSchema = z.object({
 export type ChatMsgOnClient = z.infer<typeof chatMsgOnClientSchema>
 
 export const chatMsgsResponseSchema = z.object({
-    // yourName:z.string(),
     msgs: z.array(chatMsgOnClientSchema)
 })
 export type ChatMsgsResponse = z.infer<typeof chatMsgsResponseSchema>
+
+export const addMsgEventSchema = z.object({
+    msg: chatMsgOnClientSchema,
+    roomId: z.number().optional(),
+})
+export type AddMsgEvent = z.infer<typeof addMsgEventSchema>
+
 
 export const historicalMsgsRequestSchema = z.object({
     startAtTime:z.number(),
@@ -103,6 +121,19 @@ export const positionInClientSchema = z.object({
 })
 export type PositionInClient = z.infer<typeof positionInClientSchema>
 
+export const inviteOnClientSchema = z.object({
+    id:z.number(),
+    toRoom:z.object({
+        id:z.number(),
+        roomName:z.string(),
+        ownerId:z.number(),
+        msgs:z.array(chatMsgOnClientSchema)
+    }),
+    joined:z.boolean(),
+    userfk:z.number(),
+})
+export type InviteOnClient = z.infer<typeof inviteOnClientSchema>
+
 
 export const exitPositionResponseSchema = z.object({
     idleStock: z.number(),
@@ -154,9 +185,12 @@ export const worldEventSchema = z.object({
     tubers: z.array(tuberInClientSchema).optional(),
     msgs: z.array(chatMsgOnClientSchema).optional(),
     positions: z.array(positionInClientSchema).optional(),
+    // joinedRooms: z.array(inviteOnClientSchema).optional(),
+    roomInvites: z.array(inviteOnClientSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),
     yourPrivateId: z.string().optional(),
+    yourDbId: z.number().optional(),
 })
 export type WorldEvent = z.infer<typeof worldEventSchema>
 
@@ -170,17 +204,17 @@ export type WorldEvent = z.infer<typeof worldEventSchema>
 //     userId?: string;
 // };
 
-export const dataFirstLoadSchema = z.object({
-    users: z.array(otherUserOnClientSchema),
-    tubers: z.array(tuberInClientSchema),
-    msgs: z.array(chatMsgOnClientSchema),
-    positions: z.array(positionInClientSchema).optional(),
-    yourName: z.string().optional(),
-    yourIdleStock: z.number().optional(),
-    yourPrivateId: z.string().optional(),
-})
+// export const dataFirstLoadSchema = z.object({
+//     users: z.array(otherUserOnClientSchema),
+//     tubers: z.array(tuberInClientSchema),
+//     msgs: z.array(chatMsgOnClientSchema),
+//     positions: z.array(positionInClientSchema).optional(),
+//     yourName: z.string().optional(),
+//     yourIdleStock: z.number().optional(),
+//     yourPrivateId: z.string().optional(),
+// })
 
-export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
+// export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
 
 export type SamResult<T> = {
     failed:false

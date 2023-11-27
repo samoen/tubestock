@@ -15,6 +15,7 @@ export type InsertAppUser = typeof appusers.$inferInsert
 export const usersRelations = relations(appusers, ({ many }) => ({
 	msgs: many(chatMessages),
   positions:many(positions),
+  invites:many(roomInvites),
 }));
 
 export const tubers = pgTable("tubers", {
@@ -42,6 +43,61 @@ export const msgsRelations = relations(chatMessages, ({ one }) => ({
 
 export type DbChatMsg = typeof chatMessages.$inferSelect
 export type InsertDbChatMsg = typeof chatMessages.$inferInsert
+
+export const privateMessages = pgTable("private_msgs", {
+  id: serial("id").primaryKey(),
+  userfk:integer('user_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull(),
+  roomfk:integer('room_id').references(()=>privateRooms.id,{onDelete:'cascade'}).notNull(),
+  msgTxt: text("msg_txt").notNull(),
+  sentAt:bigint('sent_at',{mode:"number"}).notNull(),
+});
+export const privateMsgRelations = relations(privateMessages, ({ one }) => ({
+  author: one(appusers, {
+    fields: [privateMessages.userfk],
+		references: [appusers.id],
+	}),
+  room: one(privateRooms, {
+    fields: [privateMessages.roomfk],
+		references: [privateRooms.id],
+	}),
+}));
+export type DbPrivateMsg = typeof privateMessages.$inferSelect
+export type InsertPrivateMsg = typeof privateMessages.$inferInsert
+
+
+export const privateRooms = pgTable("private_rooms",{
+  id: serial('id').primaryKey(),
+  roomName: text('room_name').notNull(),
+  ownerId:integer('owner_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull()
+})
+export const privateRoomRelations = relations(privateRooms,  ({ one,many }) => ({
+  owner: one(appusers, {
+    fields: [privateRooms.ownerId],
+		references: [appusers.id],
+	}),
+  msgs: many(privateMessages)
+}));
+export type DbPrivateRoom = typeof privateRooms.$inferSelect
+export type InsertPrivateRoom = typeof privateRooms.$inferInsert
+
+export const roomInvites = pgTable("room_invites",{
+  id:serial('id').primaryKey(),
+  userfk:integer('user_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull(),
+  roomfk:integer('room_id').references(()=>privateRooms.id,{onDelete:'cascade'}).notNull(),
+  joined:boolean('joined').notNull(),
+})
+export type DbRoomInvite = typeof roomInvites.$inferSelect
+export type InsertRoomInvite = typeof roomInvites.$inferInsert
+export const roomInviteRelations = relations(roomInvites,  ({ one }) => ({
+  forUser: one(appusers, {
+    fields: [roomInvites.userfk],
+		references: [appusers.id],
+	}),
+  toRoom: one(privateRooms, {
+    fields: [roomInvites.roomfk],
+		references: [privateRooms.id],
+	}),
+}));
 
 export const positions = pgTable("positions", {
   id: serial("id").primaryKey().unique(),

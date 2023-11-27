@@ -2,22 +2,15 @@
     import * as ClientState from "$lib/client/clientState.svelte";
     import * as Utils from "$lib/utils";
 
-    let { data } = $props<{ data: Utils.DataFirstLoad }>();
+    let { data } = $props<{ data: Utils.WorldEvent }>();
     let windowScrollY = $state(0);
     let atTop = $derived(windowScrollY < 35);
     if(data.yourName){
         console.log(`init layout with existing user ${data.yourName}`);
     }
+    ClientState.getAppState()
+    ClientState.receiveWorldEvent(data)
 
-    ClientState.getAppState().update((s) => {
-        s.chatMsgs = data.msgs;
-        s.userList = data.users;
-        s.positionsList = data.positions;
-        s.tuberList = data.tubers;
-        s.myUsername = data.yourName;
-        s.myIdleStock = data.yourIdleStock;
-        s.myPrivateId = data.yourPrivateId;
-    });
 </script>
 
 <svelte:window bind:scrollY={windowScrollY} />

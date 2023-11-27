@@ -3,16 +3,15 @@
     import type { SamResult } from "$lib/utils";
     type Props = {
         buttonLabel: string;
-        coolfire?: (...args: any[]) => Promise<SamResult<unknown>>;
-        inputType?: "text" | "number";
-        things?: InputShape[];
+        onSubmit?: (...args: any[]) => Promise<SamResult<unknown>>;
+        inputs?: InputShape[];
     };
     type InputShape = {
         itype: "text" | "number" | "checkbox";
         placeHold?: string;
     };
 
-    let { buttonLabel, inputType, things, coolfire } = $props<Props>();
+    let { buttonLabel, inputs: things, onSubmit: coolfire } = $props<Props>();
 
     let meLoad = $state(false);
     let errTxt = $state("");

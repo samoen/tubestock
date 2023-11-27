@@ -12,17 +12,18 @@ export type ClientAppState = {
     chatMsgs: Utils.ChatMsgOnClient[];
     userList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
+    roomInvites:Utils.InviteOnClient[];
+    displayingRooms:number[];
     positionsList: Utils.PositionInClient[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
     myPrivateId: string | undefined;
+    myDbId:number|undefined;
     selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
 }
 
-let appState: ReturnType<typeof stateFactory>;
-export const getAppState = () => appState ?? (appState = stateFactory());
 const stateFactory = () => {
     const as: ClientAppState = {
         source: undefined,
@@ -30,9 +31,13 @@ const stateFactory = () => {
         userList: [],
         positionsList: undefined,
         tuberList: [],
+        roomInvites:[],
+        displayingRooms:[],
+        // joinedRooms:[],
         myUsername: undefined,
         myIdleStock: undefined,
         myPrivateId: undefined,
+        myDbId:undefined,
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
@@ -54,6 +59,24 @@ const stateFactory = () => {
     };
 };
 
+
+// export const getAppState = () => appState ?? (appState = stateFactory());
+export function getAppState(){
+    if(appState)return appState
+    appState = stateFactory()
+    return appState;
+}
+let appState: ReturnType<typeof stateFactory>;
+
+export function showDisplayingRooms() : Utils.InviteOnClient[]{
+    let result : Utils.InviteOnClient[] = []
+    for(const r of appState.value.displayingRooms){
+        const found = appState.value.roomInvites.findLast(f=>f.id == r)
+        if(!found)continue
+        result.push(found)
+    }
+    return result
+}
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
     const toSend: Utils.SetNameRequest = {
@@ -115,14 +138,16 @@ export async function subscribe() {
 
     appState.value.source.addEventListener("chatmsg", (ev) => {
         console.log("got chatmsg event");
-        const parsed = Utils.chatMsgsResponseSchema.safeParse(
+        const parsed = Utils.addMsgEventSchema.safeParse(
             JSON.parse(ev.data)
         );
         if (!parsed.success) {
             console.log("bad update from server");
             return;
         }
-        appState.value.chatMsgs.unshift(...parsed.data.msgs)
+        if(!parsed.data.roomId){
+            appState.value.chatMsgs.unshift(parsed.data.msg)
+        }
         appState.dirty()
     });
 
@@ -146,28 +171,7 @@ export async function subscribe() {
             console.log("bad world update from server");
             return;
         }
-        if (parsed.data.users) {
-            appState.value.userList = parsed.data.users;
-        }
-        if (parsed.data.tubers) {
-            appState.value.tuberList = parsed.data.tubers;
-        }
-        if (parsed.data.msgs) {
-            appState.value.chatMsgs = parsed.data.msgs;
-        }
-        if (parsed.data.positions) {
-            appState.value.positionsList = parsed.data.positions;
-        }
-        if (parsed.data.yourName) {
-            appState.value.myUsername = parsed.data.yourName;
-        }
-        if (parsed.data.yourIdleStock !== undefined) {
-            appState.value.myIdleStock = parsed.data.yourIdleStock;
-        }
-        if (parsed.data.yourPrivateId !== undefined) {
-            appState.value.myPrivateId = parsed.data.yourPrivateId;
-        }
-        appState.dirty()
+        receiveWorldEvent(parsed.data)
     });
 
     appState.value.source.addEventListener("tuberAdded", (e) => {
@@ -180,15 +184,53 @@ export async function subscribe() {
         appState.dirty()
     });
 }
+
+export function receiveWorldEvent(we:Utils.WorldEvent){
+    if (we.users) {
+        appState.value.userList = we.users;
+    }
+    if (we.tubers) {
+        appState.value.tuberList = we.tubers;
+    }
+    if (we.msgs) {
+        appState.value.chatMsgs = we.msgs;
+    }
+    if (we.positions) {
+        appState.value.positionsList = we.positions;
+    }
+    if (we.roomInvites) {
+        appState.value.roomInvites = we.roomInvites;
+    }
+    // if (parsed.data.joinedRooms) {
+    //     appState.value.joinedRooms = parsed.data.joinedRooms;
+    // }
+    if (we.yourName) {
+        appState.value.myUsername = we.yourName;
+    }
+    if (we.yourIdleStock !== undefined) {
+        appState.value.myIdleStock = we.yourIdleStock;
+    }
+    if (we.yourPrivateId !== undefined) {
+        appState.value.myPrivateId = we.yourPrivateId;
+    }
+    if (we.yourDbId !== undefined) {
+        appState.value.myDbId = we.yourDbId;
+    }
+    appState.dirty()
+}
+
 export function manualSourceError() {
     appState.value.source?.dispatchEvent(new Event("error"));
 }
 
 
-export async function sendMsg(chatInputTxt: string) : Promise<Utils.SamResult<{}>> {
+export async function sendMsg(chatInputTxt: string, toRoom:number|undefined = undefined) : Promise<Utils.SamResult<{}>> {
     const toSend: Utils.SendMsgRequest = {
         msgTxt: chatInputTxt,
     };
+    if(toRoom != undefined){
+        toSend.toRoomId = toRoom
+    }
     let r = await hitEndpoint("sendMsg", toSend, Utils.emptyObject);
     return r
 }
@@ -228,7 +270,7 @@ export async function putStock(channelId: string, amt: number, long: boolean) : 
     return resp
 }
 
-export async function exitPosition(positionId: number) {
+export async function exitPosition(positionId: number) : Promise< Utils.SamResult<Utils.ExitPositionResponse>> {
     const toSend: Utils.ExitPositionRequest = {
         positionId: positionId,
     };
@@ -237,11 +279,12 @@ export async function exitPosition(positionId: number) {
         toSend,
         Utils.exitPositionResponseSchema
     );
-    if (fSafe.failed) return;
+    if (fSafe.failed) return fSafe;
 
     appState.value.myIdleStock = fSafe.value.idleStock;
     appState.value.positionsList = fSafe.value.positions;
     appState.dirty()
+    return fSafe
 }
 
 export async function restoreUser(pId:string,displayName: string) : Promise<Utils.SamResult<{}>> {

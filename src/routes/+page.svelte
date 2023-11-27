@@ -1,5 +1,4 @@
 <script lang="ts">
-
     import * as Svelte from "svelte";
     import * as Utils from "$lib/utils";
     import * as ClientState from "$lib/client/clientState.svelte";
@@ -22,13 +21,13 @@
         if (appState.value.myIdleStock == undefined) return undefined;
         return calcNetWorth(
             appState.value.myIdleStock,
-            appState.value.positionsList || []
+            appState.value.positionsList || [],
         );
     }
 
     function calcNetWorth(
         idle: number,
-        positions: Utils.PositionInClient[]
+        positions: Utils.PositionInClient[],
     ): number | undefined {
         let res: number = idle;
         for (const pos of positions) {
@@ -38,69 +37,108 @@
     }
     async function placeStockClicked(
         inTxt: string,
-        short: string
+        short: string,
     ): Promise<Utils.SamResult<{}>> {
         if (!appState.value.selectedTuber)
             return { failed: true, error: new Error("no tuber selected") };
         const intVal = Number.parseInt(inTxt);
         if (!intVal) {
-            return { failed: true, error: new Error("Must be number greater than 0") };
+            return {
+                failed: true,
+                error: new Error("Must be number greater than 0"),
+            };
         }
         const shortBool = short == "true" ? true : false;
         // putStockLoading = true;
         const r = await ClientState.putStock(
             appState.value.selectedTuber.channelId,
             intVal,
-            !shortBool
+            !shortBool,
         );
         // putStockLoading = false;
         return r;
     }
 
-    let exitPositionLoading = $state(false);
-    async function exitPositionClicked(positionId: number) {
-        exitPositionLoading = true;
-        await ClientState.exitPosition(positionId);
-        exitPositionLoading = false;
+    async function inviteToRoomClicked(
+        userIdToInvite: number,
+        roomIdToInviteTo: number,
+    ): Promise<Utils.SamResult<{}>> {
+        // putStockLoading = true;
+        const toSend: Utils.InviteToRoomRequest = {
+            roomId: roomIdToInviteTo,
+            userToInviteId: userIdToInvite,
+        };
+        const r = await ClientState.hitEndpoint(
+            "inviteToRoom",
+            toSend,
+            Utils.emptyObject,
+        );
+        // putStockLoading = false;
+        return r;
     }
+
+    // let exitPositionLoading = $state(false);
+    // async function exitPositionClicked(positionId: number) {
+    //     exitPositionLoading = true;
+    //     const r = await ClientState.exitPosition(positionId);
+    //     exitPositionLoading = false;
+    //     return r
+    // }
 
     async function restoreClicked(
         pIdTxt: string,
-        nameTxt: string
+        nameTxt: string,
     ): Promise<Utils.SamResult<{}>> {
         let r = await ClientState.restoreUser(pIdTxt, nameTxt);
         return r;
     }
-    async function gogo(){
-        ClientState.hitEndpoint('rando',{},Utils.emptyObject)
+    async function gogo() {
+        ClientState.hitEndpoint("rando", {}, Utils.emptyObject);
     }
-    async function getEarlierMsgs(){
-        const oldestMsg = appState.value.chatMsgs.reduce(
-            (oldest, current) => {
+    async function getEarlierMsgs() {
+        const oldestMsg = appState.value.chatMsgs.reduce((oldest, current) => {
             return current.sentAt < oldest.sentAt ? current : oldest;
-            },
-            appState.value.chatMsgs[0]
-        );
-        const toSend : Utils.HistoricalMsgsRequest = {
+        }, appState.value.chatMsgs[0]);
+        const toSend: Utils.HistoricalMsgsRequest = {
             startAtTime: oldestMsg.sentAt,
-            offset:0,
+            offset: 0,
+        };
+        const resp = await ClientState.hitEndpoint(
+            "historicalMsgs",
+            toSend,
+            Utils.chatMsgsResponseSchema,
+        );
+        if (resp.failed) {
+            console.log("bad get historical resp format");
+            return;
+        }
+        console.log("got earlier " + JSON.stringify(resp.value.msgs));
+        appState.value.chatMsgs.push(...resp.value.msgs);
+        appState.dirty();
+    }
 
+    async function addRoom(inputTxt: string) {
+        const toSend: Utils.CreateRoomRequest = {
+            roomName: inputTxt,
+        };
+        const resp = await ClientState.hitEndpoint(
+            "createRoom",
+            toSend,
+            Utils.worldEventSchema,
+        );
+        if (resp.failed) return resp;
+        if (resp.value.roomInvites) {
+            appState.value.roomInvites = resp.value.roomInvites;
         }
-        const resp = await ClientState.hitEndpoint('historicalMsgs',toSend,Utils.chatMsgsResponseSchema)
-        if(resp.failed){
-            console.log('bad get historical resp format')
-            return
-        }
-        console.log('got earlier ' + JSON.stringify(resp.value.msgs))
-        appState.value.chatMsgs.push(...resp.value.msgs)
-        appState.dirty()
+        appState.dirty();
+        return resp;
     }
 </script>
 
 <button
     on:click={async () => {
         console.log("dev");
-        gogo()
+        gogo();
     }}>dev</button
 >
 {#if !appState.value.subscribing && (!appState.value.source || appState.value.source.readyState == 2)}
@@ -119,14 +157,14 @@
 <!-- fire={ClientState.setName}  -->
 <SimpleForm
     buttonLabel="Update Display Name"
-    coolfire={ClientState.setName}
-    things={[{ itype: "text", placeHold: "name" }]}
+    onSubmit={ClientState.setName}
+    inputs={[{ itype: "text", placeHold: "name" }]}
 />
 <br />
 <SimpleForm
     buttonLabel="Restore Session"
-    coolfire={restoreClicked}
-    things={[
+    onSubmit={restoreClicked}
+    inputs={[
         { itype: "text", placeHold: "id" },
         { itype: "text", placeHold: "name" },
     ]}
@@ -135,17 +173,68 @@
 <button on:click={ClientState.deleteUser}>delete user</button>
 <br />
 <br />
-<h3>Chat</h3>
+<h3>Rooms</h3>
+<SimpleForm
+    buttonLabel="Add Room"
+    inputs={[{ itype: "text" }]}
+    onSubmit={addRoom}
+></SimpleForm>
+<h3>Invites</h3>
+<div class="msgs">
+    {#each appState.value.roomInvites as i (i.id)}
+        <div>
+            <span> {i.toRoom.roomName}</span>
+            {#if i.joined}
+                <button
+                    on:click={() => {
+                        if (!appState.value.displayingRooms.includes(i.id)) {
+                            appState.value.displayingRooms.push(i.id);
+                            appState.dirty();
+                        }
+                    }}>show</button
+                >
+            {:else}
+                <button>join</button>
+            {/if}
+        </div>
+    {/each}
+</div>
+<h3>Private Chats</h3>
+{#each ClientState.showDisplayingRooms() as d}
+    <button
+        on:click={() => {
+            appState.value.displayingRooms =
+                appState.value.displayingRooms.filter((r) => r != d.id);
+            appState.dirty();
+        }}>x</button
+    >
+    <h4>{d.toRoom.roomName}</h4>
+    <div class="msgs">
+        {#each d.toRoom.msgs as m (m.id)}
+            <p>{m.author.displayName} : {m.msgTxt}</p>
+        {/each}
+    </div>
+    <SimpleForm
+        buttonLabel="Send"
+        onSubmit={async (msgTxt) => {
+            return await ClientState.sendMsg(msgTxt, d.toRoom.id);
+        }}
+        inputs={[{ itype: "text" }]}
+    />
+{/each}
+<h3>Public Chat</h3>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
-        <p> {m.author.displayName} : {m.msgTxt}</p>
+        <p>{m.author.displayName} : {m.msgTxt}</p>
     {/each}
     <button on:click={getEarlierMsgs}>Get earlier</button>
 </div>
 <SimpleForm
     buttonLabel="Send"
-    coolfire={ClientState.sendMsg}
-    things={[{ itype: "text" }]}
+    onSubmit={async (msgTxt) => {
+        return await ClientState.sendMsg(msgTxt);
+    }}
+    inputs={[{ itype: "text" }]}
 />
 <br />
 <br />
@@ -166,24 +255,40 @@
 </div>
 {#if appState.value.selectedUser}
     <h4>
-        {appState.value.selectedUser.displayName} : {calcNetWorth(appState.value.selectedUser.idleStock,
-            appState.value.selectedUser.positions
+        {appState.value.selectedUser.displayName} : {calcNetWorth(
+            appState.value.selectedUser.idleStock,
+            appState.value.selectedUser.positions,
         )}
     </h4>
     {#each appState.value.selectedUser.positions as p (p.id)}
         <p>
-            {p.tuberName} : {p.long
-                ? "(long)"
-                : "(short)"} : value {p.returnValue}
+            {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
         </p>
+    {/each}
+    {#each appState.value.roomInvites.filter((i) => i.userfk == appState.value.myDbId) as i}
+        <SimpleForm
+            buttonLabel={`Invite to ${i.toRoom.roomName}`}
+            onSubmit={async () => {
+                if (!appState.value.selectedUser) {
+                    return {
+                        failed: true,
+                        error: new Error("huh"),
+                    };
+                }
+                return await inviteToRoomClicked(
+                    appState.value.selectedUser.id,
+                    i.toRoom.id,
+                );
+            }}
+        ></SimpleForm>
     {/each}
 {/if}
 <br />
 <h3>Tubers</h3>
 <SimpleForm
     buttonLabel="Search"
-    coolfire={ClientState.requestTuber}
-    things={[{ itype: "text" }]}
+    onSubmit={ClientState.requestTuber}
+    inputs={[{ itype: "text" }]}
 />
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
@@ -207,9 +312,8 @@
     <h3>{appState.value.selectedTuber.channelName}</h3>
     <SimpleForm
         buttonLabel="Place stock"
-        coolfire={placeStockClicked}
-        inputType="number"
-        things={[
+        onSubmit={placeStockClicked}
+        inputs={[
             { itype: "number" },
             { itype: "checkbox", placeHold: "short" },
         ]}
@@ -225,14 +329,20 @@
                         ? "(long)"
                         : "(short)"} : returns {p.returnValue}
                 </span>
-                <button
-                    class="itemButton red"
+                <!-- class="itemButton red" -->
+                <SimpleForm
+                    buttonLabel="exit"
+                    onSubmit={async () => {
+                        return await ClientState.exitPosition(p.id);
+                    }}
+                ></SimpleForm>
+                <!-- <button
                     type="button"
                     disabled={exitPositionLoading}
                     on:click={() => {
                         exitPositionClicked(p.id);
                     }}>Exit</button
-                >
+                > -->
             </div>
         {/each}
     </div>
