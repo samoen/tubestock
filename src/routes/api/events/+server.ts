@@ -3,6 +3,7 @@ import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'
 import * as Schema from '$lib/server/schema';
+import { eq } from 'drizzle-orm';
 
 export const GET: Kit.RequestHandler = async (event) => {
 	await ServerState.fakeLatency()
@@ -21,20 +22,24 @@ export const GET: Kit.RequestHandler = async (event) => {
 		userCreated = true
 		let genSecret = Uuid.v4()
 		let genGuestName = 'Guest'
-		// for (let num = 1; num < 100; num++) {
-		// 	const nameTaken = ServerState.state.usersInDb.some((p) => p.displayName == `Guest${num}`);
-		// 	if (!nameTaken) {
-		// 		usernameCookie = `Guest${num}`;
-		// 		break;
-		// 	}
-		// }
 		const usrCreate: Schema.InsertAppUser = {
 			secret: genSecret,
 			displayName: genGuestName,
 			idleStock:100,
 		}
 
-		foundDbUser = await ServerState.dbInsertUser(usrCreate)
+		const inserted = await ServerState.dbInsertUser(usrCreate)
+		const updateds = await ServerState.db
+			.update(Schema.appusers)
+			.set({displayName:`Guest${inserted.id}`})
+			.where(eq(Schema.appusers.id,inserted.id))
+			.returning()
+		
+		const updated = updateds.at(0)
+		if(!updated)throw Kit.error(500,'failed to create user')
+		foundDbUser = updated
+
+
 		event.cookies.set('uid', foundDbUser.secret, { path: '/', secure: false });
 		event.cookies.set('username', foundDbUser.displayName, { path: '/', secure: false });
 	}
@@ -69,9 +74,11 @@ export const GET: Kit.RequestHandler = async (event) => {
 			ServerState.state.usersInMemory.push(newMemUsr)
 			let world : Utils.WorldEvent = {}
 			if(userCreated){
+				// If the user already existed on page load they already have this info
 				world.yourIdleStock=constFoundUser.idleStock
 				world.yourName=constFoundUser.displayName
 				world.yourPrivateId=constFoundUser.secret
+				world.yourDbId = constFoundUser.id
 				world.positions=[]
 			}
 			// send at least an empty event to open their EventSource

@@ -453,8 +453,8 @@ export async function dbInsertMsg(msg: Schema.InsertDbChatMsg): Promise<Schema.D
 	return fInserted
 }
 
-export async function dbGetInvites(forUserId:number){
-	const res = await db.query.roomInvites.findMany({
+export async function dbGetInvites(forUserId:number) : Promise<Utils.InviteOnClient[]>{
+	const res : Utils.InviteOnClient[] = await db.query.roomInvites.findMany({
         where:eq(Schema.roomInvites.userfk,forUserId),
         columns:{
             id:true,
@@ -485,6 +485,19 @@ export async function dbGetInvites(forUserId:number){
 						},
 						orderBy: [desc(Schema.privateMessages.sentAt)],
 					},
+					invites:{
+						columns:{
+							joined:true
+						},
+						with:{
+							forUser:{
+								columns:{
+									id:true,
+									displayName:true,
+								}
+							}
+						}		
+					}
 				}
             }
         }

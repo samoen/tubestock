@@ -63,7 +63,6 @@
         userIdToInvite: number,
         roomIdToInviteTo: number,
     ): Promise<Utils.SamResult<{}>> {
-        // putStockLoading = true;
         const toSend: Utils.InviteToRoomRequest = {
             roomId: roomIdToInviteTo,
             userToInviteId: userIdToInvite,
@@ -73,17 +72,8 @@
             toSend,
             Utils.emptyObject,
         );
-        // putStockLoading = false;
         return r;
     }
-
-    // let exitPositionLoading = $state(false);
-    // async function exitPositionClicked(positionId: number) {
-    //     exitPositionLoading = true;
-    //     const r = await ClientState.exitPosition(positionId);
-    //     exitPositionLoading = false;
-    //     return r
-    // }
 
     async function restoreClicked(
         pIdTxt: string,
@@ -127,15 +117,13 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        if (resp.value.roomInvites) {
-            appState.value.roomInvites = resp.value.roomInvites;
-        }
-        appState.dirty();
+        ClientState.receiveWorldEvent(resp.value)
         return resp;
     }
-    async function joinRoom(roomId:number){
+    async function joinRoom(roomId:number,leave:boolean=false){
         const toSend: Utils.JoinRoomRequest = {
             roomIdToJoin: roomId,
+            leave:leave,
         };
         const resp = await ClientState.hitEndpoint(
             "joinRoom",
@@ -144,10 +132,21 @@
         );
         if (resp.failed) return resp;
         ClientState.receiveWorldEvent(resp.value)
-        // if (resp.value.roomInvites) {
-        //     appState.value.roomInvites = resp.value.roomInvites;
-        // }
-        // appState.dirty()
+        return resp
+    }
+    async function kickUser(roomId:number,userId:number){
+        const toSend: Utils.InviteToRoomRequest = {
+            roomId:roomId,
+            userToInviteId:userId,
+            kick:true,
+        };
+        const resp = await ClientState.hitEndpoint(
+            "inviteToRoom",
+            toSend,
+            Utils.worldEventSchema,
+        );
+        if (resp.failed) return resp;
+        ClientState.receiveWorldEvent(resp.value)
         return resp
     }
 </script>
@@ -187,12 +186,12 @@
     ]}
 />
 <br />
-<button on:click={ClientState.deleteUser}>delete user</button>
+<button type='button' on:click={ClientState.deleteUser}>delete user</button>
 <br />
 <br />
 <h3>Rooms</h3>
 <SimpleForm
-    buttonLabel="Add Room"
+    buttonLabel="Create Room"
     inputs={[{ itype: "text" }]}
     onSubmit={createRoom}
 ></SimpleForm>
@@ -203,13 +202,18 @@
             <span> {i.toRoom.roomName}</span>
             {#if i.joined}
                 <button
+                    type='button'
+                    class="itemButton"
                     on:click={() => {
-                        if (!appState.value.displayingRooms.includes(i.id)) {
-                            appState.value.displayingRooms.push(i.id);
+                        if (!appState.value.displayingInvites.includes(i.id)) {
+                            appState.value.displayingInvites.push(i.id);
                             appState.dirty();
                         }
                     }}>show</button
                 >
+                <SimpleForm buttonLabel="leave" onSubmit={async()=>{
+                    return await joinRoom(i.toRoom.id,true)
+                }}></SimpleForm>
             {:else}
                 <SimpleForm buttonLabel="join" onSubmit={async()=>{
                     return await joinRoom(i.toRoom.id)
@@ -220,15 +224,25 @@
     {/each}
 </div>
 <h3>Private Chats</h3>
-{#each ClientState.showDisplayingRooms() as d}
+{#each ClientState.showDisplayingInvites() as d}
+    <span>{d.toRoom.roomName}</span>
     <button
+        type='button'
+        class='itemButton'
         on:click={() => {
-            appState.value.displayingRooms =
-                appState.value.displayingRooms.filter((r) => r != d.id);
+            appState.value.displayingInvites =
+                appState.value.displayingInvites.filter((r) => r != d.id);
             appState.dirty();
-        }}>x</button
+        }}>hide</button
     >
-    <h4>{d.toRoom.roomName}</h4>
+    {#each d.toRoom.invites as i}
+        <div>
+            <span>{i.forUser.displayName}</span>
+            <SimpleForm buttonLabel='kick' onSubmit={async()=>{
+                return await kickUser(d.toRoom.id,i.forUser.id)
+            }}></SimpleForm>
+        </div>
+    {/each}
     <div class="msgs">
         {#each d.toRoom.msgs as m (m.id)}
             <p>{m.author.displayName} : {m.msgTxt}</p>
@@ -241,13 +255,15 @@
         }}
         inputs={[{ itype: "text" }]}
     />
+    <br/>
+    <br/>
 {/each}
 <h3>Public Chat</h3>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
         <p>{m.author.displayName} : {m.msgTxt}</p>
     {/each}
-    <button on:click={getEarlierMsgs}>Get earlier</button>
+    <button type='button' on:click={getEarlierMsgs}>Get earlier</button>
 </div>
 <SimpleForm
     buttonLabel="Send"
@@ -264,7 +280,8 @@
         <div>
             <span>{u.displayName}</span>
             <button
-                class="itemButton yellow"
+                type='button'
+                class="itemButton"
                 on:click={() => {
                     appState.value.selectedUser = u;
                     appState.dirty();
@@ -285,7 +302,7 @@
             {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
         </p>
     {/each}
-    {#each appState.value.roomInvites.filter((i) => i.toRoom.ownerId == appState.value.myDbId) as i}
+    {#each ClientState.showInvitables() as i}
         <SimpleForm
             buttonLabel={`Invite to ${i.toRoom.roomName}`}
             onSubmit={async () => {
@@ -315,8 +332,8 @@
         <div>
             <span>{t.channelName} : {t.count}</span>
             <button
-                class="itemButton yellow"
                 type="button"
+                class="itemButton"
                 on:click={() => {
                     appState.value.selectedTuber = t;
                     appState.dirty();
@@ -356,13 +373,6 @@
                         return await ClientState.exitPosition(p.id);
                     }}
                 ></SimpleForm>
-                <!-- <button
-                    type="button"
-                    disabled={exitPositionLoading}
-                    on:click={() => {
-                        exitPositionClicked(p.id);
-                    }}>Exit</button
-                > -->
             </div>
         {/each}
     </div>
@@ -404,13 +414,11 @@
         padding-block: 2px;
         cursor: pointer;
         font-weight: bold;
+        background-color: yellow;
     }
     .red {
         background-color: red;
         color: white;
         border-color: white;
-    }
-    .yellow {
-        background-color: yellow;
     }
 </style>

@@ -75,7 +75,8 @@ export const privateRoomRelations = relations(privateRooms,  ({ one,many }) => (
     fields: [privateRooms.ownerId],
 		references: [appusers.id],
 	}),
-  msgs: many(privateMessages)
+  msgs: many(privateMessages),
+  invites:many(roomInvites)
 }));
 export type DbPrivateRoom = typeof privateRooms.$inferSelect
 export type InsertPrivateRoom = typeof privateRooms.$inferInsert

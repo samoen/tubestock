@@ -36,13 +36,15 @@ export const createRoomRequestSchema = z.object({
 export type CreateRoomRequest = z.infer<typeof createRoomRequestSchema>
 
 export const joinRoomRequestSchema = z.object({
-    roomIdToJoin: z.number()
+    roomIdToJoin: z.number(),
+    leave:z.boolean(),
 })
 export type JoinRoomRequest = z.infer<typeof joinRoomRequestSchema>
 
 export const inviteToRoomRequestSchema = z.object({
     userToInviteId: z.number(),
-    roomId:z.number()
+    roomId:z.number(),
+    kick:z.boolean().optional(),
 })
 export type InviteToRoomRequest = z.infer<typeof inviteToRoomRequestSchema>
 
@@ -132,7 +134,16 @@ export const inviteOnClientSchema = z.object({
         id:z.number(),
         roomName:z.string(),
         ownerId:z.number(),
-        msgs:z.array(chatMsgOnClientSchema)
+        msgs:z.array(chatMsgOnClientSchema),
+        invites:z.array(
+            z.object({
+                joined:z.boolean(),
+                forUser:z.object({
+                    id:z.number(),
+                    displayName:z.string()
+                })
+            })
+        ) 
     }),
     joined:z.boolean(),
     userfk:z.number(),

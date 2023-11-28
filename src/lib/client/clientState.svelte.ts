@@ -13,7 +13,7 @@ export type ClientAppState = {
     userList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
     roomInvites:Utils.InviteOnClient[];
-    displayingRooms:number[];
+    displayingInvites:number[];
     positionsList: Utils.PositionInClient[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
@@ -32,7 +32,7 @@ const stateFactory = () => {
         positionsList: undefined,
         tuberList: [],
         roomInvites:[],
-        displayingRooms:[],
+        displayingInvites:[],
         // joinedRooms:[],
         myUsername: undefined,
         myIdleStock: undefined,
@@ -68,14 +68,21 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export function showDisplayingRooms() : Utils.InviteOnClient[]{
+export function showDisplayingInvites() : Utils.InviteOnClient[]{
     let result : Utils.InviteOnClient[] = []
-    for(const r of appState.value.displayingRooms){
+    for(const r of appState.value.displayingInvites){
         const found = appState.value.roomInvites.findLast(f=>f.id == r)
         if(!found)continue
         result.push(found)
     }
     return result
+}
+
+export function showInvitables(){
+    const myId = appState.value.myDbId
+    console.log('recalc invitables. myid is ' + myId + ', my invites are ' + JSON.stringify(appState.value.roomInvites))
+    const i = appState.value.roomInvites.filter((i) => i.toRoom.ownerId == myId)
+    return i
 }
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
@@ -206,9 +213,6 @@ export function receiveWorldEvent(we:Utils.WorldEvent){
     if (we.roomInvites) {
         appState.value.roomInvites = we.roomInvites;
     }
-    // if (parsed.data.joinedRooms) {
-    //     appState.value.joinedRooms = parsed.data.joinedRooms;
-    // }
     if (we.yourName) {
         appState.value.myUsername = we.yourName;
     }

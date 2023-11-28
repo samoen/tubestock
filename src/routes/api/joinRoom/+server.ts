@@ -14,39 +14,25 @@ export const POST: Kit.RequestHandler = async (event) => {
     let p = Utils.joinRoomRequestSchema.parse(j)
 
     const foundInvite = await ServerState.db.query.roomInvites.findFirst({
-        where: and(eq(Schema.roomInvites.roomfk,p.roomIdToJoin),eq(Schema.roomInvites.joined,false))
+        where: and(
+            eq(Schema.roomInvites.userfk,foundUser.id),
+            eq(Schema.roomInvites.roomfk,p.roomIdToJoin),
+        ) 
     })
 
     if(!foundInvite){
-        throw Kit.error(401,'you cant join that room')
+        throw Kit.error(401,'Invite not found')
     }
-
-    // let insertInvite : Schema.Upd = {
-    //     userfk:p.userToInviteId,
-    //     joined:false,
-    //     roomfk:p.roomId
-    // }
 
     let updatedInvite = await ServerState.db
         .update(Schema.roomInvites)
-        .set({joined:true})
+        .set({joined:!p.leave})
         .where(eq(Schema.roomInvites.id,foundInvite.id))
 
-    // const foundUsrInMem = ServerState.state.usersInMemory.findLast(u=>u.dbId == p.userToInviteId)
-    // if(!foundUsrInMem){
-    //     return Kit.json({})
-    // }
     const cInvites = await ServerState.dbGetInvites(foundUser.id)
     const worldToSend : Utils.WorldEvent = {
         roomInvites: cInvites
     }
-
-    // ServerState.sendToUser(foundUsrInMem,'world',worldToSend)
-    // let nowInvites = await ServerState.dbGetInvites(foundUser.id)
-
-    // const response : Utils.WorldEvent = {
-    //     roomInvites:nowInvites
-    // }
 
     return Kit.json(worldToSend);
 };
