@@ -60,7 +60,6 @@ const stateFactory = () => {
 };
 
 
-// export const getAppState = () => appState ?? (appState = stateFactory());
 export function getAppState(){
     if(appState)return appState
     appState = stateFactory()
@@ -69,12 +68,18 @@ export function getAppState(){
 let appState: ReturnType<typeof stateFactory>;
 
 export function showDisplayingInvites() : Utils.InviteOnClient[]{
+    // console.log('recalc show invites to show chat ui')
     let result : Utils.InviteOnClient[] = []
+    const toRemove: number[] = []
     for(const r of appState.value.displayingInvites){
         const found = appState.value.roomInvites.findLast(f=>f.id == r)
-        if(!found)continue
+        if(!found || !found.joined){
+            toRemove.push(r)
+            continue
+        }
         result.push(found)
     }
+    appState.value.displayingInvites = appState.value.displayingInvites.filter(i=>!toRemove.includes(i))
     return result
 }
 

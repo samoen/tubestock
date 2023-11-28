@@ -14,8 +14,6 @@
 
     const appState = ClientState.getAppState();
     let netWorth = $derived(myNetWorth());
-    // let putStockChecked = $state(false);
-    // let putStockLoading = $state(false);
 
     function myNetWorth(): number | undefined {
         if (appState.value.myIdleStock == undefined) return undefined;
