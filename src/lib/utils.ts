@@ -35,6 +35,11 @@ export const createRoomRequestSchema = z.object({
 })
 export type CreateRoomRequest = z.infer<typeof createRoomRequestSchema>
 
+export const joinRoomRequestSchema = z.object({
+    roomIdToJoin: z.number()
+})
+export type JoinRoomRequest = z.infer<typeof joinRoomRequestSchema>
+
 export const inviteToRoomRequestSchema = z.object({
     userToInviteId: z.number(),
     roomId:z.number()

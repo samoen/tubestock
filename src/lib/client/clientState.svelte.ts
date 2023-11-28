@@ -137,16 +137,21 @@ export async function subscribe() {
     });
 
     appState.value.source.addEventListener("chatmsg", (ev) => {
-        console.log("got chatmsg event");
         const parsed = Utils.addMsgEventSchema.safeParse(
             JSON.parse(ev.data)
-        );
+            );
+        // console.log("got chatmsg event " + JSON.stringify(parsed));
         if (!parsed.success) {
             console.log("bad update from server");
             return;
         }
         if(!parsed.data.roomId){
             appState.value.chatMsgs.unshift(parsed.data.msg)
+        }else{
+            const foundInvite = appState.value.roomInvites.findLast(ri=>ri.toRoom.id == parsed.data.roomId)
+            if(foundInvite){
+                foundInvite.toRoom.msgs.unshift(parsed.data.msg)
+            }
         }
         appState.dirty()
     });

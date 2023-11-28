@@ -482,7 +482,8 @@ export async function dbGetInvites(forUserId:number){
 									displayName:true
 								}
 							}
-						}
+						},
+						orderBy: [desc(Schema.privateMessages.sentAt)],
 					},
 				}
             }

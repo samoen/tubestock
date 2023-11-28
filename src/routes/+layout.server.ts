@@ -32,7 +32,7 @@ export const load : LayoutServerLoad = async(event)=>{
     const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
     const cPoses = await ServerState.positionArrayToPosWithReturnValArray(poses)
     const cInvites = await ServerState.dbGetInvites(foundUser.id)
-    console.log('fetching invites ' + JSON.stringify(cInvites))
+    // console.log('fetching invites ' + JSON.stringify(cInvites))
     dfl.positions = cPoses
     dfl.yourName = foundUser.displayName
     dfl.yourIdleStock = foundUser.idleStock

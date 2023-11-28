@@ -27,8 +27,11 @@ export const POST: Kit.RequestHandler = async (event) => {
         roomfk:p.roomId
     }
 
-    let insertedInvite = await ServerState.db.insert(Schema.roomInvites).values(insertInvite)
-
+    let insertedInvite = await ServerState.db
+        .insert(Schema.roomInvites)
+        .values(insertInvite)
+        .returning()
+    
     const foundUsrInMem = ServerState.state.usersInMemory.findLast(u=>u.dbId == p.userToInviteId)
     if(!foundUsrInMem){
         return Kit.json({})

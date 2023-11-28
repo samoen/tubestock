@@ -77,7 +77,7 @@
         }
     }
     function inputChanged() {
-        console.log("input changed");
+        // console.log("input changed");
         errTxt = "";
     }
 </script>

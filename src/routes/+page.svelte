@@ -117,7 +117,7 @@
         appState.dirty();
     }
 
-    async function addRoom(inputTxt: string) {
+    async function createRoom(inputTxt: string) {
         const toSend: Utils.CreateRoomRequest = {
             roomName: inputTxt,
         };
@@ -132,6 +132,23 @@
         }
         appState.dirty();
         return resp;
+    }
+    async function joinRoom(roomId:number){
+        const toSend: Utils.JoinRoomRequest = {
+            roomIdToJoin: roomId,
+        };
+        const resp = await ClientState.hitEndpoint(
+            "joinRoom",
+            toSend,
+            Utils.worldEventSchema,
+        );
+        if (resp.failed) return resp;
+        ClientState.receiveWorldEvent(resp.value)
+        // if (resp.value.roomInvites) {
+        //     appState.value.roomInvites = resp.value.roomInvites;
+        // }
+        // appState.dirty()
+        return resp
     }
 </script>
 
@@ -177,7 +194,7 @@
 <SimpleForm
     buttonLabel="Add Room"
     inputs={[{ itype: "text" }]}
-    onSubmit={addRoom}
+    onSubmit={createRoom}
 ></SimpleForm>
 <h3>Invites</h3>
 <div class="msgs">
@@ -194,7 +211,10 @@
                     }}>show</button
                 >
             {:else}
-                <button>join</button>
+                <SimpleForm buttonLabel="join" onSubmit={async()=>{
+                    return await joinRoom(i.toRoom.id)
+                }}></SimpleForm>
+                
             {/if}
         </div>
     {/each}
@@ -265,7 +285,7 @@
             {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
         </p>
     {/each}
-    {#each appState.value.roomInvites.filter((i) => i.userfk == appState.value.myDbId) as i}
+    {#each appState.value.roomInvites.filter((i) => i.toRoom.ownerId == appState.value.myDbId) as i}
         <SimpleForm
             buttonLabel={`Invite to ${i.toRoom.roomName}`}
             onSubmit={async () => {

@@ -71,7 +71,7 @@ export const POST: RequestHandler = async (event) => {
                 forUser:true
             },
         })
-
+        console.log('sending to users in room ' + JSON.stringify(invitesForRoom))
         for (const i of invitesForRoom){
             const foundMem = ServerState.state.usersInMemory.findLast(u=>u.dbId == i.forUser.id)
             if(!foundMem)continue
@@ -83,9 +83,11 @@ export const POST: RequestHandler = async (event) => {
                     },
                     msgTxt:inserted.msgTxt,
                     sentAt:inserted.sentAt
-                }
+                },
+                roomId:inserted.roomfk
             }
-            // ServerState.sendToUser(foundMem,'world',)
+            console.log('sending msg to usr')
+            ServerState.sendToUser(foundMem,'chatmsg',toSend)
         }
     
         return Kit.json({});
