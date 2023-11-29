@@ -200,13 +200,55 @@
 <button type='button' on:click={ClientState.deleteUser}>delete user</button>
 <br />
 <br />
+<h3>Users</h3>
+<div class="msgs">
+    {#each appState.value.userList as u (u.id)}
+        <div>
+            <span>{u.displayName}</span>
+            <button
+                type='button'
+                class="itemButton"
+                on:click={() => {
+                    appState.value.selectedUser = u;
+                    appState.dirty();
+                }}>details</button
+            >
+        </div>
+    {/each}
+</div>
+{#if appState.value.selectedUser}
+    <h4>
+        {appState.value.selectedUser.displayName}
+    </h4>
+    <p> Net worth: {calcNetWorth(
+        appState.value.selectedUser.idleStock,
+        appState.value.selectedUser.positions,
+    )}</p>
+    {#each appState.value.selectedUser.positions as p (p.id)}
+        <p>
+            {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
+        </p>
+    {/each}
+    {#each ClientState.showInvitables() as i}
+        <SimpleForm
+            buttonLabel={`Invite to ${i.toRoom.roomName}`}
+            onSubmit={async () => {
+                if (!appState.value.selectedUser) {
+                    return {
+                        failed: true,
+                        error: new Error("huh"),
+                    };
+                }
+                return await inviteToRoomClicked(
+                    appState.value.selectedUser.id,
+                    i.toRoom.id,
+                );
+            }}
+        ></SimpleForm>
+    {/each}
+{/if}
+<br />
 <h3>Rooms</h3>
-<SimpleForm
-    buttonLabel="Create Room"
-    inputs={[{ itype: "text" }]}
-    onSubmit={createRoom}
-></SimpleForm>
-<h3>Invites</h3>
 <div class="msgs">
     {#each appState.value.roomInvites as i (i.id)}
         <div>
@@ -240,9 +282,15 @@
         </div>
     {/each}
 </div>
-<h3>Private Chats</h3>
+<SimpleForm
+    buttonLabel="Create Room"
+    inputs={[{ itype: "text" }]}
+    onSubmit={createRoom}
+></SimpleForm>
+<br/>
+<br/>
 {#each ClientState.showDisplayingInvites() as d}
-    <span>{d.toRoom.roomName}</span>
+    <span class="bigBold">{d.toRoom.roomName}</span>
     <button
         type='button'
         class='itemButton'
@@ -255,9 +303,15 @@
     {#each d.toRoom.invites as i}
         <div>
             <span>{i.forUser.displayName}</span>
-            <SimpleForm buttonLabel='kick' onSubmit={async()=>{
-                return await kickUser(d.toRoom.id,i.forUser.id)
-            }}></SimpleForm>
+            {#if i.forUser.id == d.toRoom.ownerId}
+                <span>(owner)</span>
+            {/if}
+            {#if (d.toRoom.ownerId == appState.value.myDbId) && (i.forUser.id != appState.value.myDbId)}
+                <SimpleForm buttonLabel='kick' onSubmit={async()=>{
+                    return await kickUser(d.toRoom.id,i.forUser.id)
+                }}></SimpleForm>
+                
+            {/if}
         </div>
     {/each}
     <div class="msgs">
@@ -290,53 +344,6 @@
     inputs={[{ itype: "text" }]}
 />
 <br />
-<br />
-<h3>Users</h3>
-<div class="msgs">
-    {#each appState.value.userList as u (u.id)}
-        <div>
-            <span>{u.displayName}</span>
-            <button
-                type='button'
-                class="itemButton"
-                on:click={() => {
-                    appState.value.selectedUser = u;
-                    appState.dirty();
-                }}>details</button
-            >
-        </div>
-    {/each}
-</div>
-{#if appState.value.selectedUser}
-    <h4>
-        {appState.value.selectedUser.displayName} : {calcNetWorth(
-            appState.value.selectedUser.idleStock,
-            appState.value.selectedUser.positions,
-        )}
-    </h4>
-    {#each appState.value.selectedUser.positions as p (p.id)}
-        <p>
-            {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
-        </p>
-    {/each}
-    {#each ClientState.showInvitables() as i}
-        <SimpleForm
-            buttonLabel={`Invite to ${i.toRoom.roomName}`}
-            onSubmit={async () => {
-                if (!appState.value.selectedUser) {
-                    return {
-                        failed: true,
-                        error: new Error("huh"),
-                    };
-                }
-                return await inviteToRoomClicked(
-                    appState.value.selectedUser.id,
-                    i.toRoom.id,
-                );
-            }}
-        ></SimpleForm>
-    {/each}
-{/if}
 <br />
 <h3>Tubers</h3>
 <SimpleForm
@@ -374,7 +381,7 @@
     />
 {/if}
 {#if appState.value.positionsList != undefined}
-    <h3>Positions</h3>
+    <h3>My Positions</h3>
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}
             <div>
@@ -424,6 +431,10 @@
         overflow-y: auto;
         background-color: burlywood;
         margin: 10px;
+    }
+    .bigBold{
+        font-weight: bold;
+        font-size: 1.3rem;
     }
     .itemButton {
         border-radius: 6px;

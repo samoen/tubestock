@@ -107,24 +107,6 @@ export const exitPositionRequestSchema = z.object({
 })
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 
-// export const positionSchema = z.object({
-//     userfk:z.string(),
-//     id:z.string(),
-//     tuberfk:z.string(),
-//     tuberId: z.string(),
-//     tuberName: z.string(),
-//     amount: z.number(),
-//     subsAtStart: z.number(),
-//     long: z.boolean(),
-// })
-// export type Position = z.infer<typeof positionSchema>
-// export const positionWithReturnValueSchema = z.intersection(
-//     positionSchema,
-//     z.object({
-//         returnValue: z.number()
-//     })
-// )
-// export type PositionWithReturnValue = z.infer<typeof positionWithReturnValueSchema>
 export const positionInClientSchema = z.object({
     id: z.number(),
     tuberName: z.string(),
@@ -217,27 +199,6 @@ export const worldEventSchema = z.object({
 })
 export type WorldEvent = z.infer<typeof worldEventSchema>
 
-// export type DataFirstLoad = {
-//     cookieMissing?: boolean;
-//     noPlayer?: boolean;
-//     username?: string;
-//     idleStock?: number;
-//     noMatch?: boolean;
-//     readyToSubscribe?: boolean;
-//     userId?: string;
-// };
-
-// export const dataFirstLoadSchema = z.object({
-//     users: z.array(otherUserOnClientSchema),
-//     tubers: z.array(tuberInClientSchema),
-//     msgs: z.array(chatMsgOnClientSchema),
-//     positions: z.array(positionInClientSchema).optional(),
-//     yourName: z.string().optional(),
-//     yourIdleStock: z.number().optional(),
-//     yourPrivateId: z.string().optional(),
-// })
-
-// export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
 
 export type SamResult<T> = {
     failed: false

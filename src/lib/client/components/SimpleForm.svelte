@@ -46,6 +46,7 @@
 
     async function itClicked() {
         if (!coolfire) return;
+        errTxt = ""
         meLoad = true;
         let vals: string[] = [];
         for (const ie of inputEles) {
