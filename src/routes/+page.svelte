@@ -87,6 +87,7 @@
         const oldestMsg = appState.value.chatMsgs.reduce((oldest, current) => {
             return current.sentAt < oldest.sentAt ? current : oldest;
         }, appState.value.chatMsgs[0]);
+
         const toSend: Utils.HistoricalMsgsRequest = {
             startAtTime: oldestMsg.sentAt,
             offset: 0,
@@ -98,11 +99,12 @@
         );
         if (resp.failed) {
             console.log("bad get historical resp format");
-            return;
+            return resp
         }
         console.log("got earlier " + JSON.stringify(resp.value.msgs));
         appState.value.chatMsgs.push(...resp.value.msgs);
         appState.dirty();
+        return resp
     }
 
     async function createRoom(inputTxt: string) {
@@ -161,7 +163,7 @@
         return resp
     }
 </script>
-
+<br/>
 <button
     on:click={async () => {
         console.log("dev");
@@ -176,6 +178,8 @@
 {/if}
 <button on:click={ClientState.updateTubers}>update tubers</button>
 <button on:click={ClientState.manualSourceError}>close source</button>
+<br/>
+<br/>
 <h3>User</h3>
 <p>My name : {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
@@ -264,9 +268,11 @@
                         }
                     }}>show</button
                 >
-                <SimpleForm buttonLabel="leave" onSubmit={async()=>{
-                    return await joinRoom(i.toRoom.id,true)
-                }}></SimpleForm>
+                {#if i.toRoom.ownerId != appState.value.myDbId}
+                    <SimpleForm buttonLabel="leave" onSubmit={async()=>{
+                        return await joinRoom(i.toRoom.id,true)
+                    }}></SimpleForm>
+                {/if}
             {:else}
                 <SimpleForm buttonLabel="join" onSubmit={async()=>{
                     return await joinRoom(i.toRoom.id)
@@ -334,7 +340,8 @@
     {#each appState.value.chatMsgs as m (m.id)}
         <p>{m.author.displayName} : {m.msgTxt}</p>
     {/each}
-    <button type='button' on:click={getEarlierMsgs}>Get earlier</button>
+    <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}></SimpleForm>
+    <!-- <button type='button' class="getEarlier" on:click={getEarlierMsgs}>Get earlier</button> -->
 </div>
 <SimpleForm
     buttonLabel="Send"
@@ -346,11 +353,6 @@
 <br />
 <br />
 <h3>Tubers</h3>
-<SimpleForm
-    buttonLabel="Search"
-    onSubmit={ClientState.requestTuber}
-    inputs={[{ itype: "text" }]}
-/>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
         <div>
@@ -368,6 +370,11 @@
         </div>
     {/each}
 </div>
+<SimpleForm
+    buttonLabel="Search"
+    onSubmit={ClientState.requestTuber}
+    inputs={[{ itype: "text" }]}
+/>
 
 {#if appState.value.selectedTuber}
     <h3>{appState.value.selectedTuber.channelName}</h3>
@@ -381,6 +388,8 @@
     />
 {/if}
 {#if appState.value.positionsList != undefined}
+    <br/>
+    <br/>
     <h3>My Positions</h3>
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}
@@ -404,22 +413,6 @@
 
 <!-- {/if} -->
 <style>
-    :global(body) {
-        background-color: aliceblue;
-        /* padding-inline: 5px; */
-        /* padding: 0; */
-        /* margin: 0; */
-        /* word-wrap: break-word; */
-    }
-    :global(*) {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        user-select: none;
-        touch-action: manipulation;
-        font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
-            sans-serif;
-    }
 
     .selectableText {
         user-select: text;
@@ -427,10 +420,11 @@
     .msgs {
         display: flex;
         flex-direction: column-reverse;
+        align-items: flex-start;
         height: 100px;
         overflow-y: auto;
         background-color: burlywood;
-        margin: 10px;
+        margin-block: 5px;
     }
     .bigBold{
         font-weight: bold;
@@ -448,5 +442,11 @@
         background-color: red;
         color: white;
         border-color: white;
+    }
+    .getEarlier{
+        max-width: max-content;
+        border-radius: 5px;
+        padding-inline:5px;
+        padding-block:2px;
     }
 </style>

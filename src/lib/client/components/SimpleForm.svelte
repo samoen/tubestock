@@ -136,6 +136,7 @@
     }
     input[type="text"] {
         padding-block: 2px;
+        margin-block:4px;
     }
     .inputHolder {
         display: inline;

@@ -23,9 +23,27 @@
 <slot />
 
 <style>
+    :global(*) {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        touch-action: manipulation;
+        font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+        sans-serif;
+    }
+    :global(body) {
+        background-color: beige;
+        /* padding-inline: 5px; */
+        padding: 10px;
+        /* margin: 0; */
+        /* word-wrap: break-word; */
+    }
     a {
         text-decoration: none;
         display: inline-block;
+        color:black;
+        margin-inline: 10px;
     }
     h3 {
         display: inline-block;
@@ -35,9 +53,10 @@
         top: 0px;
         border: 2px solid black;
         z-index: 1;
+        padding:5px;
     }
     .solid {
-        background-color: pink;
+        background-color: burlywood;
     }
     .blurry {
         background-color: transparent;

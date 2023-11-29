@@ -35,18 +35,11 @@ export async function fakeLatency() {
 }
 
 type ServerAppState = {
-	// usersInDb: Schema.AppUser[]
 	usersInMemory: UserInMemory[]
-	// msgs: Utils.SavedChatMsg[]
-	// tubers: TuberInDb[]
-	// positions: Utils.Position[]
 }
+
 export const state: ServerAppState = {
-	// usersInDb: [],
 	usersInMemory: [],
-	// msgs: [],
-	// tubers: [],
-	// positions:[]
 }
 
 export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnClient[]> {
@@ -103,29 +96,6 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 	return otherUsers
 }
 
-// export async function dbGetFreeInfo(){
-// 	const msgsQuery = db
-// 		.select({
-// 			thing:Schema.chatMessages,
-// 			// tubers:Schema.tubers,
-// 		})
-// 		.from(Schema.chatMessages)
-// 		// .unionAll(Schema.tubers)
-// 		// .fullJoin(Schema.tubers)
-
-// 	// const tubersQuery = db.select({thing:Schema.tubers}).from(Schema.tubers)
-// 	// const msgTuberUnion = await unionAll(msgsQuery,tubersQuery)
-
-// 	const q = db.select(
-// 		{
-// 			msgs:Schema.chatMessages,
-// 			tubers:Schema.tubers,
-// 		}
-// 	).from(Schema.chatMessages)
-// 	// .unionAll()
-// 	// .fullJoin(Schema.tubers,DORM.exists())
-// }
-
 export function broadcast(event: string, data: object) {
 	for (const user of state.usersInMemory) {
 		sendToUser(user, event, data)
@@ -147,26 +117,9 @@ export function sendToUser(user: UserInMemory, key: string, payload: object) {
 	}
 }
 
-function removeClosedConnections() {
+export function removeClosedConnections() {
 	state.usersInMemory = state.usersInMemory.filter(u => u.con)
 }
-
-export async function broadcastTubersUpdated() {
-	const allTubers = await dbGetAllTubers()
-	const allPosesWithRetVals = await getPositionsWithRetVals()
-	for (const memUser of state.usersInMemory) {
-		if (!memUser.con) continue
-		const posesForThisUser = allPosesWithRetVals.filter(p=>p.id == memUser.dbId)
-		const worldEvent: Utils.WorldEvent = {
-			tubers: allTubers,
-			positions: posesForThisUser,
-		}
-		sendToUser(memUser, 'world', worldEvent)
-	}
-	removeClosedConnections()
-}
-
-
 
 const textEncoder = new TextEncoder();
 export function encode(event: string, data: object, noretry = false) {
@@ -306,35 +259,6 @@ export async function dbGetPositionsForUser(usrPrimKey: number): Promise<Schema.
 	return selected
 	// return state.positions.filter(p=>p.userfk == usrPrimKey)
 
-}
-
-export async function getPositionsWithRetVals():Promise<Utils.PositionInClient[]>{
-	let selected = await db.query.positions.findMany({
-		
-		with:{
-			forTuber:true
-		}
-	})
-	const posesInClient : Utils.PositionInClient[] = []
-	for(const sel of selected){
-		const retVal = fastCalcRetVal(
-			sel.forTuber.count,
-			sel.subsAtStart,
-			sel.amount,
-			sel.long
-		)
-
-		const p : Utils.PositionInClient = {
-			id:sel.id,
-			amount:sel.amount,
-			long:sel.long,
-			tuberName:sel.forTuber.channelName,
-			subsAtStart:sel.subsAtStart,
-			returnValue:retVal,
-		}
-		posesInClient.push(p)
-	}
-	return posesInClient
 }
 
 export async function dbGetAllTubers(): Promise<Schema.DbTuber[]> {

@@ -213,6 +213,7 @@ export function receiveWorldEvent(we:Utils.WorldEvent){
         appState.value.chatMsgs = we.msgs;
     }
     if (we.positions) {
+        console.log('got positions ' + JSON.stringify(we.positions))
         appState.value.positionsList = we.positions;
     }
     if (we.roomInvites) {

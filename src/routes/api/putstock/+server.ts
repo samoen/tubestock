@@ -4,6 +4,7 @@ import { sendMsgRequestSchema } from '$lib/utils';
 import * as ServerState from '$lib/server/serverState'
 import * as Utils from '$lib/utils'
 import * as Uuid from 'uuid'
+import * as Kit from '@sveltejs/kit'
 import * as Schema from '$lib/server/schema'
 import { eq } from 'drizzle-orm';
 
@@ -16,15 +17,15 @@ export const POST: RequestHandler = async (event) => {
     const requestJson = await event.request.json()
     const putStockRequest = Utils.putStockRequestSchema.safeParse(requestJson)
     if(!putStockRequest.success){
-        return json({ error: 'malformed put stock request' }, { status: 400 });
+        throw Kit.error(400,'malformed request')
     }
     if(foundUser.idleStock < putStockRequest.data.amount){
-        return json({ error: 'not enough idle stock' }, { status: 400 });
+        throw Kit.error(400,'not enough idle stock')
     }
     const foundTuber = await ServerState.dbGetTuberByChannelId(putStockRequest.data.channelId)
-
+    
     if(!foundTuber){
-        return json({ error: 'tuber not found' }, { status: 400 });
+        throw Kit.error(404,'tuber not found')
     }
     const position : Schema.InsertDbPosition = {
         userfk: foundUser.id,

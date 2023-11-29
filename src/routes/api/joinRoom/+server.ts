@@ -17,11 +17,19 @@ export const POST: Kit.RequestHandler = async (event) => {
         where: and(
             eq(Schema.roomInvites.userfk,foundUser.id),
             eq(Schema.roomInvites.roomfk,p.roomIdToJoin),
-        ) 
+        ),
+        with:{
+            toRoom:true
+        }
     })
+    
 
     if(!foundInvite){
         throw Kit.error(401,'Invite not found')
+    }
+
+    if(foundInvite.toRoom.ownerId == foundUser.id){
+        throw Kit.error(400,'cant leave your own room')
     }
 
     let updatedInvite = await ServerState.db
