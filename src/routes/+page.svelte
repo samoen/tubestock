@@ -90,7 +90,6 @@
 
         const toSend: Utils.HistoricalMsgsRequest = {
             startAtTime: oldestMsg.sentAt,
-            offset: 0,
         };
         const resp = await ClientState.hitEndpoint(
             "historicalMsgs",
@@ -101,8 +100,29 @@
             console.log("bad get historical resp format");
             return resp;
         }
-        console.log("got earlier " + JSON.stringify(resp.value.msgs));
         appState.value.chatMsgs.push(...resp.value.msgs);
+        appState.dirty();
+        return resp;
+    }
+    async function getEarlierPrivateMsgs(invite: Utils.InviteOnClient) {
+        const oldestMsg = invite.toRoom.msgs.reduce((oldest, current) => {
+            return current.sentAt < oldest.sentAt ? current : oldest;
+        }, invite.toRoom.msgs[0]);
+
+        const toSend: Utils.HistoricalMsgsRequest = {
+            startAtTime: oldestMsg.sentAt,
+            roomId: invite.toRoom.id,
+        };
+        const resp = await ClientState.hitEndpoint(
+            "historicalMsgs",
+            toSend,
+            Utils.chatMsgsResponseSchema,
+        );
+        if (resp.failed) {
+            console.log("bad get historical resp format");
+            return resp;
+        }
+        invite.toRoom.msgs.push(...resp.value.msgs);
         appState.dirty();
         return resp;
     }
@@ -338,6 +358,12 @@
         {#each d.toRoom.msgs as m (m.id)}
             <p>{m.author.displayName} : {m.msgTxt}</p>
         {/each}
+        <SimpleForm
+            buttonLabel="Show Earlier"
+            onSubmit={async () => {
+                return await getEarlierPrivateMsgs(d);
+            }}
+        ></SimpleForm>
     </div>
     <SimpleForm
         buttonLabel="Send"
@@ -356,7 +382,6 @@
     {/each}
     <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}
     ></SimpleForm>
-    <!-- <button type='button' class="getEarlier" on:click={getEarlierMsgs}>Get earlier</button> -->
 </div>
 <SimpleForm
     buttonLabel="Send"

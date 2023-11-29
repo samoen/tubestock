@@ -80,7 +80,7 @@ export type AddMsgEvent = z.infer<typeof addMsgEventSchema>
 
 export const historicalMsgsRequestSchema = z.object({
     startAtTime: z.number(),
-    offset: z.number()
+    roomId:z.number().optional(),
 })
 export type HistoricalMsgsRequest = z.infer<typeof historicalMsgsRequestSchema>
 

@@ -3,7 +3,7 @@ import type { LayoutServerLoad } from './$types'
 import * as ServerState from '$lib/server/serverState';
 import * as Utils from '$lib/utils';
 import * as Schema from '$lib/server/schema'
-import { eq } from 'drizzle-orm';
+import * as DORM from 'drizzle-orm';
 
 export const ssr = false;
 
@@ -11,12 +11,27 @@ export const load : LayoutServerLoad = async(event)=>{
     
     await ServerState.fakeLatency()
     const allTubers = await ServerState.dbGetAllTubers()
-    const allMsgs = await ServerState.dbgetMessagesWithUsers('latest')
+    const recentMsgs = await ServerState.db.query.chatMessages.findMany({
+		columns: {
+			id: true,
+			msgTxt: true,
+			sentAt: true
+		},
+		with: {
+			author: {
+				columns: {
+					displayName: true
+				}
+			}
+		},
+		orderBy: [DORM.desc(Schema.chatMessages.sentAt)],
+		limit: 5,
+	})
     const allUsrs = await ServerState.betterUsersOnServerToClient()
     const dfl: Utils.WorldEvent = {
 		users: allUsrs,
 		tubers: allTubers,
-		msgs: allMsgs,
+		msgs: recentMsgs,
 	}
 
     let foundUser : Schema.AppUser | undefined = undefined

@@ -320,38 +320,6 @@ export async function dbInsertPosition(posCreate: Schema.InsertDbPosition): Prom
 	return dbPos
 }
 
-export async function dbgetMessagesWithUsers(startAtTime: number | 'latest'): Promise<Utils.ChatMsgOnClient[]> {
-	let strtat: number | undefined
-	if (startAtTime != 'latest') {
-		strtat = startAtTime
-	} else {
-		strtat = new Date().getTime()
-	}
-	const numStrtAt: number = strtat
-	const sel = await db.query.chatMessages.findMany({
-		columns: {
-			id: true,
-			msgTxt: true,
-			sentAt: true
-		},
-		with: {
-
-			author: {
-
-				columns: {
-					displayName: true
-				}
-			}
-		},
-		where: (table, clause) => clause.lt(table.sentAt, numStrtAt),
-		orderBy: [DORM.desc(Schema.chatMessages.sentAt)],
-		limit: 5,
-	})
-
-	return sel
-
-}
-
 export async function dbGetAllMsgs(): Promise<Schema.DbChatMsg[]> {
 	// return state.msgs
 	let selected = await db.select().from(Schema.chatMessages)
@@ -395,6 +363,7 @@ export async function dbGetInvites(forUserId: number): Promise<Utils.InviteOnCli
 							}
 						},
 						orderBy: [DORM.desc(Schema.privateMessages.sentAt)],
+						limit:5,
 					},
 					invites: {
 						columns: {
