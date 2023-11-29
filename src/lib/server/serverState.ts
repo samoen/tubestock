@@ -1,19 +1,14 @@
 import * as Utils from "$lib/utils";
-import { drizzle } from "drizzle-orm/node-postgres";
+import * as NodePostgres from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import * as DbClient from '$lib/server/dbClient'
 import * as Schema from '$lib/server/schema';
-import { asc, desc, eq } from "drizzle-orm";
 import * as DORM from "drizzle-orm"
-import { env } from '$env/dynamic/private';
 import * as Kit from '@sveltejs/kit'
-import { unionAll } from "drizzle-orm/pg-core";
-
-
 
 console.log('running serverstate')
 
-export const db = drizzle(DbClient.client, { schema: Schema });
+export const db = NodePostgres.drizzle(DbClient.client, { schema: Schema });
 try {
 	await migrate(db, { migrationsFolder: './drizzle' });
 } catch (e) {
@@ -176,10 +171,14 @@ export async function positionArrayToPosWithReturnValArray(poses: Schema.DbPosit
 
 export async function checkUpdateCount(tuber: Schema.DbTuber): Promise<boolean> {
 	let testing = true
-	if (testing) {
+	if (testing && import.meta.env.MODE == 'development') {
 		const newCount = tuber.count + 500000
 		const newAt = new Date().getTime()
-		dbUpdateTuberCountByPKey(tuber.id, newCount, newAt)
+		await new Promise(r => setTimeout(r, 500))
+		await db
+			.update(Schema.tubers)
+			.set({ count: newCount, countUpdatedAt: newAt })
+			.where(DORM.eq(Schema.tubers.id, tuber.id))
 		return true
 	}
 
@@ -192,7 +191,10 @@ export async function checkUpdateCount(tuber: Schema.DbTuber): Promise<boolean> 
 	if (fetchedCount == undefined) {
 		return false
 	}
-	dbUpdateTuberCountByPKey(tuber.id, fetchedCount, today)
+	await db
+		.update(Schema.tubers)
+		.set({ count: fetchedCount, countUpdatedAt: today })
+		.where(DORM.eq(Schema.tubers.id, tuber.id))
 	return true
 }
 
@@ -223,7 +225,9 @@ export async function fetchTuberSubsFromId(id: string): Promise<number | undefin
 
 	return count
 }
+
 type KitEvent = Kit.RequestEvent<Partial<Record<string, string>>, string | null>
+
 export async function getUserFromEvent(event: KitEvent): Promise<Schema.AppUser> {
 	const uidCookie = event.cookies.get('uid')
 	if (!uidCookie) {
@@ -250,15 +254,12 @@ export function removeCookiesFromEvent(event: KitEvent) {
 }
 
 export async function dbDeletePositionById(id: number) {
-	await db.delete(Schema.positions).where(eq(Schema.positions.id, id))
-	// state.positions = state.positions.filter(p => p.id !== id)
+	await db.delete(Schema.positions).where(DORM.eq(Schema.positions.id, id))
 }
 
 export async function dbGetPositionsForUser(usrPrimKey: number): Promise<Schema.DbPosition[]> {
-	let selected = await db.select().from(Schema.positions).where(eq(Schema.positions.userfk, usrPrimKey))
+	let selected = await db.select().from(Schema.positions).where(DORM.eq(Schema.positions.userfk, usrPrimKey))
 	return selected
-	// return state.positions.filter(p=>p.userfk == usrPrimKey)
-
 }
 
 export async function dbGetAllTubers(): Promise<Schema.DbTuber[]> {
@@ -266,99 +267,85 @@ export async function dbGetAllTubers(): Promise<Schema.DbTuber[]> {
 }
 
 export async function dbGetUserBySecret(pId: string): Promise<Schema.AppUser | undefined> {
-	// let usr = state.usersInDb.findLast(u => u.secret == pId);
-	// let usr = await db.query.appusers.findFirst({where:{secret:pId}});
-	const usrs = await db.select().from(Schema.appusers).where(eq(Schema.appusers.secret, pId));
+	const usrs = await db.select().from(Schema.appusers).where(DORM.eq(Schema.appusers.secret, pId));
 	const usr = usrs.at(0)
 	return usr
 }
 
 export async function dbGetAllUsers(): Promise<Schema.AppUser[]> {
-	// let selected = await db.select().from(Schema.appusers)
 	let found = await db.query.appusers.findMany()
 	return found
-	// return state.usersInDb
 }
 
 export async function dbGetTuberByPrimaryKey(tuberPKey: number): Promise<Schema.DbTuber | undefined> {
-	let selected = await db.select().from(Schema.tubers).where(eq(Schema.tubers.id, tuberPKey))
+	let selected = await db.select().from(Schema.tubers).where(DORM.eq(Schema.tubers.id, tuberPKey))
 	let t = selected.at(0)
 	return t
-	// return state.tubers.findLast(t => t.channelId == pos.tuberId)
-	// return state.tubers.findLast(t => t.id == tuberPKey)
 }
 export async function dbGetTuberByChannelId(chanId: string): Promise<Schema.DbTuber | undefined> {
-	let selected = await db.select().from(Schema.tubers).where(eq(Schema.tubers.channelId, chanId))
+	let selected = await db.select().from(Schema.tubers).where(DORM.eq(Schema.tubers.channelId, chanId))
 	let t = selected.at(0)
 	return t
-	// return state.tubers.findLast(t=>t.channelId == chanId)
 }
 export async function dbGetTuberByChannelName(chanName: string): Promise<Schema.DbTuber | undefined> {
-	let selected = await db.select().from(Schema.tubers).where(eq(Schema.tubers.channelName, chanName))
+	let selected = await db.select().from(Schema.tubers).where(DORM.eq(Schema.tubers.channelName, chanName))
 	let t = selected.at(0)
 	return t
-	// return state.tubers.findLast(t=>t.channelName == chanName)
 }
 export async function dbInsertTuber(tuber: Schema.InsertDbTuber) {
 	await db.insert(Schema.tubers).values(tuber)
 }
 
-export async function dbUpdateTuberCountByPKey(pKey: number, count: number, at: number) {
-	await db.update(Schema.tubers).set({ count: count, countUpdatedAt: at }).where(eq(Schema.tubers.id, pKey))
-}
-
 export async function dbGetUserByPrimaryKey(pKey: number): Promise<Schema.AppUser | undefined> {
-	const dbUsers = await db.select().from(Schema.appusers).where(eq(Schema.appusers.id, pKey))
+	const dbUsers = await db.select().from(Schema.appusers).where(DORM.eq(Schema.appusers.id, pKey))
 	const dbUser = dbUsers.at(0)
-	// const dbUser = state.usersInDb.findLast(u=>u.id == pKey)
 	return dbUser
 }
 
 export async function dbDeleteUser(pKey: number) {
-	await db.delete(Schema.appusers).where(eq(Schema.appusers.id, pKey))
+	await db.delete(Schema.appusers).where(DORM.eq(Schema.appusers.id, pKey))
 }
 
 export async function dbInsertUser(usrCreate: Schema.InsertAppUser): Promise<Schema.AppUser> {
 	const ret = await db.insert(Schema.appusers).values(usrCreate).returning()
 	const dbUsr = ret.at(0)
-	if (!dbUsr) throw ' huh'
+	if (!dbUsr) throw 'Failed to insert user'
 	return dbUsr
 }
 
 export async function dbInsertPosition(posCreate: Schema.InsertDbPosition): Promise<Schema.DbPosition> {
-	// state.positions.push(dbPosition)
 	const ret = await db.insert(Schema.positions).values(posCreate).returning()
 	const dbPos = ret.at(0)
-	if (!dbPos) throw ' huh'
+	if (!dbPos) throw 'Failed to insert position'
 	return dbPos
 }
 
-export async function dbgetMessagesWithUsers(startAtTime: number | 'latest') : Promise<Utils.ChatMsgOnClient[]> {
-	let strtat : number | undefined
-	if(startAtTime != 'latest'){
+export async function dbgetMessagesWithUsers(startAtTime: number | 'latest'): Promise<Utils.ChatMsgOnClient[]> {
+	let strtat: number | undefined
+	if (startAtTime != 'latest') {
 		strtat = startAtTime
-	}else{
+	} else {
 		strtat = new Date().getTime()
 	}
-	const numStrtAt : number = strtat
+	const numStrtAt: number = strtat
 	const sel = await db.query.chatMessages.findMany({
-		columns:{
-			id:true,
-			msgTxt:true,
-			sentAt:true
+		columns: {
+			id: true,
+			msgTxt: true,
+			sentAt: true
 		},
-		with:{
+		with: {
 
-			author:{
+			author: {
 
-				columns:{
-					displayName:true
+				columns: {
+					displayName: true
 				}
 			}
 		},
-		where:(table, clause) => clause.lt(table.sentAt, numStrtAt),
-		orderBy: [desc(Schema.chatMessages.sentAt)],
-		limit:5,
+		where: (table, clause) => clause.lt(table.sentAt, numStrtAt),
+		orderBy: [DORM.desc(Schema.chatMessages.sentAt)],
+		limit: 5,
 	})
 
 	return sel
@@ -377,54 +364,54 @@ export async function dbInsertMsg(msg: Schema.InsertDbChatMsg): Promise<Schema.D
 	return fInserted
 }
 
-export async function dbGetInvites(forUserId:number) : Promise<Utils.InviteOnClient[]>{
-	const res : Utils.InviteOnClient[] = await db.query.roomInvites.findMany({
-        where:eq(Schema.roomInvites.userfk,forUserId),
-        columns:{
-            id:true,
-            joined:true,
-			userfk:true,
-        },
-        with:{
-            toRoom:{
-                columns:{
-					id:true,
-                    roomName:true,
-					ownerId:true,
-                },
-				with:{
-					msgs:{
-						columns:{
-							id:true,
-							msgTxt:true,
-							sentAt:true,
+export async function dbGetInvites(forUserId: number): Promise<Utils.InviteOnClient[]> {
+	const res: Utils.InviteOnClient[] = await db.query.roomInvites.findMany({
+		where: DORM.eq(Schema.roomInvites.userfk, forUserId),
+		columns: {
+			id: true,
+			joined: true,
+			userfk: true,
+		},
+		with: {
+			toRoom: {
+				columns: {
+					id: true,
+					roomName: true,
+					ownerId: true,
+				},
+				with: {
+					msgs: {
+						columns: {
+							id: true,
+							msgTxt: true,
+							sentAt: true,
 
 						},
-						with:{
-							author:{
-								columns:{
-									displayName:true
+						with: {
+							author: {
+								columns: {
+									displayName: true
 								}
 							}
 						},
-						orderBy: [desc(Schema.privateMessages.sentAt)],
+						orderBy: [DORM.desc(Schema.privateMessages.sentAt)],
 					},
-					invites:{
-						columns:{
-							joined:true
+					invites: {
+						columns: {
+							joined: true
 						},
-						with:{
-							forUser:{
-								columns:{
-									id:true,
-									displayName:true,
+						with: {
+							forUser: {
+								columns: {
+									id: true,
+									displayName: true,
 								}
 							}
-						}		
+						}
 					}
 				}
-            }
-        }
-    })
+			}
+		}
+	})
 	return res
 }

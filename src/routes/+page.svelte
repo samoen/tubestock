@@ -99,12 +99,12 @@
         );
         if (resp.failed) {
             console.log("bad get historical resp format");
-            return resp
+            return resp;
         }
         console.log("got earlier " + JSON.stringify(resp.value.msgs));
         appState.value.chatMsgs.push(...resp.value.msgs);
         appState.dirty();
-        return resp
+        return resp;
     }
 
     async function createRoom(inputTxt: string) {
@@ -117,12 +117,12 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        ClientState.receiveWorldEvent(resp.value)
+        ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
-    async function deleteRoom(roomId:number) {
+    async function deleteRoom(roomId: number) {
         const toSend: Utils.DeleteRoomRequest = {
-            rId:roomId
+            rId: roomId,
         };
         const resp = await ClientState.hitEndpoint(
             "createRoom",
@@ -130,13 +130,13 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        ClientState.receiveWorldEvent(resp.value)
+        ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
-    async function joinRoom(roomId:number,leave:boolean=false){
+    async function joinRoom(roomId: number, leave: boolean = false) {
         const toSend: Utils.JoinRoomRequest = {
             roomIdToJoin: roomId,
-            leave:leave,
+            leave: leave,
         };
         const resp = await ClientState.hitEndpoint(
             "joinRoom",
@@ -144,14 +144,14 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        ClientState.receiveWorldEvent(resp.value)
-        return resp
+        ClientState.receiveWorldEvent(resp.value);
+        return resp;
     }
-    async function kickUser(roomId:number,userId:number){
+    async function kickUser(roomId: number, userId: number) {
         const toSend: Utils.InviteToRoomRequest = {
-            roomId:roomId,
-            userToInviteId:userId,
-            kick:true,
+            roomId: roomId,
+            userToInviteId: userId,
+            kick: true,
         };
         const resp = await ClientState.hitEndpoint(
             "inviteToRoom",
@@ -159,11 +159,12 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        ClientState.receiveWorldEvent(resp.value)
-        return resp
+        ClientState.receiveWorldEvent(resp.value);
+        return resp;
     }
 </script>
-<br/>
+
+<br />
 <button
     on:click={async () => {
         console.log("dev");
@@ -178,8 +179,8 @@
 {/if}
 <button on:click={ClientState.updateTubers}>update tubers</button>
 <button on:click={ClientState.manualSourceError}>close source</button>
-<br/>
-<br/>
+<br />
+<br />
 <h3>User</h3>
 <p>My name : {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
@@ -201,7 +202,7 @@
     ]}
 />
 <br />
-<button type='button' on:click={ClientState.deleteUser}>delete user</button>
+<button type="button" on:click={ClientState.deleteUser}>delete user</button>
 <br />
 <br />
 <h3>Users</h3>
@@ -210,7 +211,7 @@
         <div>
             <span>{u.displayName}</span>
             <button
-                type='button'
+                type="button"
                 class="itemButton"
                 on:click={() => {
                     appState.value.selectedUser = u;
@@ -221,35 +222,39 @@
     {/each}
 </div>
 {#if appState.value.selectedUser}
-    <h4>
-        {appState.value.selectedUser.displayName}
-    </h4>
-    <p> Net worth: {calcNetWorth(
-        appState.value.selectedUser.idleStock,
-        appState.value.selectedUser.positions,
-    )}</p>
-    {#each appState.value.selectedUser.positions as p (p.id)}
+    {#key appState.value.selectedUser}
+        <h4>
+            {appState.value.selectedUser.displayName}
+        </h4>
         <p>
-            {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
+            Net worth: {calcNetWorth(
+                appState.value.selectedUser.idleStock,
+                appState.value.selectedUser.positions,
+            )}
         </p>
-    {/each}
-    {#each ClientState.showInvitables() as i}
-        <SimpleForm
-            buttonLabel={`Invite to ${i.toRoom.roomName}`}
-            onSubmit={async () => {
-                if (!appState.value.selectedUser) {
-                    return {
-                        failed: true,
-                        error: new Error("huh"),
-                    };
-                }
-                return await inviteToRoomClicked(
-                    appState.value.selectedUser.id,
-                    i.toRoom.id,
-                );
-            }}
-        ></SimpleForm>
-    {/each}
+        {#each appState.value.selectedUser.positions as p (p.id)}
+            <p>
+                {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
+            </p>
+        {/each}
+        {#each ClientState.showInvitables() as i}
+            <SimpleForm
+                buttonLabel={`Invite to ${i.toRoom.roomName}`}
+                onSubmit={async () => {
+                    if (!appState.value.selectedUser) {
+                        return {
+                            failed: true,
+                            error: new Error("selected user is undefined"),
+                        };
+                    }
+                    return await inviteToRoomClicked(
+                        appState.value.selectedUser.id,
+                        i.toRoom.id,
+                    );
+                }}
+            ></SimpleForm>
+        {/each}
+    {/key}
 {/if}
 <br />
 <h3>Rooms</h3>
@@ -259,7 +264,7 @@
             <span> {i.toRoom.roomName}</span>
             {#if i.joined}
                 <button
-                    type='button'
+                    type="button"
                     class="itemButton"
                     on:click={() => {
                         if (!appState.value.displayingInvites.includes(i.id)) {
@@ -269,21 +274,28 @@
                     }}>show</button
                 >
                 {#if i.toRoom.ownerId != appState.value.myDbId}
-                    <SimpleForm buttonLabel="leave" onSubmit={async()=>{
-                        return await joinRoom(i.toRoom.id,true)
-                    }}></SimpleForm>
+                    <SimpleForm
+                        buttonLabel="leave"
+                        onSubmit={async () => {
+                            return await joinRoom(i.toRoom.id, true);
+                        }}
+                    ></SimpleForm>
                 {/if}
             {:else}
-                <SimpleForm buttonLabel="join" onSubmit={async()=>{
-                    return await joinRoom(i.toRoom.id)
-                }}></SimpleForm>
-                
+                <SimpleForm
+                    buttonLabel="join"
+                    onSubmit={async () => {
+                        return await joinRoom(i.toRoom.id);
+                    }}
+                ></SimpleForm>
             {/if}
             {#if i.toRoom.ownerId == appState.value.myDbId}
-                <SimpleForm buttonLabel="delete" onSubmit={async()=>{
-                    return await deleteRoom(i.toRoom.id)
-                }}></SimpleForm>
-                
+                <SimpleForm
+                    buttonLabel="delete"
+                    onSubmit={async () => {
+                        return await deleteRoom(i.toRoom.id);
+                    }}
+                ></SimpleForm>
             {/if}
         </div>
     {/each}
@@ -293,13 +305,13 @@
     inputs={[{ itype: "text" }]}
     onSubmit={createRoom}
 ></SimpleForm>
-<br/>
-<br/>
+<br />
+<br />
 {#each ClientState.showDisplayingInvites() as d}
     <span class="bigBold">{d.toRoom.roomName}</span>
     <button
-        type='button'
-        class='itemButton'
+        type="button"
+        class="itemButton"
         on:click={() => {
             appState.value.displayingInvites =
                 appState.value.displayingInvites.filter((r) => r != d.id);
@@ -312,11 +324,13 @@
             {#if i.forUser.id == d.toRoom.ownerId}
                 <span>(owner)</span>
             {/if}
-            {#if (d.toRoom.ownerId == appState.value.myDbId) && (i.forUser.id != appState.value.myDbId)}
-                <SimpleForm buttonLabel='kick' onSubmit={async()=>{
-                    return await kickUser(d.toRoom.id,i.forUser.id)
-                }}></SimpleForm>
-                
+            {#if d.toRoom.ownerId == appState.value.myDbId && i.forUser.id != appState.value.myDbId}
+                <SimpleForm
+                    buttonLabel="kick"
+                    onSubmit={async () => {
+                        return await kickUser(d.toRoom.id, i.forUser.id);
+                    }}
+                ></SimpleForm>
             {/if}
         </div>
     {/each}
@@ -332,15 +346,16 @@
         }}
         inputs={[{ itype: "text" }]}
     />
-    <br/>
-    <br/>
+    <br />
+    <br />
 {/each}
 <h3>Public Chat</h3>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
         <p>{m.author.displayName} : {m.msgTxt}</p>
     {/each}
-    <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}></SimpleForm>
+    <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}
+    ></SimpleForm>
     <!-- <button type='button' class="getEarlier" on:click={getEarlierMsgs}>Get earlier</button> -->
 </div>
 <SimpleForm
@@ -388,8 +403,8 @@
     />
 {/if}
 {#if appState.value.positionsList != undefined}
-    <br/>
-    <br/>
+    <br />
+    <br />
     <h3>My Positions</h3>
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}
@@ -413,7 +428,6 @@
 
 <!-- {/if} -->
 <style>
-
     .selectableText {
         user-select: text;
     }
@@ -426,7 +440,7 @@
         background-color: burlywood;
         margin-block: 5px;
     }
-    .bigBold{
+    .bigBold {
         font-weight: bold;
         font-size: 1.3rem;
     }
@@ -443,10 +457,10 @@
         color: white;
         border-color: white;
     }
-    .getEarlier{
+    .getEarlier {
         max-width: max-content;
         border-radius: 5px;
-        padding-inline:5px;
-        padding-block:2px;
+        padding-inline: 5px;
+        padding-block: 2px;
     }
 </style>
