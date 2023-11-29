@@ -19,40 +19,47 @@ export type SetNameResponse = z.infer<typeof setNameResponseSchema>
 
 export const restoreRequestSchema = z.object({
     displayName: z.string(),
-    privateId:z.string(),
+    privateId: z.string(),
 })
 export type RestoreRequest = z.infer<typeof restoreRequestSchema>
 
 
 export const sendMsgRequestSchema = z.object({
     msgTxt: safeString,
-    toRoomId:z.number().optional(),
+    toRoomId: z.number().optional(),
 })
 export type SendMsgRequest = z.infer<typeof sendMsgRequestSchema>
 
 export const createRoomRequestSchema = z.object({
-    roomName: safeString
+    roomName: safeString,
 })
+
 export type CreateRoomRequest = z.infer<typeof createRoomRequestSchema>
+
+
+export const deleteRoomRequestSchema = z.object({
+            rId: z.number(),
+        })
+export type DeleteRoomRequest = z.infer<typeof deleteRoomRequestSchema>
 
 export const joinRoomRequestSchema = z.object({
     roomIdToJoin: z.number(),
-    leave:z.boolean(),
+    leave: z.boolean(),
 })
 export type JoinRoomRequest = z.infer<typeof joinRoomRequestSchema>
 
 export const inviteToRoomRequestSchema = z.object({
     userToInviteId: z.number(),
-    roomId:z.number(),
-    kick:z.boolean().optional(),
+    roomId: z.number(),
+    kick: z.boolean().optional(),
 })
 export type InviteToRoomRequest = z.infer<typeof inviteToRoomRequestSchema>
 
 export const chatMsgOnClientSchema = z.object({
-    id:z.number(),
+    id: z.number(),
     msgTxt: z.string(),
-    sentAt:z.number(),
-    author:z.object({
+    sentAt: z.number(),
+    author: z.object({
         displayName: z.string(),
     }),
 })
@@ -72,8 +79,8 @@ export type AddMsgEvent = z.infer<typeof addMsgEventSchema>
 
 
 export const historicalMsgsRequestSchema = z.object({
-    startAtTime:z.number(),
-    offset:z.number()
+    startAtTime: z.number(),
+    offset: z.number()
 })
 export type HistoricalMsgsRequest = z.infer<typeof historicalMsgsRequestSchema>
 
@@ -96,7 +103,7 @@ export const putStockRequestSchema = z.object({
 export type PutStockRequest = z.infer<typeof putStockRequestSchema>
 
 export const exitPositionRequestSchema = z.object({
-    positionId:z.number(),
+    positionId: z.number(),
 })
 export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 
@@ -119,34 +126,34 @@ export type ExitPositionRequest = z.infer<typeof exitPositionRequestSchema>
 // )
 // export type PositionWithReturnValue = z.infer<typeof positionWithReturnValueSchema>
 export const positionInClientSchema = z.object({
-    id:z.number(),
+    id: z.number(),
     tuberName: z.string(),
     amount: z.number(),
     subsAtStart: z.number(),
     long: z.boolean(),
-    returnValue:z.number(),
+    returnValue: z.number(),
 })
 export type PositionInClient = z.infer<typeof positionInClientSchema>
 
 export const inviteOnClientSchema = z.object({
-    id:z.number(),
-    toRoom:z.object({
-        id:z.number(),
-        roomName:z.string(),
-        ownerId:z.number(),
-        msgs:z.array(chatMsgOnClientSchema),
-        invites:z.array(
+    id: z.number(),
+    toRoom: z.object({
+        id: z.number(),
+        roomName: z.string(),
+        ownerId: z.number(),
+        msgs: z.array(chatMsgOnClientSchema),
+        invites: z.array(
             z.object({
-                joined:z.boolean(),
-                forUser:z.object({
-                    id:z.number(),
-                    displayName:z.string()
+                joined: z.boolean(),
+                forUser: z.object({
+                    id: z.number(),
+                    displayName: z.string()
                 })
             })
-        ) 
+        )
     }),
-    joined:z.boolean(),
-    userfk:z.number(),
+    joined: z.boolean(),
+    userfk: z.number(),
 })
 export type InviteOnClient = z.infer<typeof inviteOnClientSchema>
 
@@ -158,7 +165,7 @@ export const exitPositionResponseSchema = z.object({
 export type ExitPositionResponse = z.infer<typeof exitPositionResponseSchema>
 
 export const positionUpdateEventSchema = z.object({
-    positions:z.array(positionInClientSchema)
+    positions: z.array(positionInClientSchema)
 })
 
 export const putStockResponseSchema = z.object({
@@ -177,13 +184,13 @@ export type TuberInClient = z.infer<typeof tuberInClientSchema>
 export const otherUserOnClientSchema = z.object({
     displayName: z.string(),
     id: z.number(),
-    idleStock:z.number(),
+    idleStock: z.number(),
     positions: z.array(positionInClientSchema)
 })
 
 export type OtherUserOnClient = z.infer<typeof otherUserOnClientSchema>
 
-export function findRunRemove<T>(arr:T[],find:(f:T)=>boolean,run:(f:T)=>void):boolean{
+export function findRunRemove<T>(arr: T[], find: (f: T) => boolean, run: (f: T) => void): boolean {
     let didFind = false
     for (let i = arr.length - 1; i >= 0; i--) {
         const item = arr[i];
@@ -233,31 +240,31 @@ export type WorldEvent = z.infer<typeof worldEventSchema>
 // export type DataFirstLoad = z.infer<typeof dataFirstLoadSchema>
 
 export type SamResult<T> = {
-    failed:false
-    value : T,
+    failed: false
+    value: T,
 } | {
     failed: true,
     error: Error
 }
-export function runCatching<T>(toRun:()=>T):SamResult<T>{
-	try{
-		const ran = toRun()
-		return {
-			failed:false,
-			value:ran,
-		}
-	}catch(e){
-        let error : Error
-        if(e instanceof Error){
+export function runCatching<T>(toRun: () => T): SamResult<T> {
+    try {
+        const ran = toRun()
+        return {
+            failed: false,
+            value: ran,
+        }
+    } catch (e) {
+        let error: Error
+        if (e instanceof Error) {
             error = e
-        }else{
+        } else {
             error = new Error(String(e))
         }
         console.log('run catching caught ' + error.message)
 
-		return {
-            failed:true,
-            error:error,
+        return {
+            failed: true,
+            error: error,
         }
-	}
+    }
 }

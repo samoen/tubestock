@@ -70,7 +70,6 @@ export const POST: Kit.RequestHandler = async (event) => {
             .returning()
     }
 
-
     // notify everyone in room
     const invitesForRoom = await ServerState.db
         .query.roomInvites.findMany({

@@ -118,6 +118,19 @@
         ClientState.receiveWorldEvent(resp.value)
         return resp;
     }
+    async function deleteRoom(roomId:number) {
+        const toSend: Utils.DeleteRoomRequest = {
+            rId:roomId
+        };
+        const resp = await ClientState.hitEndpoint(
+            "createRoom",
+            toSend,
+            Utils.worldEventSchema,
+        );
+        if (resp.failed) return resp;
+        ClientState.receiveWorldEvent(resp.value)
+        return resp;
+    }
     async function joinRoom(roomId:number,leave:boolean=false){
         const toSend: Utils.JoinRoomRequest = {
             roomIdToJoin: roomId,
@@ -215,6 +228,12 @@
             {:else}
                 <SimpleForm buttonLabel="join" onSubmit={async()=>{
                     return await joinRoom(i.toRoom.id)
+                }}></SimpleForm>
+                
+            {/if}
+            {#if i.toRoom.ownerId == appState.value.myDbId}
+                <SimpleForm buttonLabel="delete" onSubmit={async()=>{
+                    return await deleteRoom(i.toRoom.id)
                 }}></SimpleForm>
                 
             {/if}
