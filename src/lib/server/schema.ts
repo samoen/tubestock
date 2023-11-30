@@ -104,7 +104,6 @@ export const positions = pgTable("positions", {
   id: serial("id").primaryKey().unique(),
   userfk:integer('user_id').references(() => appusers.id,{onDelete:'cascade'}).notNull(),
   tuberfk:integer('tuber_id').references(() => tubers.id,{onDelete:'cascade'}).notNull(),
-  tuberName: text('tuber_name').notNull(),
   amount: integer('amount').notNull(),
   subsAtStart: integer('subs_at_start').notNull(),
   long: boolean('long').notNull(),

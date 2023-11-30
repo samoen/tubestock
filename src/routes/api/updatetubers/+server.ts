@@ -36,7 +36,7 @@ async function updateThem() {
 	type SelectedWithRet = {sel:Selected,ret:number}
 	const selectedWithRets : SelectedWithRet[] = []
 	for(const sel of selected){
-		const retVal = ServerState.fastCalcRetVal(
+		const retVal = ServerState.positionReturnValue(
 			sel.forTuber.count,
 			sel.subsAtStart,
 			sel.amount,

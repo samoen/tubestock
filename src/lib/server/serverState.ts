@@ -54,7 +54,8 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 				with: {
 					forTuber: {
 						columns: {
-							count: true
+							count: true,
+							channelName:true,
 						}
 					}
 				}
@@ -67,13 +68,13 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 
 		const posesInClient: Utils.PositionInClient[] = []
 		for (const selPos of sel.positions) {
-			const retVal = fastCalcRetVal(selPos.forTuber.count, selPos.subsAtStart, selPos.amount, selPos.long)
+			const retVal = positionReturnValue(selPos.forTuber.count, selPos.subsAtStart, selPos.amount, selPos.long)
 			const posInClient: Utils.PositionInClient = {
 				id: selPos.id,
 				amount: selPos.amount,
 				long: selPos.long,
 				subsAtStart: selPos.subsAtStart,
-				tuberName: selPos.tuberName,
+				tuberName: selPos.forTuber.channelName,
 				returnValue: retVal,
 			}
 			posesInClient.push(posInClient)
@@ -125,19 +126,8 @@ export function encode(event: string, data: object, noretry = false) {
 	toEncode = toEncode + `\n`;
 	return textEncoder.encode(toEncode);
 }
-export async function calcReturnValue(pos: Schema.DbPosition): Promise<number | undefined> {
-	// const foundTuber = state.tubers.findLast(t => t.channelId == pos.tuberId)
-	const foundTuber = await dbGetTuberByPrimaryKey(pos.tuberfk)
-	if (!foundTuber) return undefined
 
-	return fastCalcRetVal(
-		foundTuber.count,
-		pos.subsAtStart,
-		pos.amount,
-		pos.long,
-	)
-}
-export function fastCalcRetVal(currentCount: number, subsAtPosStart: number, posAmt: number, long: boolean): number {
+export function positionReturnValue(currentCount: number, subsAtPosStart: number, posAmt: number, long: boolean): number {
 	const subsGained = currentCount - subsAtPosStart
 	const percentGain = subsGained / subsAtPosStart
 	let bonus = Math.floor(posAmt * percentGain)
@@ -150,24 +140,38 @@ export function fastCalcRetVal(currentCount: number, subsAtPosStart: number, pos
 	}
 	return ret
 }
-export async function positionToPosWithReturnVal(pos: Schema.DbPosition): Promise<(Schema.DbPosition & { returnValue: number }) | undefined> {
-	const val = await calcReturnValue(pos)
-	if (val == undefined) return undefined
-	const posWithValue = {
-		...pos,
-		returnValue: val,
-	}
-	return posWithValue
+
+export async function positionsInClientForUser(userId: number): Promise<Utils.PositionInClient[]> {
+	let gotp = await db.query.positions.findMany({
+        where:DORM.eq(Schema.positions.userfk,userId),
+        with:{
+            forTuber:true
+        }
+    })
+
+    const cPoses : Utils.PositionInClient[] = []
+    for(const g of gotp){
+        const ret = positionReturnValue(
+            g.forTuber.count,
+            g.subsAtStart,
+            g.amount,
+            g.long
+        )
+
+        const cpos : Utils.PositionInClient = {
+            id:g.id,
+            amount:g.amount,
+            long:g.long,
+            tuberName:g.forTuber.channelName,
+            subsAtStart:g.subsAtStart,
+            returnValue:ret
+        }
+        cPoses.push(cpos)
+    }
+	return cPoses
 }
-export async function positionArrayToPosWithReturnValArray(poses: Schema.DbPosition[]): Promise<Utils.PositionInClient[]> {
-	const result: Utils.PositionInClient[] = []
-	for (const pos of poses) {
-		const withRet = await positionToPosWithReturnVal(pos)
-		if (withRet == undefined) continue
-		result.push(withRet)
-	}
-	return result
-}
+
+
 
 export async function checkUpdateCount(tuber: Schema.DbTuber): Promise<boolean> {
 	let testing = true

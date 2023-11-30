@@ -32,7 +32,6 @@ export const POST: RequestHandler = async (event) => {
         tuberfk: foundTuber.id,
         amount:putStockRequest.data.amount,
         subsAtStart:foundTuber.count,
-        tuberName:foundTuber.channelName,
         long:putStockRequest.data.long,
     }
 
@@ -41,8 +40,7 @@ export const POST: RequestHandler = async (event) => {
     const newIdle = foundUser.idleStock - putStockRequest.data.amount
     await ServerState.db.update(Schema.appusers).set({idleStock: newIdle}).where(eq(Schema.appusers.id,foundUser.id))
     
-    const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
-    const cPoses = await ServerState.positionArrayToPosWithReturnValArray(poses)
+    const cPoses = await ServerState.positionsInClientForUser(foundUser.id)
     const response : Utils.PutStockResponse = {
         idleStock:newIdle,
         positions: cPoses,
