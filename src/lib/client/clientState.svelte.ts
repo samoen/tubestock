@@ -1,5 +1,8 @@
 import * as Utils from '$lib/utils'
 import * as z from 'zod'
+import User from '$lib/client/components/User.svelte'
+import Users from '$lib/client/components/Users.svelte'
+import Rooms from './components/Rooms.svelte'
 
 console.log('running clientstate')
 
@@ -22,7 +25,9 @@ export type ClientAppState = {
     selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
+    compies:any[]
 }
+
 
 const stateFactory = () => {
     const as: ClientAppState = {
@@ -41,6 +46,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
+        compies: [User,Users,Rooms],
     };
     let value = $state(as)
     return {
@@ -81,13 +87,6 @@ export function showDisplayingInvites() : Utils.InviteOnClient[]{
     }
     appState.value.displayingInvites = appState.value.displayingInvites.filter(i=>!toRemove.includes(i))
     return result
-}
-
-export function showInvitables(){
-    const myId = appState.value.myDbId
-    console.log('recalc invitables. myid is ' + myId + ', my invites are ' + JSON.stringify(appState.value.roomInvites))
-    const i = appState.value.roomInvites.filter((i) => i.toRoom.ownerId == myId)
-    return i
 }
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
@@ -200,6 +199,17 @@ export async function subscribe() {
         appState.value.tuberList.push(parsed.data)
         appState.dirty()
     });
+}
+
+export function calcNetWorth(
+    idle: number,
+    positions: Utils.PositionInClient[],
+): number | undefined {
+    let res: number = idle;
+    for (const pos of positions) {
+        res += pos.returnValue;
+    }
+    return res;
 }
 
 export function receiveWorldEvent(we:Utils.WorldEvent){

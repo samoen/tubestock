@@ -8,13 +8,19 @@ import * as Kit from '@sveltejs/kit'
 
 console.log('running serverstate')
 
-export const db = NodePostgres.drizzle(DbClient.client, { schema: Schema });
+export let maybeDb : NodePostgres.NodePgDatabase<typeof Schema> | undefined = undefined
 try {
-	await migrate(db, { migrationsFolder: './drizzle' });
+	maybeDb = NodePostgres.drizzle(DbClient.client, { schema: Schema });
+	await migrate(maybeDb, { migrationsFolder: './drizzle' });
 } catch (e) {
 	console.log('failed to migrate ' + String(e))
 	process.exit()
 }
+if(!maybeDb){
+	console.log('failed to connect to db')
+	process.exit()
+}
+export const db : NodePostgres.NodePgDatabase<typeof Schema> = maybeDb
 
 export type UserInMemory = {
 	dbId: number;
