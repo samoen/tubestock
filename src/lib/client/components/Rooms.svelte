@@ -4,6 +4,20 @@
     import SimpleForm from './SimpleForm.svelte';
     
     const appState = ClientState.getAppState();
+    const displayingRooms = $derived((()=>{
+        let result : Utils.InviteOnClient[] = []
+        const toRemove: number[] = []
+        for(const r of appState.value.displayingInvites){
+            const found = appState.value.roomInvites.findLast(f=>f.id == r)
+            if(!found || !found.joined){
+                toRemove.push(r)
+                continue
+            }
+            result.push(found)
+        }
+        appState.value.displayingInvites = appState.value.displayingInvites.filter(i=>!toRemove.includes(i))
+        return result
+    })())
     
     async function joinRoom(roomId: number, leave: boolean = false) {
         const toSend: Utils.JoinRoomRequest = {
@@ -82,68 +96,91 @@
         appState.dirty();
         return resp;
     }
+    let hidden= $state(false)
+    function hide(){
+        if(appState.value.displayingInvites.length > 0){
+            hidden = !hidden
+            return
+        }
+        ClientState.hideComp('rooms')
+    }
+    function roomHide(d:Utils.InviteOnClient){
+        if(
+            appState.value.displayingInvites.length == 1
+            && hidden
+        ){
+            ClientState.hideComp('rooms')
+        }else{
+            appState.value.displayingInvites = appState.value.displayingInvites.filter((r) => r != d.id);
+        }
+        appState.dirty();
+    }
 </script>
 
-<h3>Rooms</h3>
-<div class="msgs">
-    {#each appState.value.roomInvites as i (i.id)}
-        <div>
-            <span> {i.toRoom.roomName}</span>
-            {#if i.joined}
-                <button
-                    type="button"
-                    class="itemButton"
-                    on:click={() => {
-                        if (!appState.value.displayingInvites.includes(i.id)) {
-                            appState.value.displayingInvites.push(i.id);
-                            appState.dirty();
-                        }
-                    }}>show</button
-                >
-                {#if i.toRoom.ownerId != appState.value.myDbId}
+{#if !hidden}
+    <span class='bigBold'>Rooms</span>
+    <button class='itemButton' on:click={hide}>Hide</button>
+    <div class="msgs">
+        {#each appState.value.roomInvites as i (i.id)}
+            <div>
+                <span> {i.toRoom.roomName}</span>
+                {#if i.joined}
+                    <button
+                        type="button"
+                        class="itemButton"
+                        on:click={() => {
+                            if (!appState.value.displayingInvites.includes(i.id)) {
+                                appState.value.displayingInvites.push(i.id);
+                                appState.dirty();
+                            }
+                        }}>show</button
+                    >
+                    {#if i.toRoom.ownerId != appState.value.myDbId}
+                        <SimpleForm
+                            buttonLabel="leave"
+                            onSubmit={async () => {
+                                return await joinRoom(i.toRoom.id, true);
+                            }}
+                        ></SimpleForm>
+                    {/if}
+                {:else}
                     <SimpleForm
-                        buttonLabel="leave"
+                        buttonLabel="join"
                         onSubmit={async () => {
-                            return await joinRoom(i.toRoom.id, true);
+                            return await joinRoom(i.toRoom.id);
                         }}
                     ></SimpleForm>
                 {/if}
-            {:else}
-                <SimpleForm
-                    buttonLabel="join"
-                    onSubmit={async () => {
-                        return await joinRoom(i.toRoom.id);
-                    }}
-                ></SimpleForm>
-            {/if}
-            {#if i.toRoom.ownerId == appState.value.myDbId}
-                <SimpleForm
-                    buttonLabel="delete"
-                    onSubmit={async () => {
-                        return await deleteRoom(i.toRoom.id);
-                    }}
-                ></SimpleForm>
-            {/if}
-        </div>
-    {/each}
-</div>
-<SimpleForm
-    buttonLabel="Create Room"
-    inputs={[{ itype: "text" }]}
-    onSubmit={createRoom}
-></SimpleForm>
+                {#if i.toRoom.ownerId == appState.value.myDbId}
+                    <SimpleForm
+                        buttonLabel="delete"
+                        onSubmit={async () => {
+                            return await deleteRoom(i.toRoom.id);
+                        }}
+                    ></SimpleForm>
+                {/if}
+            </div>
+        {/each}
+    </div>
+    <SimpleForm
+        buttonLabel="Create Room"
+        inputs={[{ itype: "text" }]}
+        onSubmit={createRoom}
+    ></SimpleForm>
+    <br/>
+{/if}
 
-{#each ClientState.showDisplayingInvites() as d}
-    <span class="bigBold">{d.toRoom.roomName}</span>
-    <button
-        type="button"
-        class="itemButton"
-        on:click={() => {
-            appState.value.displayingInvites =
-                appState.value.displayingInvites.filter((r) => r != d.id);
-            appState.dirty();
-        }}>hide</button
-    >
+{#each displayingRooms as d}
+    <div>
+        <span class="bigBold">{d.toRoom.roomName}</span>
+        <button
+            type="button"
+            class="itemButton"
+            on:click={() => {
+                roomHide(d)
+            }}>hide</button
+        >
+    </div>
     {#each d.toRoom.invites as i}
         <div>
             <span>{i.forUser.displayName}</span>

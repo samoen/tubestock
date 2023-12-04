@@ -8,8 +8,6 @@
 </script>
 
 {#if appState.value.positionsList != undefined}
-    <br />
-    <br />
     <h3>My Positions</h3>
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}

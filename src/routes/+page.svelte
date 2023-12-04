@@ -1,14 +1,11 @@
 <script lang="ts">
-    import * as Svelte from "svelte";
-    import * as Utils from "$lib/utils";
     import * as ClientState from "$lib/client/clientState.svelte";
-    import SimpleForm from "$lib/client/components/SimpleForm.svelte";
-    import User from "$lib/client/components/User.svelte";
-    import Users from "$lib/client/components/Users.svelte";
-    import Rooms from "$lib/client/components/Rooms.svelte";
-    import GlobalChat from "$lib/client/components/GlobalChat.svelte";
-    import Tubers from "$lib/client/components/Tubers.svelte";
-    import Positions from "$lib/client/components/Positions.svelte";
+    import * as Utils from "$lib/utils";
+    import * as Svelte from "svelte";
+    import * as Easing from "svelte/easing";
+    import * as SvelteTransition from "svelte/transition";
+    import * as SvelteAnimate from "svelte/animate";
+
 
     console.log("init base page");
 
@@ -20,21 +17,11 @@
 
     const appState = ClientState.getAppState();
     
-
-
-    
-
-    
-
-
     async function gogo() {
         ClientState.hitEndpoint("rando", {}, Utils.emptyObject);
     }
 
     
-    
-    
-
     
 </script>
 
@@ -53,30 +40,55 @@
 {/if}
 <button on:click={ClientState.updateTubers}>update tubers</button>
 <button on:click={ClientState.manualSourceError}>close source</button>
+<br/>
+<br/>
+<div class='compListHolder'>
+    {#each appState.value.compies as c (c)}
+    <!-- in:receive={{ key: todo.id }}
+        out:send={{ key: todo.id }} -->
+        <!-- transition:slide={{duration:400}} -->
+        <!-- transition:slide -->
+        <!-- on:animationstart={()=>{appState.dirty()}} -->
+        <!-- on:transitionend={()=>{appState.dirty()}} -->
+        <!-- out:fade={{duration:200,delay:0}}  -->
+        <!-- animate:flip={{duration:400,delay:0}} -->
+        <!-- on:animationend={()=>{appState.dirty()}} -->
+        <!-- out:SvelteTransition.fade -->
+        <!-- in:receive={{key:c}}
+            out:send={{key:c}} -->
+            <!-- animate:SvelteAnimate.flip={{duration:400}}
+            in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}}
+            out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}} -->
+            <!-- transition:SvelteTransition.fade -->
+            
+            <div
+            class='compHolder'
+            in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}}
+            out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
+    >
+                <svelte:component this={ClientState.compLedg[c]}></svelte:component>
+                <!-- <CompSelector key={c}></CompSelector> -->
+    
+        </div>
+        
+        <br />
+    {/each}
 
-{#each appState.value.compies as c }
-    <svelte:component this={c}></svelte:component>
-{/each}
-<br />
-<br />
-
-
-
-<!-- <User></User>
-<br />
-<br />
-<Users></Users>
-<Rooms></Rooms>
-<br />
-<br />
-<GlobalChat></GlobalChat>
-<Tubers></Tubers>
-<Positions></Positions> -->
+</div>
 
 
 
 <!-- {/if} -->
 <style>
+    .compHolder {
+        border: 2px solid brown;
+        padding:10px;
+
+    }
+    .compListHolder {
+        display: grid;
+        /* flex-direction: column; */
+    }
     .selectableText {
         user-select: text;
     }

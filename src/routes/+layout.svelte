@@ -17,48 +17,51 @@
     const appState = ClientState.getAppState()
     
     ClientState.receiveWorldEvent(data)
+
     
-    function selectedClicked(comp:any){
+    function selectedClicked(comp:ClientState.CompKey){
+        
         if(appState.value.compies.includes(comp)){
-            appState.value.compies = appState.value.compies.filter(c=>c != comp)
-            appState.dirty()
+            ClientState.hideComp(comp)
+            
             return
         }
         appState.value.compies.unshift(comp)
+        windowScrollY = 0
         appState.dirty()
     }
     let usrSel = $derived((()=>{
-        if(appState.value.compies.includes(User)){
+        if(appState.value.compies.includes('usr')){
             return true
         }
         return false
     })())
     let usrsSel = $derived((()=>{
-        if(appState.value.compies.includes(Users)){
+        if(appState.value.compies.includes('usrs')){
             return true
         }
         return false
     })())
     let roomsSel = $derived((()=>{
-        if(appState.value.compies.includes(Rooms)){
+        if(appState.value.compies.includes('rooms')){
             return true
         }
         return false
     })())
     let posSel = $derived((()=>{
-        if(appState.value.compies.includes(Positions)){
+        if(appState.value.compies.includes('positions')){
             return true
         }
         return false
     })())
     let tubersSel = $derived((()=>{
-        if(appState.value.compies.includes(Tubers)){
+        if(appState.value.compies.includes('tubers')){
             return true
         }
         return false
     })())
     let globChatSel = $derived((()=>{
-        if(appState.value.compies.includes(GlobalChat)){
+        if(appState.value.compies.includes("globalChat")){
             return true
         }
         return false
@@ -70,12 +73,12 @@
 <div class="topBar" class:solid={atTop} class:blurry={!atTop}>
     <h3><a href="/">Tubestock</a></h3>
     <a href="/about">about</a>
-    <button on:click={()=>{selectedClicked(User)}} class:selectedBut={usrSel}>user</button>
-    <button on:click={()=>{selectedClicked(Users)}} class:selectedBut={usrsSel}>users</button>
-    <button on:click={()=>{selectedClicked(Rooms)}} class:selectedBut={roomsSel}>rooms</button>
-    <button on:click={()=>{selectedClicked(Positions)}} class:selectedBut={posSel}>positions</button>
-    <button on:click={()=>{selectedClicked(Tubers)}} class:selectedBut={tubersSel}>tubers</button>
-    <button on:click={()=>{selectedClicked(GlobalChat)}} class:selectedBut={globChatSel}>global chat</button>
+    <button on:click={()=>{selectedClicked('usr')}} class:selectedBut={usrSel}>user</button>
+    <button on:click={()=>{selectedClicked('usrs')}} class:selectedBut={usrsSel}>users</button>
+    <button on:click={()=>{selectedClicked('rooms')}} class:selectedBut={roomsSel}>rooms</button>
+    <button on:click={()=>{selectedClicked('positions')}} class:selectedBut={posSel}>positions</button>
+    <button on:click={()=>{selectedClicked('tubers')}} class:selectedBut={tubersSel}>tubers</button>
+    <button on:click={()=>{selectedClicked('globalChat')}} class:selectedBut={globChatSel}>global chat</button>
 </div>
 
 <slot />

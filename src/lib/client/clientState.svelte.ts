@@ -3,6 +3,22 @@ import * as z from 'zod'
 import User from '$lib/client/components/User.svelte'
 import Users from '$lib/client/components/Users.svelte'
 import Rooms from './components/Rooms.svelte'
+import type { ComponentType, SvelteComponent } from 'svelte'
+import Positions from "$lib/client/components/Positions.svelte"
+import GlobalChat from "$lib/client/components/GlobalChat.svelte"
+import Tubers from "$lib/client/components/Tubers.svelte"
+
+export const compLedg = {
+    usr:User,
+    usrs:Users,
+    rooms:Rooms,
+    positions:Positions,
+    globalChat:GlobalChat,
+    tubers:Tubers,
+}
+export type CompKey = keyof typeof compLedg
+
+
 
 console.log('running clientstate')
 
@@ -25,7 +41,7 @@ export type ClientAppState = {
     selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
-    compies:any[]
+    compies:CompKey[]
 }
 
 
@@ -46,7 +62,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
-        compies: [User,Users,Rooms],
+        compies: ['usrs','tubers','globalChat'],
     };
     let value = $state(as)
     return {
@@ -56,6 +72,7 @@ const stateFactory = () => {
         // return value; 
         // },
         dirty() {
+            // console.log('dirty')
             value = value
         },
         update(mod: (s: ClientAppState) => void) {
@@ -73,20 +90,10 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export function showDisplayingInvites() : Utils.InviteOnClient[]{
-    // console.log('recalc show invites to show chat ui')
-    let result : Utils.InviteOnClient[] = []
-    const toRemove: number[] = []
-    for(const r of appState.value.displayingInvites){
-        const found = appState.value.roomInvites.findLast(f=>f.id == r)
-        if(!found || !found.joined){
-            toRemove.push(r)
-            continue
-        }
-        result.push(found)
-    }
-    appState.value.displayingInvites = appState.value.displayingInvites.filter(i=>!toRemove.includes(i))
-    return result
+export async function hideComp(comp:CompKey){
+    console.log('removing ' + JSON.stringify(comp))
+            appState.value.compies = appState.value.compies.filter(c=>c != comp)
+            appState.dirty()
 }
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{

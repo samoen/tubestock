@@ -44,35 +44,7 @@ export const load : LayoutServerLoad = async(event)=>{
         return dfl
     }
 
-    // const poses = await ServerState.dbGetPositionsForUser(foundUser.id)
     const cPoses = await ServerState.positionsInClientForUser(foundUser.id)
-
-    // let gotp = await ServerState.db.query.positions.findMany({
-    //     where:DORM.eq(Schema.positions.userfk,foundUser.id),
-    //     with:{
-    //         forTuber:true
-    //     }
-    // })
-
-    // const cPoses : Utils.PositionInClient[] = []
-    // for(const g of gotp){
-    //     const ret = ServerState.fastCalcRetVal(
-    //         g.forTuber.count,
-    //         g.subsAtStart,
-    //         g.amount,
-    //         g.long
-    //     )
-
-    //     const cpos : Utils.PositionInClient = {
-    //         id:g.id,
-    //         amount:g.amount,
-    //         long:g.long,
-    //         tuberName:g.forTuber.channelName,
-    //         subsAtStart:g.subsAtStart,
-    //         returnValue:ret
-    //     }
-    //     cPoses.push(cpos)
-    // }
 
     const cInvites = await ServerState.dbGetInvites(foundUser.id)
     dfl.positions = cPoses
