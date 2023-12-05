@@ -126,6 +126,8 @@
         position: relative;
         padding-block: 2px;
         padding-inline: 4px;
+        /* border-radius: 20px; */
+        background-color: aliceblue;
     }
     .buttonLoading {
         position: absolute;
@@ -137,6 +139,7 @@
     input[type="text"] {
         padding-block: 2px;
         margin-block:4px;
+        background-color: beige;
     }
     .inputHolder {
         display: inline;

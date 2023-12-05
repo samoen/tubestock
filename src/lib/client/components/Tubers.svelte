@@ -32,11 +32,11 @@
 
 <!-- <span class='bigBold'>Tubers</span> -->
     <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('tubers')}}>Hide</button> -->
-    <BarItem forCompId={{kind:"static",id:`tubers`}} title='Tubers'></BarItem>
+    <BarItem compData={{kind:"static",id:`tubers`}} title='Tubers'></BarItem>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
         <div class='listItem'>
-            <BarItem forCompId={{kind:"tuber",id:`tuber${t.channelId}`,tuberOnClient:t}} title={t.channelName}></BarItem>
+            <BarItem compData={{kind:"tuber",id:`tuber${t.channelId}`,tuberOnClient:t}} title={t.channelName}></BarItem>
             <span>{t.count}</span>
             <!-- <button
                 type="button"

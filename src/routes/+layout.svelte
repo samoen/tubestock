@@ -28,34 +28,12 @@
 <div class="topBar brutal-border" class:solid={atTop} class:blurry={!atTop}>
     <h3><a href="/">Tubestock</a></h3>
     <a href="/about">about</a>
-    <BarItem forCompId={{id:'usr', kind:'static'}} title='Me'></BarItem>
-    <BarItem forCompId={{id:'usrs', kind:'static'}} title='Users'></BarItem>
-    <BarItem forCompId={{id:'rooms', kind:'static'}} title='Rooms'></BarItem>
-    <BarItem forCompId={{id:'positions', kind:'static'}} title='Positions'></BarItem>
-    <BarItem forCompId={{id:'tubers', kind:'static'}} title='Tubers'></BarItem>
-    <BarItem forCompId={{id:'globalChat', kind:'static'}} title='Global Chat'></BarItem>
-    <!-- <div class='topBarBut'> -->
-        <!-- style:width='maxContent'  -->
-        <!-- <button 
-            class='itemButton' 
-            on:click={()=>{selectedClicked('usr')}} 
-            class:inset-brutal={usrSel} 
-            class:brutal-border={!usrSel}>
-            <div class='holdVis'>
-                <p 
-                class:shrinkFont={usrSel}
-                    class='vis' 
-                    >User</p>
-                <p class='vis invis'>User</p>
-
-            </div>
-        </button> -->
-    <!-- </div> -->
-    <!-- <button class='itemButton' on:click={()=>{selectedClicked('usrs')}} class:shower={usrsSel}>users</button>
-    <button class='itemButton' on:click={()=>{selectedClicked('rooms')}} class:selectedBut={roomsSel}>rooms</button>
-    <button class='itemButton' on:click={()=>{selectedClicked('positions')}} class:selectedBut={posSel}>positions</button>
-    <button class='itemButton' on:click={()=>{selectedClicked('tubers')}} class:selectedBut={tubersSel}>tubers</button>
-    <button class='itemButton' on:click={()=>{selectedClicked('globalChat')}} class:selectedBut={globChatSel}>global chat</button> -->
+    <BarItem compData={{id:'usr', kind:'static'}} title='Me'></BarItem>
+    <BarItem compData={{id:'usrs', kind:'static'}} title='Users'></BarItem>
+    <BarItem compData={{id:'rooms', kind:'static'}} title='Rooms'></BarItem>
+    <BarItem compData={{id:'positions', kind:'static'}} title='Positions'></BarItem>
+    <BarItem compData={{id:'tubers', kind:'static'}} title='Tubers'></BarItem>
+    <BarItem compData={{id:'globalChat', kind:'static'}} title='Global Chat'></BarItem>
 </div>
 
 <slot />
@@ -97,6 +75,11 @@
         background-color: beige;
         font-size:1.3rem;
     }
+
+    :global(.opener){
+        background-color: yellowgreen;
+        padding:5px;
+    }
     
     :global(.brutal-border) {
         border: 2px solid black;
@@ -109,7 +92,8 @@
     :global(.listOfBarItems) {
         display: flex;
         flex-wrap: wrap;
-        gap:5px
+        gap:5px;
+        align-items: center;
     }
     
     :global(.inset-brutal) {

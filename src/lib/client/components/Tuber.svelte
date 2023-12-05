@@ -35,7 +35,7 @@
     }
 </script>
 
-<BarItem forCompId={{kind:"tuber",id:`tuber${tuberOnClient.channelId}`,tuberOnClient:tuberOnClient}} title={tuberOnClient.channelName}></BarItem>
+<BarItem compData={{kind:"tuber",id:`tuber${tuberOnClient.channelId}`,tuberOnClient:tuberOnClient}} title={tuberOnClient.channelName}></BarItem>
 <span class='bigBold'>Tuber</span>
 <br/>
 <br/>

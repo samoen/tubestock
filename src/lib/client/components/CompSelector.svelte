@@ -35,7 +35,7 @@
             <p>comp key not found</p>
         {/if}
     {:else if key.kind == 'room'}
-        <Room d={key.invite}></Room>
+        <Room inviteId={key.invite.id}></Room>
     {:else if key.kind == 'user'}
         <OtherUser selectedUser={key.userOnClient}></OtherUser>
     {:else if key.kind == 'tuber'}

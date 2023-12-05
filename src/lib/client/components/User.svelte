@@ -25,8 +25,8 @@
 </script>
 
 <!-- <h3>Me</h3> -->
-<BarItem forCompId={{kind:'static',id:'usr'}} title='Me'></BarItem>
-<p>My name : {appState.value.myUsername}</p>
+<BarItem compData={{kind:'static',id:'usr'}} title='Me'></BarItem>
+<p>Display Name: {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
 <p class="selectableText">Private Id : {appState.value.myPrivateId}</p>

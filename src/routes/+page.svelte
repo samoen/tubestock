@@ -62,10 +62,10 @@
             out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}} -->
             <!-- transition:SvelteTransition.fade -->
             
-            <!-- in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}} -->
-            <!-- out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}} -->
             <div
             class='compHolder'
+            in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}}
+            out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
             >
                 
                 <!-- <svelte:component this={ClientState.compLedg[c.id]}></svelte:component> -->

@@ -2,20 +2,14 @@
     import * as ClientState from "$lib/client/clientState.svelte";
     import * as Utils from "$lib/utils";
 
-    let { forCompId, title } = $props<{ forCompId: ClientState.CompKey, title:string }>();
+    let { compData: forCompId, title } = $props<{ compData: ClientState.CompKey, title:string }>();
 
     const appState = ClientState.getAppState();
 
     function selectedClicked() {
-        console.log(
-            "clicked " +
-                forCompId +
-                "with existing compies " +
-                JSON.stringify(appState.value.compies),
-        );
         if (cExist(forCompId.id)) {
-            console.log("hiding comp");
-            ClientState.hideComp(forCompId.id);
+            appState.value.compies = appState.value.compies.filter(c=>c.id != forCompId.id)
+            appState.dirty()
             return;
         }
         // appState.value.compies.unshift({ id: forCompId, kind: "static" });

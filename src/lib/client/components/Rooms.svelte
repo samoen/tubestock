@@ -3,30 +3,10 @@
     import * as Utils from "$lib/utils";
     import BarItem from "./BarItem.svelte";
     import Room from "./Room.svelte";
+    import Opener from "./Opener.svelte";
     import SimpleForm from "./SimpleForm.svelte";
 
     const appState = ClientState.getAppState();
-    // const displayingRooms = $derived(
-    //     (() => {
-    //         let result: Utils.InviteOnClient[] = [];
-    //         const toRemove: number[] = [];
-    //         for (const r of appState.value.displayingInvites) {
-    //             const found = appState.value.roomInvites.findLast(
-    //                 (f) => f.id == r,
-    //             );
-    //             if (!found || !found.joined) {
-    //                 toRemove.push(r);
-    //                 continue;
-    //             }
-    //             result.push(found);
-    //         }
-    //         appState.value.displayingInvites =
-    //             appState.value.displayingInvites.filter(
-    //                 (i) => !toRemove.includes(i),
-    //             );
-    //         return result;
-    //     })(),
-    // );
 
     async function joinRoom(roomId: number) {
         const toSend: Utils.JoinRoomRequest = {
@@ -69,36 +49,37 @@
     );
 </script>
 
-<BarItem forCompId={{ kind: "static", id: "rooms" }} title="Rooms"></BarItem>
-<!-- <span class="bigBold">Rooms</span> -->
-<!-- <button class="itemButton" on:click={hide}>Hide</button> -->
+<BarItem compData={{ kind: "static", id: "rooms" }} title="Rooms"></BarItem>
 <div class="m">
     <h4>Joined</h4>
-    {#each showables as i (i.id)}
-        <BarItem
-            forCompId={{ kind: "room", id: `room${i.id}`, invite: i }}
-            title={i.toRoom.roomName}
-        ></BarItem>
-    {/each}
-    <br/>
-    <br/>
-    {#if joinables.length > 0}
-    <h4>Invited</h4>
-    {#each joinables as i (i.id)}
-    <div class="listItem">
-        <span> {i.toRoom.roomName}</span>
-        <SimpleForm
-        buttonLabel="join"
-        onSubmit={async () => {
-            return await joinRoom(i.toRoom.id);
-        }}
-            ></SimpleForm>
-        </div>
+    <div class='listOfBarItems'>
+        {#each showables as i (i.id)}
+            <BarItem
+            compData={{ kind: "room", id: `room${i.id}`, invite: i }}
+                title={i.toRoom.roomName}
+            ></BarItem>
         {/each}
-        {/if}
+    </div>
+    <br />
+    <br />
+    {#if joinables.length > 0}
+        <h4>Invited</h4>
+        {#each joinables as i (i.id)}
+            <Opener label={i.toRoom.roomName}>
+                <SimpleForm
+                    buttonLabel="join"
+                    onSubmit={async () => {
+                        return await joinRoom(i.toRoom.id);
+                    }}
+                ></SimpleForm>
+                Room Id: {i.toRoom.id}
+            </Opener>
+        {/each}
+    {/if}
 </div>
+<h4>Create Room</h4>
 <SimpleForm
-    buttonLabel="Create Room"
+    buttonLabel="Create"
     inputs={[{ itype: "text" }]}
     onSubmit={createRoom}
 ></SimpleForm>

@@ -9,7 +9,7 @@
 </script>
 
 {#if appState.value.positionsList != undefined}
-    <BarItem forCompId={{kind:"static",id:`positions`}} title='Positions'></BarItem>
+    <BarItem compData={{kind:"static",id:`positions`}} title='Positions'></BarItem>
     <!-- <span class='bigBold'>My Positions</span> -->
     <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('positions')}}>Hide</button> -->
     <div class="msgs">

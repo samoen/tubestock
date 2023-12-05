@@ -3,6 +3,7 @@
     import * as Utils from '$lib/utils'
     import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
+    import Opener from './Opener.svelte';
 
     type Props = {
         selectedUser:Utils.OtherUserOnClient
@@ -34,7 +35,7 @@
     })())
 </script>
 
-<BarItem forCompId={{id:`user${selectedUser.id}`, kind:'user', userOnClient:selectedUser}} title={selectedUser.displayName}></BarItem>
+<BarItem compData={{id:`user${selectedUser.id}`, kind:'user', userOnClient:selectedUser}} title={selectedUser.displayName}></BarItem>
 <span class='bigBold'>
     User
 </span>
@@ -49,20 +50,26 @@
         {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
     </p>
 {/each}
-{#each roomsIOwn as i}
-    <SimpleForm
-        buttonLabel={`Invite to ${i.toRoom.roomName}`}
-        onSubmit={async () => {
-            if (!selectedUser) {
-                return {
-                    failed: true,
-                    error: new Error("selected user is undefined"),
-                };
-            }
-            return await inviteToRoomClicked(
-                selectedUser.id,
-                i.toRoom.id,
-            );
-        }}
-    ></SimpleForm>
-{/each}
+{#if roomsIOwn.length > 1}
+    <Opener label='Invite'>
+        {#each roomsIOwn as i}
+            <SimpleForm
+                buttonLabel={`${i.toRoom.roomName}`}
+                onSubmit={async () => {
+                    if (!selectedUser) {
+                        return {
+                            failed: true,
+                            error: new Error("selected user is undefined"),
+                        };
+                    }
+                    return await inviteToRoomClicked(
+                        selectedUser.id,
+                        i.toRoom.id,
+                    );
+                }}
+            ></SimpleForm>
+        {/each}
+
+    </Opener>
+    
+{/if}

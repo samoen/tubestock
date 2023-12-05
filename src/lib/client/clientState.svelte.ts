@@ -115,7 +115,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
-        compies: [{kind:'static', id:'usrs'}],
+        compies: [{kind:'static', id:'usrs'},{kind:'static',id:'rooms'}],
     };
     let value = $state(as)
     return {
@@ -143,23 +143,23 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export async function hideComp(compId:CompKeyId){
-    console.log('removing ' + compId + ' from compies ' + JSON.stringify(appState.value.compies))
-            appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
-            appState.dirty()
-}
+// export async function hideComp(compId:CompKeyId){
+//     // console.log('removing ' + compId + ' from compies ' + JSON.stringify(appState.value.compies))
+//             appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
+//             appState.dirty()
+// }
 
-export function hideCompIfPresent(compId:CompKeyId):{wasPresent:boolean}{
-    if(appState.value.compies.findLast(c=>c.id == compId)){
-        console.log('hiding comp')
-        hideComp(compId)
-        return{wasPresent:true}
-    }
-    return{wasPresent:false}
-    // console.log('removing ' + JSON.stringify(comp))
-            // appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
-            // appState.dirty()
-}
+// export function hideCompIfPresent(compId:CompKeyId):{wasPresent:boolean}{
+//     if(appState.value.compies.findLast(c=>c.id == compId)){
+//         console.log('hiding comp')
+//         hideComp(compId)
+//         return{wasPresent:true}
+//     }
+//     return{wasPresent:false}
+//     // console.log('removing ' + JSON.stringify(comp))
+//             // appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
+//             // appState.dirty()
+// }
 export function showComp(compy:CompKey){
     appState.value.compies.unshift(compy);
     createCounter().setToZero()

@@ -1,14 +1,21 @@
 <script lang="ts">
-    import * as ClientState from '$lib/client/clientState.svelte'
-    import * as Utils from '$lib/utils'
-    import BarItem from './BarItem.svelte';
-    import SimpleForm from './SimpleForm.svelte';
+    import * as ClientState from "$lib/client/clientState.svelte";
+    import * as Utils from "$lib/utils";
+    import BarItem from "./BarItem.svelte";
+    import Opener from "./Opener.svelte";
+    import SimpleForm from "./SimpleForm.svelte";
 
     const appState = ClientState.getAppState();
     type Props = {
-        d:Utils.InviteOnClient
-    }
-    let {d} = $props<Props>();
+        // d:Utils.InviteOnClient
+        inviteId: number;
+    };
+    let { inviteId } = $props<Props>();
+    let invite = $derived(
+        (() => {
+            return appState.value.roomInvites.findLast((i) => i.id == inviteId);
+        })(),
+    );
 
     async function kickUser(roomId: number, userId: number) {
         const toSend: Utils.InviteToRoomRequest = {
@@ -22,7 +29,7 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        ClientState.receiveWorldEvent(resp.value);
+        // ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
     async function getEarlierPrivateMsgs(invite: Utils.InviteOnClient) {
@@ -47,7 +54,7 @@
         appState.dirty();
         return resp;
     }
-    
+
     async function deleteRoom(roomId: number) {
         const toSend: Utils.DeleteRoomRequest = {
             rId: roomId,
@@ -58,7 +65,9 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        appState.value.compies = appState.value.compies.filter(c=>c.id != `room${d.id}`)
+        appState.value.compies = appState.value.compies.filter(
+            (c) => c.id != `room${inviteId}`,
+        );
         ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
@@ -73,74 +82,87 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        appState.value.compies = appState.value.compies.filter(c=>c.id != `room${d.id}`)
+        appState.value.compies = appState.value.compies.filter(
+            (c) => c.id != `room${inviteId}`,
+        );
         ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
 </script>
 
-<!-- <div style:marginBottom=60px> -->
-    <BarItem forCompId={{kind:"room",id:`room${d.id}`,invite:d}} title={d.toRoom.roomName}></BarItem>
-    <span class='bigBold'>Private Room</span>
-<!-- </div> -->
-<br/>
-<br/>
-{#if d.toRoom.ownerId == appState.value.myDbId}
-                <SimpleForm
-                    buttonLabel="delete"
-                    onSubmit={async () => {
-                        return await deleteRoom(d.toRoom.id);
-                    }}
-                ></SimpleForm>
-{/if}
-{#if d.toRoom.ownerId != appState.value.myDbId}
+{#if invite}
+    <!-- <div style:marginBottom=60px> -->
+    <BarItem
+    compData={{ kind: "room", id: `room${inviteId}`, invite: invite }}
+        title={invite.toRoom.roomName}
+    ></BarItem>
+    <span class="bigBold">Private Room</span>
+    <!-- </div> -->
+    <br />
+    <br />
+    {#if invite.toRoom.ownerId == appState.value.myDbId}
+        <SimpleForm
+            buttonLabel="Delete Room"
+            onSubmit={async () => {
+                if(!invite)return {failed:true,error:new Error('huh')}
+                return await deleteRoom(invite.toRoom.id);
+            }}
+        ></SimpleForm>
+    {/if}
+    {#if invite.toRoom.ownerId != appState.value.myDbId}
+        <SimpleForm
+            buttonLabel="leave"
+            onSubmit={async () => {
+                if(!invite)return {failed:true,error:new Error('huh')}
+                return await leaveRoom(invite.toRoom.id);
+            }}
+        ></SimpleForm>
+    {/if}
+    <h4>Participants</h4>
+    <div class="listOfBarItems">
+        {#each invite.toRoom.invites as i (i.forUser.id)}
+            <Opener label={i.forUser.displayName + (i.forUser.id == invite.toRoom.ownerId ? '(owner)' : '')}>
+                {#if invite.toRoom.ownerId == appState.value.myDbId && i.forUser.id != appState.value.myDbId}
                     <SimpleForm
-                        buttonLabel="leave"
+                        buttonLabel="kick"
                         onSubmit={async () => {
-                            return await leaveRoom(d.toRoom.id);
+                            if(!invite)return {failed:true,error:new Error('huh')}
+                            return await kickUser(invite.toRoom.id, i.forUser.id);
                         }}
                     ></SimpleForm>
                 {/if}
-<h4>Participants</h4>
-<div class='msgs'>
-    {#each d.toRoom.invites as i}
-        <div class='listItem'>
-            <span>{i.forUser.displayName}</span>
-            {#if i.forUser.id == d.toRoom.ownerId}
-                <span>(owner)</span>
-            {/if}
-            {#if d.toRoom.ownerId == appState.value.myDbId && i.forUser.id != appState.value.myDbId}
-                <SimpleForm
-                    buttonLabel="kick"
-                    onSubmit={async () => {
-                        return await kickUser(d.toRoom.id, i.forUser.id);
-                    }}
-                ></SimpleForm>
-            {/if}
-        </div>
-    {/each}
-
-</div>
-<h4>Messages</h4>
-<div class="msgs">
-    {#each d.toRoom.msgs as m (m.id)}
-        <div class='listItem'>
-            <p>{m.author.displayName} : {m.msgTxt}</p>
-        </div>
-    {/each}
+                    </Opener>
+        {/each}
+    </div>
+    <h4>Messages</h4>
+    <div class="msgs">
+        {#each invite.toRoom.msgs as m (m.id)}
+            <div class="listItem">
+                <p>{m.author.displayName} : {m.msgTxt}</p>
+            </div>
+        {/each}
+        {#if invite.toRoom.msgs.length > 4}
+            <SimpleForm
+                buttonLabel="Show Earlier"
+                onSubmit={async () => {
+                    if(!invite)return {failed:true,error:new Error('huh')}
+                    return await getEarlierPrivateMsgs(invite);
+                }}
+            ></SimpleForm>
+        {/if}
+    </div>
     <SimpleForm
-        buttonLabel="Show Earlier"
-        onSubmit={async () => {
-            return await getEarlierPrivateMsgs(d);
+        buttonLabel="Send"
+        onSubmit={async (msgTxt) => {
+            if(!invite)return {failed:true,error:new Error('huh')}
+            return await ClientState.sendMsg(msgTxt, invite.toRoom.id);
         }}
-    ></SimpleForm>
-</div>
-<SimpleForm
-    buttonLabel="Send"
-    onSubmit={async (msgTxt) => {
-        return await ClientState.sendMsg(msgTxt, d.toRoom.id);
-    }}
-    inputs={[{ itype: "text" }]}
-/>
-<br />
-<br />
+        inputs={[{ itype: "text" }]}
+    />
+    <br />
+    <br />
+{/if}
+
+<style>
+    
+</style>

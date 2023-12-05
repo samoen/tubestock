@@ -29,7 +29,7 @@
 </script>
 
 <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('globalChat')}}>Hide</button> -->
-<BarItem forCompId={{kind:"static",id:`globalChat`}} title='Global Chat'></BarItem>
+<BarItem compData={{kind:"static",id:`globalChat`}} title='Global Chat'></BarItem>
 <span class='bigBold'>Public Room</span>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
