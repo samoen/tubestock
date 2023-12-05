@@ -16,7 +16,28 @@ export const compLedg = {
     globalChat:GlobalChat,
     tubers:Tubers,
 }
-export type CompKey = keyof typeof compLedg
+export type StaticCompKey = keyof typeof compLedg
+export type CompKey = {
+    kind:'static',
+    id : StaticCompKey
+} 
+ | {
+    kind:'room'
+    id:`room${string}`
+    invite:Utils.InviteOnClient
+ }
+ | {
+    kind:'user'
+    id:`user${string}`
+    userOnClient:Utils.OtherUserOnClient
+ }
+ | {
+    kind:'tuber'
+    id:`tuber${string}`
+    tuberOnClient:Utils.TuberInClient
+ }
+
+export type CompKeyId = CompKey['id']
 
 
 
@@ -32,7 +53,7 @@ export type ClientAppState = {
     userList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
     roomInvites:Utils.InviteOnClient[];
-    displayingInvites:number[];
+    // displayingInvites:number[];
     positionsList: Utils.PositionInClient[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
@@ -44,6 +65,39 @@ export type ClientAppState = {
     compies:CompKey[]
 }
 
+// let windowScrollY = {u:$state(0)};
+// export function getScroll(){
+//     return windowScrollY
+// }
+// export function scrollUp(){
+//     windowScrollY.u = 0
+// }
+export function createCounter() : ShareRune {
+    if(county)return county
+    console.log('new county')
+	let count = $state(0);
+
+	function setToZero() {
+		count = 0;
+	}
+    county = {
+        set count(val:number){
+            count = val
+        },
+		get count() {
+			return count;
+		},
+		setToZero:setToZero
+	};
+
+	return county
+}
+// type ShareRune = ReturnType<typeof createCounter>
+type ShareRune = {
+    count:number,
+    setToZero:()=>void
+}
+let county : ShareRune | undefined = undefined
 
 const stateFactory = () => {
     const as: ClientAppState = {
@@ -53,8 +107,7 @@ const stateFactory = () => {
         positionsList: undefined,
         tuberList: [],
         roomInvites:[],
-        displayingInvites:[],
-        // joinedRooms:[],
+        // displayingInvites:[],
         myUsername: undefined,
         myIdleStock: undefined,
         myPrivateId: undefined,
@@ -62,7 +115,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
-        compies: ['usrs','tubers','globalChat'],
+        compies: [{kind:'static', id:'usrs'}],
     };
     let value = $state(as)
     return {
@@ -90,10 +143,27 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export async function hideComp(comp:CompKey){
-    console.log('removing ' + JSON.stringify(comp))
-            appState.value.compies = appState.value.compies.filter(c=>c != comp)
+export async function hideComp(compId:CompKeyId){
+    console.log('removing ' + compId + ' from compies ' + JSON.stringify(appState.value.compies))
+            appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
             appState.dirty()
+}
+
+export function hideCompIfPresent(compId:CompKeyId):{wasPresent:boolean}{
+    if(appState.value.compies.findLast(c=>c.id == compId)){
+        console.log('hiding comp')
+        hideComp(compId)
+        return{wasPresent:true}
+    }
+    return{wasPresent:false}
+    // console.log('removing ' + JSON.stringify(comp))
+            // appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
+            // appState.dirty()
+}
+export function showComp(compy:CompKey){
+    appState.value.compies.unshift(compy);
+    createCounter().setToZero()
+    appState.dirty();
 }
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{

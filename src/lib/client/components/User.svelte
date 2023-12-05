@@ -1,6 +1,7 @@
 <script lang="ts">
     import * as ClientState from '$lib/client/clientState.svelte'
     import * as Utils from '$lib/utils'
+    import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
 
     const appState = ClientState.getAppState();
@@ -23,7 +24,8 @@
     }
 </script>
 
-<h3>User</h3>
+<!-- <h3>Me</h3> -->
+<BarItem forCompId={{kind:'static',id:'usr'}} title='Me'></BarItem>
 <p>My name : {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>

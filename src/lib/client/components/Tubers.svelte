@@ -1,6 +1,7 @@
 <script lang="ts">
     import * as ClientState from '$lib/client/clientState.svelte'
     import * as Utils from '$lib/utils'
+    import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
     
     const appState = ClientState.getAppState();
@@ -29,21 +30,26 @@
     }
 </script>
 
-<h3>Tubers</h3>
+<!-- <span class='bigBold'>Tubers</span> -->
+    <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('tubers')}}>Hide</button> -->
+    <BarItem forCompId={{kind:"static",id:`tubers`}} title='Tubers'></BarItem>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
-        <div>
-            <span>{t.channelName} : {t.count}</span>
-            <button
+        <div class='listItem'>
+            <BarItem forCompId={{kind:"tuber",id:`tuber${t.channelId}`,tuberOnClient:t}} title={t.channelName}></BarItem>
+            <span>{t.count}</span>
+            <!-- <button
                 type="button"
                 class="itemButton"
                 on:click={() => {
                     appState.value.selectedTuber = t;
+                    appState.value.compies.unshift({kind:"tuber",id:`tuber${t.channel}`,tuberOnClient:t})
+                    ClientState.createCounter().setToZero()
                     appState.dirty();
                 }}
             >
                 Select
-            </button>
+            </button> -->
         </div>
     {/each}
 </div>

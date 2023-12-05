@@ -1,6 +1,7 @@
 <script lang="ts">
     import * as ClientState from '$lib/client/clientState.svelte'
     import * as Utils from '$lib/utils'
+    import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
     
     const appState = ClientState.getAppState();
@@ -8,7 +9,9 @@
 </script>
 
 {#if appState.value.positionsList != undefined}
-    <h3>My Positions</h3>
+    <BarItem forCompId={{kind:"static",id:`positions`}} title='Positions'></BarItem>
+    <!-- <span class='bigBold'>My Positions</span> -->
+    <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('positions')}}>Hide</button> -->
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}
             <div>

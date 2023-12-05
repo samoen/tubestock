@@ -5,6 +5,7 @@
     import * as Easing from "svelte/easing";
     import * as SvelteTransition from "svelte/transition";
     import * as SvelteAnimate from "svelte/animate";
+    import CompSelector from "$lib/client/components/CompSelector.svelte";
 
 
     console.log("init base page");
@@ -43,7 +44,7 @@
 <br/>
 <br/>
 <div class='compListHolder'>
-    {#each appState.value.compies as c (c)}
+    {#each appState.value.compies as c (c.id)}
     <!-- in:receive={{ key: todo.id }}
         out:send={{ key: todo.id }} -->
         <!-- transition:slide={{duration:400}} -->
@@ -61,17 +62,18 @@
             out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}} -->
             <!-- transition:SvelteTransition.fade -->
             
+            <!-- in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}} -->
+            <!-- out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}} -->
             <div
             class='compHolder'
-            in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}}
-            out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
-    >
-                <svelte:component this={ClientState.compLedg[c]}></svelte:component>
-                <!-- <CompSelector key={c}></CompSelector> -->
+            >
+                
+                <!-- <svelte:component this={ClientState.compLedg[c.id]}></svelte:component> -->
+                <CompSelector key={c}></CompSelector>
     
         </div>
         
-        <br />
+        <!-- <br /> -->
     {/each}
 
 </div>
@@ -81,35 +83,29 @@
 <!-- {/if} -->
 <style>
     .compHolder {
-        border: 2px solid brown;
-        padding:10px;
+        /* border: 2px solid brown; */
+        /* height:auto; */
+        /* background-color: purple; */
+        /* padding:10px; */
 
     }
     .compListHolder {
-        display: grid;
+        display: flex;
+        gap:10px;
+        flex-wrap: wrap;
+        flex-direction: column;
+        /* align-items: flex-start; */
+        
+        /* grid-template-columns: 1fr; */
+
         /* flex-direction: column; */
     }
     .selectableText {
         user-select: text;
     }
-    :global( .msgs ) {
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: flex-start;
-        height: 100px;
-        overflow-y: auto;
-        background-color: burlywood;
-        margin-block: 5px;
-    }
     
-    :global(.itemButton) {
-        border-radius: 6px;
-        padding-inline: 4px;
-        padding-block: 2px;
-        cursor: pointer;
-        font-weight: bold;
-        background-color: yellow;
-    }
+    
+    
     .red {
         background-color: red;
         color: white;

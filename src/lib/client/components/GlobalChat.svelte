@@ -1,6 +1,7 @@
 <script lang="ts">
     import * as ClientState from '$lib/client/clientState.svelte'
     import * as Utils from '$lib/utils'
+    import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
     
     const appState = ClientState.getAppState();
@@ -27,10 +28,15 @@
     }
 </script>
 
-<h3>Global Chat</h3>
+<!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('globalChat')}}>Hide</button> -->
+<BarItem forCompId={{kind:"static",id:`globalChat`}} title='Global Chat'></BarItem>
+<span class='bigBold'>Public Room</span>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}
-        <p>{m.author.displayName} : {m.msgTxt}</p>
+        <div class='listItem'>
+
+            <p>{m.author.displayName} : {m.msgTxt}</p>
+        </div>
     {/each}
     <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}
     ></SimpleForm>
