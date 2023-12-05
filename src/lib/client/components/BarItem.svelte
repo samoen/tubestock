@@ -16,7 +16,7 @@
         appState.value.compies.unshift(forCompId);
         // ClientState.windowScrollY = 0
         // ClientState.scrollUp()
-        ClientState.createCounter().setToZero();
+        ClientState.getScrollY().setToZero();
         appState.dirty();
     }
     function cExist(key: ClientState.CompKeyId): boolean {

@@ -9,7 +9,7 @@
     import Tubers from "$lib/client/components/Tubers.svelte"
     import BarItem from "$lib/client/components/BarItem.svelte";
     
-    let counter = ClientState.createCounter()
+    let counter = ClientState.getScrollY()
     let { data } = $props<{ data: Utils.WorldEvent }>();
     
     let atTop = $derived(counter.count < 35);

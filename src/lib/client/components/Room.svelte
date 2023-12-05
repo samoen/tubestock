@@ -52,6 +52,7 @@
         }
         invite.toRoom.msgs.push(...resp.value.msgs);
         appState.dirty();
+        
         return resp;
     }
 

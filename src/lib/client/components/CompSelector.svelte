@@ -17,7 +17,7 @@
 </script>
 
 <!-- animate:flip={{duration:400,delay:0}} -->
-<div class="outer brutal-border">
+<!-- <div class="outer brutal-border"> -->
     {#if key.kind == "static"}
         {#if key.id == "usr"}
             <User></User>
@@ -37,16 +37,16 @@
     {:else if key.kind == 'room'}
         <Room inviteId={key.invite.id}></Room>
     {:else if key.kind == 'user'}
-        <OtherUser selectedUser={key.userOnClient}></OtherUser>
+        <OtherUser thingId={key.userOnClient.id}></OtherUser>
     {:else if key.kind == 'tuber'}
         <Tuber tuberOnClient={key.tuberOnClient}></Tuber>
     {/if}
-</div>
+<!-- </div> -->
 
 <style>
-    .outer{
+    /* .outer{
         background-color: burlywood;
         padding:4px;
         border-radius: 5px;
-    }
+    } */
 </style>

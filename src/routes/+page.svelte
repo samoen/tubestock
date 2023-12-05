@@ -63,7 +63,7 @@
             <!-- transition:SvelteTransition.fade -->
             
             <div
-            class='compHolder'
+            class='compHolder brutal-border'
             in:SvelteTransition.scale={{duration:200,easing:Easing.sineOut}}
             out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
             >
@@ -85,8 +85,8 @@
     .compHolder {
         /* border: 2px solid brown; */
         /* height:auto; */
-        /* background-color: purple; */
-        /* padding:10px; */
+        background-color: burlywood;
+        padding:10px;
 
     }
     .compListHolder {

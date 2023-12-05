@@ -65,22 +65,15 @@ export type ClientAppState = {
     compies:CompKey[]
 }
 
-// let windowScrollY = {u:$state(0)};
-// export function getScroll(){
-//     return windowScrollY
-// }
-// export function scrollUp(){
-//     windowScrollY.u = 0
-// }
-export function createCounter() : ShareRune {
-    if(county)return county
+export function getScrollY() : ShareRune {
+    if(scrollYRune)return scrollYRune
     console.log('new county')
 	let count = $state(0);
 
 	function setToZero() {
 		count = 0;
 	}
-    county = {
+    scrollYRune = {
         set count(val:number){
             count = val
         },
@@ -90,14 +83,14 @@ export function createCounter() : ShareRune {
 		setToZero:setToZero
 	};
 
-	return county
+	return scrollYRune
 }
 // type ShareRune = ReturnType<typeof createCounter>
 type ShareRune = {
     count:number,
     setToZero:()=>void
 }
-let county : ShareRune | undefined = undefined
+let scrollYRune : ShareRune | undefined = undefined
 
 const stateFactory = () => {
     const as: ClientAppState = {
@@ -162,7 +155,7 @@ let appState: ReturnType<typeof stateFactory>;
 // }
 export function showComp(compy:CompKey){
     appState.value.compies.unshift(compy);
-    createCounter().setToZero()
+    getScrollY().setToZero()
     appState.dirty();
 }
 
