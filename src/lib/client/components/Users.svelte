@@ -8,7 +8,7 @@
 </script>
 
 <div class="outer">
-    <BarItem compData={{ kind: "static", id: "usrs" }} title="Users"></BarItem>
+    <BarItem compData={{ kind: "usrs", thingId: undefined, }} title="Users"></BarItem>
     <br />
     <br />
     <div class="usrlist">
@@ -17,9 +17,8 @@
                 <!-- <span>{u.displayName}</span> -->
                 <BarItem
                 compData={{
-                        kind: "user",
-                        id: `user${u.id}`,
-                        userOnClient: u,
+                        kind: "otherUsr",
+                        thingId:u.id,
                     }}
                     title={u.displayName}
                 ></BarItem>

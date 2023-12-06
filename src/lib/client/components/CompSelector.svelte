@@ -10,37 +10,40 @@
     import Room from "./Room.svelte";
     import OtherUser from "./OtherUser.svelte";
 
+    const appState = ClientState.getAppState();
+
     type Props = {
-        key: ClientState.CompKey;
+        key: {compKey: ClientState.ComponentWantShow,thing:any};
     };
-    let { key } = $props<Props>();
+    const { key } = $props<Props>();
 </script>
 
-<!-- animate:flip={{duration:400,delay:0}} -->
-<!-- <div class="outer brutal-border"> -->
-    {#if key.kind == "static"}
-        {#if key.id == "usr"}
-            <User></User>
-        {:else if key.id == "usrs"}
-            <Users></Users>
-        {:else if key.id == "rooms"}
-            <Rooms></Rooms>
-        {:else if key.id == "tubers"}
-            <Tubers></Tubers>
-        {:else if key.id == "positions"}
-            <Positions></Positions>
-        {:else if key.id == "globalChat"}
-            <GlobalChat></GlobalChat>
-        {:else}
-            <p>comp key not found</p>
-        {/if}
-    {:else if key.kind == 'room'}
-        <Room inviteId={key.invite.id}></Room>
-    {:else if key.kind == 'user'}
-        <OtherUser thingId={key.userOnClient.id}></OtherUser>
-    {:else if key.kind == 'tuber'}
-        <Tuber tuberOnClient={key.tuberOnClient}></Tuber>
+<!-- {#if key.compKey.kind == "static"}
+    {#if key.compKey.thingId == "usr"}
+        <User></User>
+    {:else if key.compKey.thingId == "usrs"}
+        <Users></Users>
+    {:else if key.compKey.thingId == "rooms"}
+        <Rooms></Rooms>
+    {:else if key.compKey.thingId == "tubers"}
+        <Tubers></Tubers>
+    {:else if key.compKey.thingId == "positions"}
+        <Positions></Positions>
+    {:else if key.compKey.thingId == "globalChat"}
+        <GlobalChat></GlobalChat>
+    {:else}
+        <p>static comp not found</p>
     {/if}
+{:else if key.compKey.kind == "room"}
+    <Room thing={key.thing}></Room>
+{:else if key.compKey.kind == "user"}
+    <OtherUser thing={key.thing}></OtherUser>
+{:else if key.compKey.kind == "tuber"}
+    <Tuber thing={key.thing}></Tuber>
+{:else}
+    <p>comp not found</p>
+{/if} -->
+
 <!-- </div> -->
 
 <style>

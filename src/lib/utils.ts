@@ -157,6 +157,7 @@ export const putStockResponseSchema = z.object({
 export type PutStockResponse = z.infer<typeof putStockResponseSchema>
 
 export const tuberInClientSchema = z.object({
+    id:z.number(),
     channelName: z.string(),
     channelId: z.string(),
     count: z.number(),

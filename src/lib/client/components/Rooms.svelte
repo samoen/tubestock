@@ -3,6 +3,7 @@
     import * as Utils from "$lib/utils";
     import BarItem from "./BarItem.svelte";
     import Room from "./Room.svelte";
+    import Rooms from "$lib/client/components/Rooms.svelte";
     import Opener from "./Opener.svelte";
     import SimpleForm from "./SimpleForm.svelte";
 
@@ -49,19 +50,22 @@
     );
 </script>
 
-<BarItem compData={{ kind: "static", id: "rooms" }} title="Rooms"></BarItem>
+<BarItem compData={{ kind: "rooms", thingId: undefined}} title="Rooms"></BarItem>
 <div class="m">
+    {#if showables.length > 0}
+    
     <h4>Joined</h4>
     <div class='listOfBarItems'>
         {#each showables as i (i.id)}
             <BarItem
-            compData={{ kind: "room", id: `room${i.id}`, invite: i }}
+            compData={{ kind: "room", thingId:i.id }}
                 title={i.toRoom.roomName}
             ></BarItem>
         {/each}
     </div>
-    <br />
-    <br />
+    <!-- <br /> -->
+    <!-- <br /> -->
+    {/if}
     {#if joinables.length > 0}
         <h4>Invited</h4>
         {#each joinables as i (i.id)}

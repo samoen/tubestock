@@ -1,5 +1,7 @@
 <script lang="ts">
-    import * as ClientState from '$lib/client/clientState.svelte'
+import Tubers from "$lib/client/components/Tubers.svelte";
+import Tuber from "$lib/client/components/Tuber.svelte";
+import * as ClientState from '$lib/client/clientState.svelte'
     import * as Utils from '$lib/utils'
     import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
@@ -32,11 +34,11 @@
 
 <!-- <span class='bigBold'>Tubers</span> -->
     <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('tubers')}}>Hide</button> -->
-    <BarItem compData={{kind:"static",id:`tubers`}} title='Tubers'></BarItem>
+    <BarItem compData={{kind:"tubers",thingId:undefined}} title='Tubers'></BarItem>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
         <div class='listItem'>
-            <BarItem compData={{kind:"tuber",id:`tuber${t.channelId}`,tuberOnClient:t}} title={t.channelName}></BarItem>
+            <BarItem compData={{kind:"tuber", thingId:t.id}} title={t.channelName}></BarItem>
             <span>{t.count}</span>
             <!-- <button
                 type="button"

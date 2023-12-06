@@ -1,43 +1,17 @@
 import * as Utils from '$lib/utils'
 import * as z from 'zod'
 import User from '$lib/client/components/User.svelte'
-import Users from '$lib/client/components/Users.svelte'
 import Rooms from './components/Rooms.svelte'
 import type { ComponentType, SvelteComponent } from 'svelte'
 import Positions from "$lib/client/components/Positions.svelte"
 import GlobalChat from "$lib/client/components/GlobalChat.svelte"
 import Tubers from "$lib/client/components/Tubers.svelte"
+import OtherUser from './components/OtherUser.svelte'
+import Room from './components/Room.svelte'
+import Tuber from './components/Tuber.svelte'
+import Users from '$lib/client/components/Users.svelte'
 
-export const compLedg = {
-    usr:User,
-    usrs:Users,
-    rooms:Rooms,
-    positions:Positions,
-    globalChat:GlobalChat,
-    tubers:Tubers,
-}
-export type StaticCompKey = keyof typeof compLedg
-export type CompKey = {
-    kind:'static',
-    id : StaticCompKey
-} 
- | {
-    kind:'room'
-    id:`room${string}`
-    invite:Utils.InviteOnClient
- }
- | {
-    kind:'user'
-    id:`user${string}`
-    userOnClient:Utils.OtherUserOnClient
- }
- | {
-    kind:'tuber'
-    id:`tuber${string}`
-    tuberOnClient:Utils.TuberInClient
- }
 
-export type CompKeyId = CompKey['id']
 
 
 
@@ -62,7 +36,7 @@ export type ClientAppState = {
     selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
-    compies:CompKey[]
+    compies:ComponentWantShow[]
 }
 
 export function getScrollY() : ShareRune {
@@ -108,7 +82,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
-        compies: [{kind:'static', id:'usrs'},{kind:'static',id:'rooms'}],
+        compies: [{kind:'usrs',thingId:undefined}],
     };
     let value = $state(as)
     return {
@@ -136,24 +110,72 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-// export async function hideComp(compId:CompKeyId){
-//     // console.log('removing ' + compId + ' from compies ' + JSON.stringify(appState.value.compies))
-//             appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
-//             appState.dirty()
-// }
+export type CompLedge = Record<string,{t:any,makeProps?:(...args:any)=>object|undefined}>
+export const staticCompLedg : CompLedge = {
+    usr:{t:User},
+    usrs:{t:Users},
+    rooms:{t:Rooms},
+    positions:{t:Positions},
+    globalChat:{t:GlobalChat},
+    tubers:{t:Tubers},
+}
+export const dynamicCompLedge : CompLedge = {
+    otherUsr:{
+        t: OtherUser,
+        makeProps(id:number):object | undefined{
+            let found = appState.value.userList.findLast(u=>u.id == id)
+            if(found) return {thing:found}
+            return undefined
+        }
+    },
+    room:{
+        t:Room,
+        makeProps(id:number):object | undefined{
+            let found = appState.value.roomInvites.findLast(u=>u.id == id)
+            if(found) return {thing:found}
+            return undefined
+        }
+    },
+    tuber:{
+        t:Tuber,
+        makeProps(id:number):object | undefined{
+            let found = appState.value.tuberList.findLast(u=>u.id == id)
+            if(found) return {thing:found}
+            return undefined
+        }
+    }
+}
+export const allCompLedge : CompLedge = {
+    ...dynamicCompLedge,
+    ...staticCompLedg
+}
+export type AllCompLedgeKey = keyof typeof allCompLedge
+export type StaticCompKey = keyof typeof staticCompLedg
+export type DynamicCompKey = keyof typeof dynamicCompLedge
 
-// export function hideCompIfPresent(compId:CompKeyId):{wasPresent:boolean}{
-//     if(appState.value.compies.findLast(c=>c.id == compId)){
-//         console.log('hiding comp')
-//         hideComp(compId)
-//         return{wasPresent:true}
-//     }
-//     return{wasPresent:false}
-//     // console.log('removing ' + JSON.stringify(comp))
-//             // appState.value.compies = appState.value.compies.filter(c=>c.id != compId)
-//             // appState.dirty()
-// }
-export function showComp(compy:CompKey){
+export type ComponentWantShow = {
+    kind: StaticCompKey,
+    thingId : undefined
+    // template:any
+} 
+| {
+    kind:DynamicCompKey
+    thingId:number
+    // template:any
+ }
+//  | {
+//     kind:'user'
+//     thingId:number
+//  }
+//  | {
+//     kind:'tuber'
+//     // thingId:`tuber${string}`
+//     tuberOnClient:Utils.TuberInClient
+//     thingId:number
+//  }
+
+// export type CompKeyId = CompKey['thingId']
+export function showComp(compy:ComponentWantShow){
     appState.value.compies.unshift(compy);
     getScrollY().setToZero()
     appState.dirty();
@@ -284,6 +306,17 @@ export function calcNetWorth(
 
 export function receiveWorldEvent(we:Utils.WorldEvent){
     if (we.users) {
+        // for(const compy of appState.value.compies){
+        //     if(compy.kind == 'user'){
+        //         if(!we.users.findLast(u=>u.id == compy.userOnClient.id)){
+        //             appState.value.compies = appState.value.compies.filter(
+        //                 (c) =>
+        //                     !(c.kind == compy.kind && c.userOnClient.id == compy.userOnClient.id),
+        //             );
+
+        //         }
+        //     }
+        // }
         appState.value.userList = we.users;
     }
     if (we.tubers) {

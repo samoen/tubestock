@@ -302,9 +302,6 @@ export async function dbGetTuberByChannelName(chanName: string): Promise<Schema.
 	let t = selected.at(0)
 	return t
 }
-export async function dbInsertTuber(tuber: Schema.InsertDbTuber) {
-	await db.insert(Schema.tubers).values(tuber)
-}
 
 export async function dbGetUserByPrimaryKey(pKey: number): Promise<Schema.AppUser | undefined> {
 	const dbUsers = await db.select().from(Schema.appusers).where(DORM.eq(Schema.appusers.id, pKey))

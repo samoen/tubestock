@@ -1,13 +1,12 @@
 <script lang="ts">
     import * as ClientState from '$lib/client/clientState.svelte'
+    import Tuber from "$lib/client/components/Tuber.svelte";
     import * as Utils from '$lib/utils'
     import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
 
-
-    let {tuberOnClient} = $props<{tuberOnClient:Utils.TuberInClient}>()
-
-    // const appState = ClientState.getAppState();
+    const appState = ClientState.getAppState();
+    let {thing : tuberOnClient} = $props<{thing:Utils.TuberInClient}>()
 
     
     async function placeStockClicked(
@@ -34,8 +33,9 @@
         return r;
     }
 </script>
+{#if tuberOnClient}
 
-<BarItem compData={{kind:"tuber",id:`tuber${tuberOnClient.channelId}`,tuberOnClient:tuberOnClient}} title={tuberOnClient.channelName}></BarItem>
+<BarItem compData={{kind:"tuber",thingId:tuberOnClient.id}} title={tuberOnClient.channelName}></BarItem>
 <span class='bigBold'>Tuber</span>
 <br/>
 <br/>
@@ -53,3 +53,4 @@
         { itype: "checkbox", placeHold: "short" },
     ]}
 />
+{/if}

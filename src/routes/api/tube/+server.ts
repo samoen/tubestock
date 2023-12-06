@@ -68,7 +68,20 @@ async function getTuuber(chanName:string) : Promise< Utils.TuberInClient | undef
         count:tuberSubs,
         countUpdatedAt: new Date().getTime()
     }
-    ServerState.dbInsertTuber(tuberCreate)
-    ServerState.broadcast('tuberAdded',tuberCreate)
-    return tuberCreate
+    const inserteds = await ServerState.db.insert(Schema.tubers).values(tuberCreate).returning()
+    const inserted = inserteds.at(0)
+    if (!inserted){
+        return undefined
+    }
+    
+    
+    const w : Utils.WorldEvent = {
+        tubers:await ServerState.dbGetAllTubers()
+    }
+    ServerState.broadcast('world',w)
+    const result : Utils.TuberInClient = {
+        id: inserted.id,
+        ...tuberCreate
+    }
+    return result
 }

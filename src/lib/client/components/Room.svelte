@@ -4,18 +4,20 @@
     import BarItem from "./BarItem.svelte";
     import Opener from "./Opener.svelte";
     import SimpleForm from "./SimpleForm.svelte";
+    import Room from "./Room.svelte";
 
     const appState = ClientState.getAppState();
     type Props = {
-        // d:Utils.InviteOnClient
-        inviteId: number;
+        thing:Utils.InviteOnClient
+        // inviteId: number;
     };
-    let { inviteId } = $props<Props>();
-    let invite = $derived(
-        (() => {
-            return appState.value.roomInvites.findLast((i) => i.id == inviteId);
-        })(),
-    );
+    let { thing : invite } = $props<Props>();
+    let inviteId = invite.id
+    // let invite = $derived(
+    //     (() => {
+    //         return appState.value.roomInvites.findLast((i) => i.id == inviteId);
+    //     })(),
+    // );
 
     async function kickUser(roomId: number, userId: number) {
         const toSend: Utils.InviteToRoomRequest = {
@@ -52,7 +54,7 @@
         }
         invite.toRoom.msgs.push(...resp.value.msgs);
         appState.dirty();
-        
+
         return resp;
     }
 
@@ -66,10 +68,10 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        appState.value.compies = appState.value.compies.filter(
-            (c) => c.id != `room${inviteId}`,
-        );
-        ClientState.receiveWorldEvent(resp.value);
+        // appState.value.compies = appState.value.compies.filter(
+        //     (c) => c.thingId != `room${inviteId}`,
+        // );
+        // ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
     async function leaveRoom(roomId: number) {
@@ -83,9 +85,9 @@
             Utils.worldEventSchema,
         );
         if (resp.failed) return resp;
-        appState.value.compies = appState.value.compies.filter(
-            (c) => c.id != `room${inviteId}`,
-        );
+        // appState.value.compies = appState.value.compies.filter(
+        //     (c) => c.thingId != `room${inviteId}`,
+        // );
         ClientState.receiveWorldEvent(resp.value);
         return resp;
     }
@@ -94,7 +96,7 @@
 {#if invite}
     <!-- <div style:marginBottom=60px> -->
     <BarItem
-    compData={{ kind: "room", id: `room${inviteId}`, invite: invite }}
+    compData={{ kind: "room", thingId:inviteId }}
         title={invite.toRoom.roomName}
     ></BarItem>
     <span class="bigBold">Private Room</span>

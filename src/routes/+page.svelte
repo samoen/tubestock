@@ -22,7 +22,27 @@
         ClientState.hitEndpoint("rando", {}, Utils.emptyObject);
     }
 
-    
+    let compiesWithThings = $derived((()=>{
+        const result : {compKey:ClientState.ComponentWantShow,cProps:object,template:any}[]= []
+        for(const c of appState.value.compies){
+            const fromAllLedge = ClientState.allCompLedge[c.kind]
+            if(fromAllLedge.makeProps){
+                if(c.thingId){
+                    let p = fromAllLedge.makeProps(c.thingId)
+                    if(p){
+                        result.push({compKey:c, cProps:p,template:fromAllLedge.t})
+                    }
+
+                }
+                continue
+
+            }
+            result.push({compKey:c,cProps:{},template:fromAllLedge.t})
+
+        }
+        return result
+    })())
+
     
 </script>
 
@@ -44,7 +64,7 @@
 <br/>
 <br/>
 <div class='compListHolder'>
-    {#each appState.value.compies as c (c.id)}
+    {#each compiesWithThings as c (c.compKey.kind + c.compKey.thingId?.toString())}
     <!-- in:receive={{ key: todo.id }}
         out:send={{ key: todo.id }} -->
         <!-- transition:slide={{duration:400}} -->
@@ -68,8 +88,8 @@
             out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
             >
                 
-                <!-- <svelte:component this={ClientState.compLedg[c.id]}></svelte:component> -->
-                <CompSelector key={c}></CompSelector>
+                <svelte:component this={c.template} {...c.cProps}></svelte:component>
+                <!-- <CompSelector key={c}></CompSelector> -->
     
         </div>
         

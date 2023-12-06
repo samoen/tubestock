@@ -28,12 +28,12 @@
 <div class="topBar brutal-border" class:solid={atTop} class:blurry={!atTop}>
     <h3><a href="/">Tubestock</a></h3>
     <a href="/about">about</a>
-    <BarItem compData={{id:'usr', kind:'static'}} title='Me'></BarItem>
-    <BarItem compData={{id:'usrs', kind:'static'}} title='Users'></BarItem>
-    <BarItem compData={{id:'rooms', kind:'static'}} title='Rooms'></BarItem>
-    <BarItem compData={{id:'positions', kind:'static'}} title='Positions'></BarItem>
-    <BarItem compData={{id:'tubers', kind:'static'}} title='Tubers'></BarItem>
-    <BarItem compData={{id:'globalChat', kind:'static'}} title='Global Chat'></BarItem>
+    <BarItem compData={{kind:'usr', thingId:undefined}} title='Me'></BarItem>
+    <BarItem compData={{kind:'usrs', thingId:undefined}} title='Users'></BarItem>
+    <BarItem compData={{kind:'rooms', thingId:undefined}} title='Rooms'></BarItem>
+    <BarItem compData={{kind:'positions', thingId:undefined}} title='Positions'></BarItem>
+    <BarItem compData={{kind:'tubers', thingId:undefined}} title='Tubers'></BarItem>
+    <BarItem compData={{kind:'globalChat', thingId:undefined}} title='Global Chat'></BarItem>
 </div>
 
 <slot />

@@ -3,6 +3,7 @@
     import * as Utils from '$lib/utils'
     import BarItem from './BarItem.svelte';
     import SimpleForm from './SimpleForm.svelte';
+    import GlobalChat from '$lib/client/components/GlobalChat.svelte'
     
     const appState = ClientState.getAppState();
     async function getEarlierMsgs() {
@@ -29,7 +30,7 @@
 </script>
 
 <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('globalChat')}}>Hide</button> -->
-<BarItem compData={{kind:"static",id:`globalChat`}} title='Global Chat'></BarItem>
+<BarItem compData={{kind:"globalChat",thingId:undefined}} title='Global Chat'></BarItem>
 <span class='bigBold'>Public Room</span>
 <div class="msgs">
     {#each appState.value.chatMsgs as m (m.id)}

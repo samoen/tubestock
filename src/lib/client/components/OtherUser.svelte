@@ -4,33 +4,14 @@
     import BarItem from "./BarItem.svelte";
     import SimpleForm from "./SimpleForm.svelte";
     import Opener from "./Opener.svelte";
+    import OtherUser from "./OtherUser.svelte";
 
     const appState = ClientState.getAppState();
 
     type Props = {
-        thingId: number;
+        thing: Utils.OtherUserOnClient;
     };
-    let { thingId: selectedUserId } = $props<Props>();
-    let selectedUser = $derived(
-        (() => {
-            const userOnClient = appState.value.userList.findLast(
-                (u) => u.id == selectedUserId,
-            );
-            // if(!userOnClient){
-            //     return {
-
-            //     }
-            // }
-            return userOnClient;
-        })(),
-    );
-    $effect(()=>{
-        if(!selectedUser){
-            console.log('removing dead compy')
-            appState.value.compies = appState.value.compies.filter(c=>!(c.kind == 'user' && c.userOnClient.id == selectedUserId))
-            appState.dirty()
-        }
-    })
+    let { thing : selectedUser } = $props<Props>();
 
     async function inviteToRoomClicked(
         userIdToInvite: number,
@@ -64,15 +45,15 @@
 {#if selectedUser}
     <BarItem
         compData={{
-            id: `user${selectedUser.id}`,
-            kind: "user",
-            userOnClient: selectedUser,
+            kind: "otherUsr",
+            thingId:selectedUser.id,
+            
         }}
         title={selectedUser.displayName}
     ></BarItem>
     <span class="bigBold"> User </span>
     <p>
-        Id: {selectedUserId}
+        Id: {selectedUser.id}
     </p>
     <p>
         Net worth: {ClientState.calcNetWorth(
