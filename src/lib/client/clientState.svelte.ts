@@ -25,6 +25,7 @@ export type ClientAppState = {
     source: EventSource | undefined
     chatMsgs: Utils.ChatMsgOnClient[];
     userList: Utils.OtherUserOnClient[];
+    friendsList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
     roomInvites:Utils.InviteOnClient[];
     // displayingInvites:number[];
@@ -71,10 +72,10 @@ const stateFactory = () => {
         source: undefined,
         chatMsgs: [],
         userList: [],
+        friendsList: [],
         positionsList: undefined,
         tuberList: [],
         roomInvites:[],
-        // displayingInvites:[],
         myUsername: undefined,
         myIdleStock: undefined,
         myPrivateId: undefined,
@@ -110,16 +111,19 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export type CompLedge = Record<string,{t:any,makeProps?:(...args:any)=>object|undefined}>
-export const staticCompLedg : CompLedge = {
+export type CompLedge = Record<string,mayMakeProps>
+export type mayMakeProps = {
+    t:any,
+    makeProps?:(...args:any)=>object|undefined
+}
+
+export const allCompLedge :CompLedge = {
     usr:{t:User},
     usrs:{t:Users},
     rooms:{t:Rooms},
     positions:{t:Positions},
     globalChat:{t:GlobalChat},
     tubers:{t:Tubers},
-}
-export const dynamicCompLedge : CompLedge = {
     otherUsr:{
         t: OtherUser,
         makeProps(id:number):object | undefined{
@@ -144,25 +148,22 @@ export const dynamicCompLedge : CompLedge = {
             return undefined
         }
     }
-}
-export const allCompLedge : CompLedge = {
-    ...dynamicCompLedge,
-    ...staticCompLedg
-}
+} as const satisfies CompLedge
+
+
 export type AllCompLedgeKey = keyof typeof allCompLedge
-export type StaticCompKey = keyof typeof staticCompLedg
-export type DynamicCompKey = keyof typeof dynamicCompLedge
+// export type StaticCompKey = keyof typeof staticCompLedg
+// export type DynamicCompKey = keyof typeof dynamicCompLedge
 
 export type ComponentWantShow = {
-    kind: StaticCompKey,
-    thingId : undefined
-    // template:any
+    kind: AllCompLedgeKey,
+    thingId?: number
 } 
-| {
-    kind:DynamicCompKey
-    thingId:number
-    // template:any
- }
+// | {
+//     kind:DynamicCompKey
+//     thingId:number
+//     // template:any
+//  }
 //  | {
 //     kind:'user'
 //     thingId:number
@@ -306,18 +307,10 @@ export function calcNetWorth(
 
 export function receiveWorldEvent(we:Utils.WorldEvent){
     if (we.users) {
-        // for(const compy of appState.value.compies){
-        //     if(compy.kind == 'user'){
-        //         if(!we.users.findLast(u=>u.id == compy.userOnClient.id)){
-        //             appState.value.compies = appState.value.compies.filter(
-        //                 (c) =>
-        //                     !(c.kind == compy.kind && c.userOnClient.id == compy.userOnClient.id),
-        //             );
-
-        //         }
-        //     }
-        // }
         appState.value.userList = we.users;
+    }
+    if (we.friends) {
+        appState.value.friendsList = we.friends;
     }
     if (we.tubers) {
         appState.value.tuberList = we.tubers;
@@ -377,7 +370,7 @@ export async function requestTuber(searchTxt: string) : Promise<Utils.SamResult<
 
 
 
-export async function putStock(channelId: string, amt: number, long: boolean) : Promise<Utils.SamResult<Utils.PutStockResponse>> {
+export async function putStock(channelId: string, amt: number, long: boolean) : Promise<Utils.SamResult<{}>> {
     const toSend: Utils.PutStockRequest = {
         channelId: channelId,
         amount: amt,
@@ -387,14 +380,14 @@ export async function putStock(channelId: string, amt: number, long: boolean) : 
     let resp = await hitEndpoint(
         "putstock",
         toSend,
-        Utils.putStockResponseSchema
+        Utils.emptyObject
     );
     if (resp.failed) {
         return resp
     };
-    appState.value.myIdleStock = resp.value.idleStock;
-    appState.value.positionsList = resp.value.positions;
-    appState.dirty()
+    // appState.value.myIdleStock = resp.value.idleStock;
+    // appState.value.positionsList = resp.value.positions;
+    // appState.dirty()
     return resp
 }
 

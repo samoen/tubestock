@@ -173,6 +173,23 @@ export const otherUserOnClientSchema = z.object({
 
 export type OtherUserOnClient = z.infer<typeof otherUserOnClientSchema>
 
+export const userSearchRequestSchema = z.object({
+    userDbId: z.number()
+})
+export type UserSearchRequest = z.infer<typeof userSearchRequestSchema>
+
+export const userSearchResponseSchema = z.object({
+    userDeets: otherUserOnClientSchema
+})
+
+export type UserSearchResponse = z.infer<typeof userSearchResponseSchema>
+
+export const addFriendRequestSchema = z.object({
+    userDbId: z.number(),
+    remove:z.boolean().optional(),
+})
+export type AddFriendRequest = z.infer<typeof addFriendRequestSchema>
+
 export function findRunRemove<T>(arr: T[], find: (f: T) => boolean, run: (f: T) => void): boolean {
     let didFind = false
     for (let i = arr.length - 1; i >= 0; i--) {
@@ -188,10 +205,10 @@ export function findRunRemove<T>(arr: T[], find: (f: T) => boolean, run: (f: T) 
 
 export const worldEventSchema = z.object({
     users: z.array(otherUserOnClientSchema).optional(),
+    friends: z.array(otherUserOnClientSchema).optional(),
     tubers: z.array(tuberInClientSchema).optional(),
     msgs: z.array(chatMsgOnClientSchema).optional(),
     positions: z.array(positionInClientSchema).optional(),
-    // joinedRooms: z.array(inviteOnClientSchema).optional(),
     roomInvites: z.array(inviteOnClientSchema).optional(),
     yourName: z.string().optional(),
     yourIdleStock: z.number().optional(),

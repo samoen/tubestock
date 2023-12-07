@@ -5,7 +5,6 @@
     import * as Easing from "svelte/easing";
     import * as SvelteTransition from "svelte/transition";
     import * as SvelteAnimate from "svelte/animate";
-    import CompSelector from "$lib/client/components/CompSelector.svelte";
 
 
     console.log("init base page");

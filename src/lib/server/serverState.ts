@@ -67,6 +67,8 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 				}
 			},
 		},
+		// limit:5,
+		// orderBy:[DORM.desc(Schema.appusers.idleStock)]
 	});
 
 	const otherUsers: Utils.OtherUserOnClient[] = []
@@ -285,6 +287,48 @@ export async function dbGetUserBySecret(pId: string): Promise<Schema.AppUser | u
 export async function dbGetAllUsers(): Promise<Schema.AppUser[]> {
 	let found = await db.query.appusers.findMany()
 	return found
+}
+
+export async function dbGetFriends(ofId:number): Promise<Utils.OtherUserOnClient[]> {
+	let found = await db.query.friendships.findMany({
+		where:DORM.eq(Schema.friendships.userfk,ofId),
+		with:{
+			toUser:{
+				with:{
+					positions:{
+						with:{
+							forTuber:true
+						}
+					}
+				}
+			}
+		}
+	})
+	const result : Utils.OtherUserOnClient[] = []
+	for ( const f of found){
+		const posesInClient: Utils.PositionInClient[] = []
+		for (const selPos of f.toUser.positions) {
+			const retVal = positionReturnValue(selPos.forTuber.count, selPos.subsAtStart, selPos.amount, selPos.long)
+			const posInClient: Utils.PositionInClient = {
+				id: selPos.id,
+				amount: selPos.amount,
+				long: selPos.long,
+				subsAtStart: selPos.subsAtStart,
+				tuberName: selPos.forTuber.channelName,
+				returnValue: retVal,
+			}
+			posesInClient.push(posInClient)
+		}
+		const ou : Utils.OtherUserOnClient = {
+			id:f.toUser.id,
+			displayName:f.toUser.displayName,
+			idleStock:f.toUser.idleStock,
+			positions:posesInClient
+			
+		}
+		result.push(ou)
+	}
+	return result
 }
 
 export async function dbGetTuberByPrimaryKey(tuberPKey: number): Promise<Schema.DbTuber | undefined> {

@@ -45,13 +45,15 @@ export const load : LayoutServerLoad = async(event)=>{
     }
 
     const cPoses = await ServerState.positionsInClientForUser(foundUser.id)
-
     const cInvites = await ServerState.dbGetInvites(foundUser.id)
-    dfl.positions = cPoses
+    const cFriends = await ServerState.dbGetFriends(foundUser.id)
+
     dfl.yourName = foundUser.displayName
     dfl.yourIdleStock = foundUser.idleStock
     dfl.yourPrivateId = foundUser.secret
     dfl.yourDbId = foundUser.id
+    dfl.positions = cPoses
     dfl.roomInvites = cInvites
+    dfl.friends = cFriends
     return dfl
 }

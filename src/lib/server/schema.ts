@@ -121,4 +121,21 @@ export const positionsRelations = relations(positions, ({ one }) => ({
 export type DbPosition = typeof positions.$inferSelect
 export type InsertDbPosition = typeof positions.$inferInsert
 
-
+export const friendships = pgTable("friendships",{
+  id:serial('id').primaryKey(),
+  userfk:integer('user_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull(),
+  toUserfk:integer('to_user_id').references(()=>appusers.id,{onDelete:'cascade'}).notNull(),
+  
+})
+export type DbFriendship = typeof friendships.$inferSelect
+export type InsertFriendship = typeof friendships.$inferInsert
+export const friendshipRelations = relations(friendships,  ({ one }) => ({
+  forUser: one(appusers, {
+    fields: [friendships.userfk],
+		references: [appusers.id],
+	}),
+  toUser: one(appusers, {
+    fields: [friendships.toUserfk],
+		references: [appusers.id],
+	}),
+}));

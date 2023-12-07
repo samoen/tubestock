@@ -30,6 +30,7 @@ import * as ClientState from '$lib/client/clientState.svelte'
 <p>Display Name: {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>
+<p class="selectableText">Public Id : {appState.value.myDbId}</p>
 <p class="selectableText">Private Id : {appState.value.myPrivateId}</p>
 <!-- fire={ClientState.setName}  -->
 <SimpleForm

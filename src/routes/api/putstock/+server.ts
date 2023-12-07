@@ -41,10 +41,24 @@ export const POST: RequestHandler = async (event) => {
     await ServerState.db.update(Schema.appusers).set({idleStock: newIdle}).where(eq(Schema.appusers.id,foundUser.id))
     
     const cPoses = await ServerState.positionsInClientForUser(foundUser.id)
-    const response : Utils.PutStockResponse = {
-        idleStock:newIdle,
-        positions: cPoses,
+    // const response : Utils.PutStockResponse = {
+    //     idleStock:newIdle,
+    //     positions: cPoses,
+    // }
+    
+    // ServerState. broadcast('world',)
+    const foundTargetUsrInMem = ServerState.state.usersInMemory.findLast(u => u.dbId == foundUser.id)
+    if(!foundTargetUsrInMem){
+        return Kit.json({})
     }
+    let weTo : Utils.WorldEvent = {
+        yourIdleStock:newIdle,
+        positions:cPoses
+    }
+    ServerState.sendToUser(foundTargetUsrInMem,'world',weTo)
 
-    return json(response);
+
+    
+    return Kit.json({})
+    // return json(response);
 };

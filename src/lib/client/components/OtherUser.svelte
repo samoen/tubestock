@@ -11,7 +11,7 @@
     type Props = {
         thing: Utils.OtherUserOnClient;
     };
-    let { thing : selectedUser } = $props<Props>();
+    let { thing: selectedUser } = $props<Props>();
 
     async function inviteToRoomClicked(
         userIdToInvite: number,
@@ -28,26 +28,41 @@
         );
         return r;
     }
+    async function addOrRemoveFriend(){
+        let toSend : Utils.AddFriendRequest = {
+            userDbId:selectedUser.id,
+            remove:isFriend
+        }
+        let r = await ClientState.hitEndpoint('addFriend',toSend,Utils.worldEventSchema)
+        if(r.failed){
+            return r
+        }
+        ClientState.receiveWorldEvent(r.value)
+        console.log('got friends ' + JSON.stringify(r.value))
+        return r
+    }
     let roomsIOwn = $derived(
         (() => {
             const myId = appState.value.myDbId;
             // console.log('recalc invitables. myid is ' + myId + ', my invites are ' + JSON.stringify(appState.value.roomInvites))
             const i = appState.value.roomInvites.filter(
                 (i) => i.toRoom.ownerId == myId,
-                );
-                console.log('recalc invitables. ' + i.length)
-            
+            );
+            console.log("recalc invitables. " + i.length);
+
             return i;
         })(),
     );
+    let isFriend = $derived((()=>{
+        return appState.value.friendsList.some(f=>f.id ==selectedUser.id)
+    })())
 </script>
 
 {#if selectedUser}
     <BarItem
         compData={{
             kind: "otherUsr",
-            thingId:selectedUser.id,
-            
+            thingId: selectedUser.id,
         }}
         title={selectedUser.displayName}
     ></BarItem>
@@ -87,6 +102,8 @@
             {/each}
         </Opener>
     {/if}
-    {:else}
+    <br/>
+    <SimpleForm buttonLabel="{isFriend ? 'remove friend' : 'add friend'}" onSubmit={addOrRemoveFriend}></SimpleForm>
+{:else}
     <p>component not found</p>
 {/if}
