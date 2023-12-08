@@ -109,7 +109,7 @@
         }}
         title={invite.toRoom.roomName}
     ></BarItem>
-    <span class="bigBold">Private Room</span>
+    <span class="bigBold">Private Room #{inviteId}</span>
     <!-- </div> -->
     <br />
     <br />

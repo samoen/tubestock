@@ -28,54 +28,41 @@
         appState.dirty();
         return resp;
     }
-    async function userSearch(
-        m: Utils.ChatMsgOnClient,
-    ): Promise<Utils.SamResult<{}>> {
-        const toSend: Utils.UserSearchRequest = {
-            userDbId: m.author.id,
-        };
-        const hit = await ClientState.hitEndpoint(
-            "userSearch",
-            toSend,
-            Utils.userSearchResponseSchema,
-        );
-        if (hit.failed) {
-            return hit;
-        }
-        let cWantshow: ClientState.ComponentWantShow = {
-            kind: "otherUsr",
-            thingId: hit.value.userDeets.id,
-            maybeMakeProps: () => {
-                return {
-                    thing: hit.value.userDeets,
-                };
-            },
-        };
-        ClientState.showCompy(cWantshow)
-        return hit;
-    }
 </script>
 
 <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('globalChat')}}>Hide</button> -->
-<BarItem
-    compData={{ kind: 'globalChat' }}
-    title="Global Chat"
-></BarItem>
+<BarItem compData={{ kind: "globalChat" }} title="Global Chat"></BarItem>
 <span class="bigBold">Public Room</span>
-<div class="msgs">
-    {#each appState.value.chatMsgs as m (m.id)}
+<br />
+<br />
+<div class="chatHolder">
+    <div class="msgs">
+        {#each appState.value.chatMsgs as m (m.id)}
+            <div class="listItem">
+                <!-- <SimpleForm
+                    buttonLabel={m.author.displayName}
+                    onSubmit={async () => {
+                        return await userSearch(m);
+                    }}
+                ></SimpleForm>
+                <span> {m.msgTxt}</span> -->
+                <BarItem
+                    compData={{
+                        kind: "chatMessage",
+                        thingId: m.id,
+                        maybeMakeProps() {
+                            return { msg: m };
+                        },
+                    }}
+                    title={m.author.displayName + " : " + m.msgTxt}
+                ></BarItem>
+            </div>
+        {/each}
         <div class="listItem">
-            <p>{m.author.displayName} : {m.msgTxt}</p>
-            <SimpleForm
-                buttonLabel="get"
-                onSubmit={async () => {
-                    return await userSearch(m);
-                }}
+            <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}
             ></SimpleForm>
         </div>
-    {/each}
-    <SimpleForm buttonLabel="Show Earlier" onSubmit={getEarlierMsgs}
-    ></SimpleForm>
+    </div>
 </div>
 <SimpleForm
     buttonLabel="Send"
@@ -84,3 +71,23 @@
     }}
     inputs={[{ itype: "text" }]}
 />
+
+<style>
+    .chatHolder {
+        /* padding:15px; */
+        padding-right:7px;
+        border-radius: 10px;
+        border:1px solid black;
+        background-color: bisque;
+        /* border-top:1px solid white; */
+        /* border-bottom:1px solid white; */
+        margin-bottom: 5px;
+        /* background-color:blanchedalmond; */
+        /* border:2px solid black; */
+        /* border-radius: 5px; */
+        /* box-shadow: inset black 2px 2px 3px 3px; */
+        /* background-color: beige; */
+        /* max-height: 100px; */
+        /* overflow-y: auto; */
+    }
+</style>

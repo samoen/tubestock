@@ -7,36 +7,13 @@
     import SimpleForm from "./SimpleForm.svelte";
 
     const appState = ClientState.getAppState();
-    async function placeStockClicked(
-        inTxt: string,
-        short: string,
-    ): Promise<Utils.SamResult<{}>> {
-        if (!appState.value.selectedTuber)
-            return { failed: true, error: new Error("no tuber selected") };
-        const intVal = Number.parseInt(inTxt);
-        if (!intVal) {
-            return {
-                failed: true,
-                error: new Error("Must be number greater than 0"),
-            };
-        }
-        const shortBool = short == "true" ? true : false;
-        // putStockLoading = true;
-        const r = await ClientState.putStock(
-            appState.value.selectedTuber.channelId,
-            intVal,
-            !shortBool,
-        );
-        // putStockLoading = false;
-        return r;
-    }
 </script>
 
 <!-- <span class='bigBold'>Tubers</span> -->
 <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('tubers')}}>Hide</button> -->
 <BarItem compData={{ kind: "tubers" }} title="Tubers"
 ></BarItem>
-<div class="msgs">
+<div class="listOfBarItems">
     {#each appState.value.tuberList as t (t.channelId)}
         <div class="listItem">
             <BarItem
@@ -54,7 +31,7 @@
                 }}
                 title={t.channelName}
             ></BarItem>
-            <span>{t.count}</span>
+            <!-- <span>{t.count}</span> -->
         </div>
     {/each}
 </div>
@@ -64,7 +41,7 @@
     inputs={[{ itype: "text" }]}
 />
 
-{#if appState.value.selectedTuber}
+<!-- {#if appState.value.selectedTuber}
     <h3>{appState.value.selectedTuber.channelName}</h3>
     <SimpleForm
         buttonLabel="Place stock"
@@ -74,4 +51,4 @@
             { itype: "checkbox", placeHold: "short" },
         ]}
     />
-{/if}
+{/if} -->

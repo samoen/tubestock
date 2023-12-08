@@ -15,18 +15,25 @@
     <div class="msgs">
         {#each appState.value.positionsList as p (p.id)}
             <div>
-                <span>
+                <BarItem compData={{kind:'position',thingId:p.id,maybeMakeProps() {
+                    const foundPos = appState.value.positionsList.findLast(pFromList=>pFromList.id == p.id)
+                    if(!foundPos){
+                        return undefined
+                    }
+                    return {positionInClient:foundPos}
+                },}} title={p.tuberName + ' ' + p.id}></BarItem>
+                <!-- <span>
                     {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
                         ? "(long)"
                         : "(short)"} : returns {p.returnValue}
-                </span>
+                </span> -->
                 <!-- class="itemButton red" -->
-                <SimpleForm
+                <!-- <SimpleForm
                     buttonLabel="exit"
                     onSubmit={async () => {
                         return await ClientState.exitPosition(p.id);
                     }}
-                ></SimpleForm>
+                ></SimpleForm> -->
             </div>
         {/each}
     </div>

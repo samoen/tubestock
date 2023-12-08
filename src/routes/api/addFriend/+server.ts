@@ -13,7 +13,9 @@ export const POST: Kit.RequestHandler = async (event) => {
     let j = await event.request.json()
     let p = Utils.addFriendRequestSchema.parse(j)
 
-    
+    if(p.userDbId == foundUser.id){
+        throw Kit.error(401, 'cant friend yourself')
+    }
     
     const existingFriendship = await ServerState.db.query.friendships.findFirst({
         where: and(

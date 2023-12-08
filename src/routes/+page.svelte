@@ -16,9 +16,7 @@
 
     const appState = ClientState.getAppState();
 
-    async function gogo() {
-        ClientState.hitEndpoint("rando", {}, Utils.emptyObject);
-    }
+    
     type RenderableComponent = {
         compKey: ClientState.ComponentWantShow;
         cProps: object;
@@ -51,23 +49,13 @@
     );
 </script>
 
-<br />
-<button
-    on:click={async () => {
-        console.log("dev");
-        gogo();
-    }}>dev</button
->
-{#if !appState.value.subscribing && (!appState.value.source || appState.value.source.readyState == 2)}
-    <button on:click={ClientState.subscribe}>open source</button>
-{/if}
+
+
+
 {#if appState.value.subscribing}
     <span> loading... </span>
 {/if}
-<button on:click={ClientState.updateTubers}>update tubers</button>
-<button on:click={ClientState.manualSourceError}>close source</button>
-<br />
-<br />
+
 <div class="compListHolder">
     {#each renderableComponents as c (c.compKey.kind + c.compKey.thingId?.toString())}
         <!-- in:receive={{ key: todo.id }}

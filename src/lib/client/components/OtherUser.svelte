@@ -71,7 +71,7 @@
         }}
         title={selectedUser.displayName}
     ></BarItem>
-    <span class="bigBold"> User </span>
+    <span class="bigBold"> User #{selectedUser.id} </span>
     <p>
         Id: {selectedUser.id}
     </p>
@@ -87,7 +87,7 @@
         </p>
     {/each}
     {#if roomsIOwn.length > 0}
-        <Opener label="Invite">
+        <Opener label="Invite to Room">
             {#each roomsIOwn as i}
                 <SimpleForm
                     buttonLabel={`${i.toRoom.roomName}`}

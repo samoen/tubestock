@@ -10,6 +10,9 @@ import OtherUser from './components/OtherUser.svelte'
 import Room from './components/Room.svelte'
 import Tuber from './components/Tuber.svelte'
 import Users from '$lib/client/components/Users.svelte'
+import ChatMessage from './components/ChatMessage.svelte'
+import Admin from './components/Admin.svelte'
+import Position from './components/Position.svelte'
 
 
 
@@ -29,7 +32,7 @@ export type ClientAppState = {
     tuberList: Utils.TuberInClient[];
     roomInvites: Utils.InviteOnClient[];
     // displayingInvites:number[];
-    positionsList: Utils.PositionInClient[] | undefined;
+    positionsList: Utils.PositionInClient[];
     myUsername: string | undefined;
     myIdleStock: number | undefined;
     myPrivateId: string | undefined;
@@ -75,7 +78,7 @@ const stateFactory = () => {
         // userList: [],
         // uiUserList:[],
         friendsList: [],
-        positionsList: undefined,
+        positionsList: [],
         tuberList: [],
         roomInvites: [],
         myUsername: undefined,
@@ -142,6 +145,8 @@ export const allCompLedge = {
     tubers: { t: Tubers, 
         // tkind: 'tubers' 
     },
+    admin: { t: Admin, 
+    },
     otherUsr: {
         t: OtherUser,
         // tkind: 'otherUsr'
@@ -151,9 +156,16 @@ export const allCompLedge = {
         t: Room, 
         // tkind: 'room'
     },
+    position: {
+        t: Position, 
+        // tkind: 'room'
+    },
     tuber: {
         t: Tuber,
         // tkind: 'tuber'
+    },
+    chatMessage:{
+        t:ChatMessage
     }
 } as const satisfies CompLedge
 

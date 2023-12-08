@@ -34,6 +34,7 @@
     <BarItem compData={{kind:'positions'}} title='Positions'></BarItem>
     <BarItem compData={{kind:'tubers',}} title='Tubers'></BarItem>
     <BarItem compData={{kind:'globalChat'}} title='Global Chat'></BarItem>
+    <BarItem compData={{kind:'admin'}} title='Admin'></BarItem>
 </div>
 
 <slot />
@@ -100,22 +101,23 @@
     :global( .msgs ) {
         display: flex;
         flex-direction: column-reverse;
-        /* align-items: flex-start; */
+        align-items: flex-start;
         /* height: 100px; */
         gap:5px;
-        
+        max-height: 30vh;
 
-        max-height: 50vh;
-        border-radius: 5px;
         padding:5px;
         overflow-y: auto;
-        background-color: beige;
-        margin:10px;
+        /* scroll-behavior: smooth; */
+
+        /* box-shadow: inset; */
+        /* background-color: beige; */
+        /* margin:10px; */
         /* margin-block: 5px; */
     }
     :global( .listItem ) {
         border-radius: 5px;
-        background-color: burlywood;
+        /* background-color: burlywood; */
         padding: 5px;
     }
     
@@ -141,6 +143,7 @@
         padding:5px;
         display: flex;
         align-items: center;
+        margin-bottom: 10px;
         /* column-gap: 10px; */
         gap: 10px;
         flex-wrap: wrap;
