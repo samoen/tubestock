@@ -60,6 +60,8 @@ async function updateThem() {
 				subsAtStart:p.sel.subsAtStart,
 				tuberName:p.sel.forTuber.channelName,
 				returnValue:p.ret,
+				holderId:p.sel.holder.id	
+				
 			}
 			return cli
 		})

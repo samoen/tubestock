@@ -115,6 +115,8 @@ export const positionInClientSchema = z.object({
     subsAtStart: z.number(),
     long: z.boolean(),
     returnValue: z.number(),
+    holderId:z.number(),
+
 })
 export type PositionInClient = z.infer<typeof positionInClientSchema>
 

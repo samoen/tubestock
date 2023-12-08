@@ -58,12 +58,8 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 					userfk: false
 				},
 				with: {
-					forTuber: {
-						columns: {
-							count: true,
-							channelName:true,
-						}
-					}
+					forTuber: true,
+					holder:true,
 				}
 			},
 		},
@@ -84,6 +80,7 @@ export async function betterUsersOnServerToClient(): Promise<Utils.OtherUserOnCl
 				subsAtStart: selPos.subsAtStart,
 				tuberName: selPos.forTuber.channelName,
 				returnValue: retVal,
+				holderId: selPos.holder.id
 			}
 			posesInClient.push(posInClient)
 		}
@@ -153,7 +150,8 @@ export async function positionsInClientForUser(userId: number): Promise<Utils.Po
 	let gotp = await db.query.positions.findMany({
         where:DORM.eq(Schema.positions.userfk,userId),
         with:{
-            forTuber:true
+            forTuber:true,
+			holder:true,
         }
     })
 
@@ -172,7 +170,8 @@ export async function positionsInClientForUser(userId: number): Promise<Utils.Po
             long:g.long,
             tuberName:g.forTuber.channelName,
             subsAtStart:g.subsAtStart,
-            returnValue:ret
+            returnValue:ret,
+			holderId:g.holder.id,
         }
         cPoses.push(cpos)
     }
@@ -297,7 +296,8 @@ export async function dbGetFriends(ofId:number): Promise<Utils.OtherUserOnClient
 				with:{
 					positions:{
 						with:{
-							forTuber:true
+							forTuber:true,
+							holder:true,
 						}
 					}
 				}
@@ -316,6 +316,7 @@ export async function dbGetFriends(ofId:number): Promise<Utils.OtherUserOnClient
 				subsAtStart: selPos.subsAtStart,
 				tuberName: selPos.forTuber.channelName,
 				returnValue: retVal,
+				holderId:selPos.holder.id,
 			}
 			posesInClient.push(posInClient)
 		}

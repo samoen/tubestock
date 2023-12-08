@@ -20,12 +20,8 @@ export const POST: Kit.RequestHandler = async (event) => {
                     userfk: false
                 },
                 with: {
-                    forTuber: {
-                        columns: {
-                            count: true,
-                            channelName: true,
-                        }
-                    }
+                    forTuber: true,
+                    holder:true
                 }
             },
         }
@@ -53,6 +49,7 @@ export const POST: Kit.RequestHandler = async (event) => {
             subsAtStart: selPos.subsAtStart,
             tuberName: selPos.forTuber.channelName,
             returnValue: retVal,
+            holderId:selPos.holder.id,
         }
         posesInClient.push(posInClient)
     }
