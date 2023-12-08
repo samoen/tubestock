@@ -86,11 +86,11 @@ export const GET: Kit.RequestHandler = async (event) => {
 
 			if(userCreated){
 				// broadcast a new user was created
-				const cUsrs = await ServerState.betterUsersOnServerToClient()
-				let worldBroad : Utils.WorldEvent = {
-					users : cUsrs
-				}
-				ServerState.broadcast('world',worldBroad)
+				// const cUsrs = await ServerState.betterUsersOnServerToClient()
+				// let worldBroad : Utils.WorldEvent = {
+				// 	users : cUsrs
+				// }
+				// ServerState.broadcast('world',worldBroad)
 			}
 		},
 		cancel(reason) {

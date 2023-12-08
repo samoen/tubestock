@@ -96,7 +96,11 @@
 {#if invite}
     <!-- <div style:marginBottom=60px> -->
     <BarItem
-    compData={{ kind: "room", thingId:inviteId }}
+        compData={{ kind: "room", thingId:inviteId, maybeMakeProps() {
+            let found = appState.value.roomInvites.findLast(u=>u.id == inviteId)
+            if(found) return {thing:found}
+            return undefined
+        }, }}
         title={invite.toRoom.roomName}
     ></BarItem>
     <span class="bigBold">Private Room</span>

@@ -2,34 +2,17 @@
     import * as ClientState from "$lib/client/clientState.svelte";
     import * as Utils from "$lib/utils";
 
-    let { compData: forCompId, title } = $props<{ compData: ClientState.ComponentWantShow, title:string }>();
+    let { kind, thingId, title } = $props<{ kind: ClientState.AllCompLedgeKey, thingId:number|undefined, title:string }>();
 
     const appState = ClientState.getAppState();
 
-    
 
     function selectedClicked() {
-        if (cExist(forCompId)) {
-            appState.value.compies = appState.value.compies.filter(c=>!((c.kind == forCompId.kind) && (c.thingId == forCompId.thingId)))
+            appState.value.compies = appState.value.compies.filter(c=>!((c.kind == kind) && (c.thingId == thingId)))
             appState.dirty()
-            return;
-        }
-        appState.value.compies.unshift(forCompId);
-        ClientState.getScrollY().setToZero();
-        appState.dirty();
     }
-    function cExist(key: ClientState.ComponentWantShow): boolean {
-        for(const compy of appState.value.compies){
-
-            if(key.kind == compy.kind){
-                if(compy.thingId == key.thingId){
-                    return true
-                }
-            }
-        }
-        return false;
-    }
-    let active = $derived(cExist(forCompId));
+    
+    let active = true;
 </script>
 
 <button

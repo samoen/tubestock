@@ -20,7 +20,8 @@ export const load : LayoutServerLoad = async(event)=>{
 		with: {
 			author: {
 				columns: {
-					displayName: true
+					displayName: true,
+                    id:true,
 				}
 			}
 		},
@@ -29,7 +30,7 @@ export const load : LayoutServerLoad = async(event)=>{
 	})
     const allUsrs = await ServerState.betterUsersOnServerToClient()
     const dfl: Utils.WorldEvent = {
-		users: allUsrs,
+		// users: allUsrs,
 		tubers: allTubers,
 		msgs: recentMsgs,
 	}

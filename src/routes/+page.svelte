@@ -25,18 +25,21 @@
         const result : {compKey:ClientState.ComponentWantShow,cProps:object,template:any}[]= []
         for(const c of appState.value.compies){
             const fromAllLedge = ClientState.allCompLedge[c.kind]
-            if(fromAllLedge.makeProps){
-                if(c.thingId){
-                    let p = fromAllLedge.makeProps(c.thingId)
-                    if(p){
-                        result.push({compKey:c, cProps:p,template:fromAllLedge.t})
-                    }
-
+            // let templateToUse = fromAllLedge.t
+            if(!c.template){
+                c.template = fromAllLedge.t
+            }
+            // if(c.template){
+            //     templateToUse = c.template
+            // }
+            if(c.maybeMakeProps){
+                let p = c.maybeMakeProps()
+                if(p){
+                    result.push({compKey:c, cProps:p,template:c.template})
                 }
                 continue
-
             }
-            result.push({compKey:c,cProps:{},template:fromAllLedge.t})
+            result.push({compKey:c,cProps:{},template:c.template})
 
         }
         return result
@@ -87,7 +90,7 @@
             out:SvelteTransition.scale={{duration:250,easing:Easing.sineIn}}
             >
                 
-                <svelte:component this={c.template} {...c.cProps}></svelte:component>
+                <svelte:component this={c.compKey.template} {...c.cProps}></svelte:component>
                 <!-- <CompSelector key={c}></CompSelector> -->
     
         </div>

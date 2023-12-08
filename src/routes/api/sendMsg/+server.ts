@@ -29,6 +29,7 @@ export const POST: RequestHandler = async (event) => {
             sentAt: inserted.sentAt,
             author: {
                 displayName: foundUser.displayName,
+                id:foundUser.id
             },
         }
         const toBroadCast: Utils.AddMsgEvent = {
@@ -81,7 +82,8 @@ export const POST: RequestHandler = async (event) => {
             msg: {
                 id: inserted.id,
                 author: {
-                    displayName: foundUser.displayName
+                    displayName: foundUser.displayName,
+                    id:foundUser.id,
                 },
                 msgTxt: inserted.msgTxt,
                 sentAt: inserted.sentAt

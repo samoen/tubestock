@@ -24,7 +24,7 @@ export type SimpleFormProps = {
 export type ClientAppState = {
     source: EventSource | undefined
     chatMsgs: Utils.ChatMsgOnClient[];
-    userList: Utils.OtherUserOnClient[];
+    // userList: Utils.OtherUserOnClient[];
     friendsList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
     roomInvites:Utils.InviteOnClient[];
@@ -38,6 +38,7 @@ export type ClientAppState = {
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
     compies:ComponentWantShow[]
+    // uiUserList:Utils.OtherUserOnClient[]
 }
 
 export function getScrollY() : ShareRune {
@@ -71,7 +72,8 @@ const stateFactory = () => {
     const as: ClientAppState = {
         source: undefined,
         chatMsgs: [],
-        userList: [],
+        // userList: [],
+        // uiUserList:[],
         friendsList: [],
         positionsList: undefined,
         tuberList: [],
@@ -83,7 +85,7 @@ const stateFactory = () => {
         selectedTuber: undefined,
         selectedUser:undefined,
         subscribing: false,
-        compies: [{kind:'usrs',thingId:undefined}],
+        compies: [{kind:'usrs',thingId:undefined},{kind:'globalChat',thingId:undefined}],
     };
     let value = $state(as)
     return {
@@ -111,13 +113,13 @@ export function getAppState(){
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export type CompLedge = Record<string,mayMakeProps>
 export type mayMakeProps = {
     t:any,
-    makeProps?:(...args:any)=>object|undefined
+    // makeProps?:(...args:any)=>object|undefined
 }
+export type CompLedge = Record<string,mayMakeProps>
 
-export const allCompLedge :CompLedge = {
+export const allCompLedge = {
     usr:{t:User},
     usrs:{t:Users},
     rooms:{t:Rooms},
@@ -126,29 +128,26 @@ export const allCompLedge :CompLedge = {
     tubers:{t:Tubers},
     otherUsr:{
         t: OtherUser,
-        makeProps(id:number):object | undefined{
-            let found = appState.value.userList.findLast(u=>u.id == id)
-            if(found) return {thing:found}
-            return undefined
-        }
     },
     room:{
         t:Room,
-        makeProps(id:number):object | undefined{
-            let found = appState.value.roomInvites.findLast(u=>u.id == id)
-            if(found) return {thing:found}
-            return undefined
-        }
     },
     tuber:{
         t:Tuber,
-        makeProps(id:number):object | undefined{
-            let found = appState.value.tuberList.findLast(u=>u.id == id)
-            if(found) return {thing:found}
-            return undefined
-        }
     }
 } as const satisfies CompLedge
+
+export const usr = User
+export const usrs= Users
+export const rooms=Rooms
+export const positions=Positions
+export const globalChat=GlobalChat
+export const tubers=Tubers
+export const otherUsr=OtherUser
+export const room=Room
+export const tuber=Tuber
+
+// export const userstest = Users
 
 
 export type AllCompLedgeKey = keyof typeof allCompLedge
@@ -156,31 +155,11 @@ export type AllCompLedgeKey = keyof typeof allCompLedge
 // export type DynamicCompKey = keyof typeof dynamicCompLedge
 
 export type ComponentWantShow = {
-    kind: AllCompLedgeKey,
+    kind: AllCompLedgeKey
     thingId?: number
+    maybeMakeProps?:()=>any
+    template?:any
 } 
-// | {
-//     kind:DynamicCompKey
-//     thingId:number
-//     // template:any
-//  }
-//  | {
-//     kind:'user'
-//     thingId:number
-//  }
-//  | {
-//     kind:'tuber'
-//     // thingId:`tuber${string}`
-//     tuberOnClient:Utils.TuberInClient
-//     thingId:number
-//  }
-
-// export type CompKeyId = CompKey['thingId']
-export function showComp(compy:ComponentWantShow){
-    appState.value.compies.unshift(compy);
-    getScrollY().setToZero()
-    appState.dirty();
-}
 
 export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
     const toSend: Utils.SetNameRequest = {
@@ -260,17 +239,17 @@ export async function subscribe() {
         appState.dirty()
     });
 
-    appState.value.source.addEventListener("userJoined", (e) => {
-        const parsed = Utils.otherUserOnClientSchema.safeParse(
-            JSON.parse(e.data)
-        );
-        if (!parsed.success) {
-            console.log("bad update from server");
-            return;
-        }
-        console.log("got user joined " + JSON.stringify(parsed.data));
-        appState.value.userList.unshift(parsed.data)
-    });
+    // appState.value.source.addEventListener("userJoined", (e) => {
+    //     const parsed = Utils.otherUserOnClientSchema.safeParse(
+    //         JSON.parse(e.data)
+    //     );
+    //     if (!parsed.success) {
+    //         console.log("bad update from server");
+    //         return;
+    //     }
+    //     console.log("got user joined " + JSON.stringify(parsed.data));
+    //     appState.value.userList.unshift(parsed.data)
+    // });
 
     appState.value.source.addEventListener("world", (e) => {
         console.log('got world event')
@@ -306,9 +285,9 @@ export function calcNetWorth(
 }
 
 export function receiveWorldEvent(we:Utils.WorldEvent){
-    if (we.users) {
-        appState.value.userList = we.users;
-    }
+    // if (we.users) {
+    //     appState.value.userList = we.users;
+    // }
     if (we.friends) {
         appState.value.friendsList = we.friends;
     }

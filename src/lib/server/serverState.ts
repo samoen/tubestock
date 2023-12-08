@@ -409,7 +409,8 @@ export async function dbGetInvites(forUserId: number): Promise<Utils.InviteOnCli
 						with: {
 							author: {
 								columns: {
-									displayName: true
+									displayName: true,
+									id:true,
 								}
 							}
 						},

@@ -22,11 +22,11 @@ export const POST: Kit.RequestHandler = async (event) => {
 
     event.cookies.set('username', parsed.data.wantName, { path: '/', secure: false });
 
-    const cUsrs = await ServerState.betterUsersOnServerToClient()
-    const worldEvent: Utils.WorldEvent = {
-        users: cUsrs
-    }
-    ServerState.broadcast('world', worldEvent)
+    // const cUsrs = await ServerState
+    // const worldEvent: Utils.WorldEvent = {
+        // users: cUsrs
+    // }
+    // ServerState.broadcast('world', worldEvent)
 
     const response: Utils.SetNameResponse = {
         yourName: parsed.data.wantName

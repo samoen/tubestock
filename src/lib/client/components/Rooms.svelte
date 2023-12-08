@@ -50,21 +50,31 @@
     );
 </script>
 
-<BarItem compData={{ kind: "rooms", thingId: undefined}} title="Rooms"></BarItem>
+<BarItem compData={{ kind: "rooms", thingId: undefined}} title="Rooms"
+></BarItem>
 <div class="m">
     {#if showables.length > 0}
-    
-    <h4>Joined</h4>
-    <div class='listOfBarItems'>
-        {#each showables as i (i.id)}
-            <BarItem
-            compData={{ kind: "room", thingId:i.id }}
-                title={i.toRoom.roomName}
-            ></BarItem>
-        {/each}
-    </div>
-    <!-- <br /> -->
-    <!-- <br /> -->
+        <h4>Joined</h4>
+        <div class="listOfBarItems">
+            {#each showables as i (i.id)}
+                <BarItem
+                    compData={{
+                        kind: "room",
+                        thingId: i.id,
+                        maybeMakeProps() {
+                            let found = appState.value.roomInvites.findLast(
+                                (u) => u.id == i.id,
+                            );
+                            if (found) return { thing: found };
+                            return undefined;
+                        },
+                    }}
+                    title={i.toRoom.roomName}
+                ></BarItem>
+            {/each}
+        </div>
+        <!-- <br /> -->
+        <!-- <br /> -->
     {/if}
     {#if joinables.length > 0}
         <h4>Invited</h4>

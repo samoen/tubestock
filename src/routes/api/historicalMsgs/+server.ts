@@ -21,7 +21,8 @@ export const POST: RequestHandler = async (event) => {
             with: {
                 author: {
                     columns: {
-                        displayName: true
+                        displayName: true,
+                        id:true,
                     }
                 }
             },
@@ -45,7 +46,8 @@ export const POST: RequestHandler = async (event) => {
         with: {
             author: {
                 columns: {
-                    displayName: true
+                    displayName: true,
+                    id:true,
                 }
             }
         },

@@ -63,6 +63,12 @@
         compData={{
             kind: "otherUsr",
             thingId: selectedUser.id,
+            maybeMakeProps() {
+                let found = appState.value.friendsList.findLast(u=>u.id == selectedUser.id)
+                if(found) return {thing:found}
+                return undefined
+            },
+            template:ClientState.otherUsr
         }}
         title={selectedUser.displayName}
     ></BarItem>

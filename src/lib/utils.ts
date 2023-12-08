@@ -60,6 +60,7 @@ export const chatMsgOnClientSchema = z.object({
     msgTxt: z.string(),
     sentAt: z.number(),
     author: z.object({
+        id:z.number(),
         displayName: z.string(),
     }),
 })
@@ -204,7 +205,7 @@ export function findRunRemove<T>(arr: T[], find: (f: T) => boolean, run: (f: T) 
 }
 
 export const worldEventSchema = z.object({
-    users: z.array(otherUserOnClientSchema).optional(),
+    // users: z.array(otherUserOnClientSchema).optional(),
     friends: z.array(otherUserOnClientSchema).optional(),
     tubers: z.array(tuberInClientSchema).optional(),
     msgs: z.array(chatMsgOnClientSchema).optional(),
