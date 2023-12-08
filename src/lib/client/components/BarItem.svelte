@@ -3,23 +3,23 @@
     import * as Utils from "$lib/utils";
     import { boolean } from "drizzle-orm/mysql-core";
 
-    let { compData: forCompId, title, transpar } = $props<{
+    let { compData, title } = $props<{
         compData: ClientState.ComponentWantShow;
         title: string;
-        transpar?:boolean;
+        // transpar?:boolean;
     }>();
 
     const appState = ClientState.getAppState();
 
     function selectedClicked() {
-        if (cExist(forCompId)) {
+        if (cExist(compData)) {
             appState.value.compies = appState.value.compies.filter(
-                (c) => !ClientState.compiesAreSame(forCompId, c),
+                (c) => !ClientState.compiesAreSame(compData, c),
             );
             appState.dirty();
             return;
         }
-        appState.value.compies.unshift(forCompId);
+        appState.value.compies.unshift(compData);
         ClientState.getScrollY().setToZero();
         appState.dirty();
     }
@@ -31,14 +31,13 @@
         }
         return false;
     }
-    let active = $derived(cExist(forCompId));
+    let active = $derived(cExist(compData));
 </script>
 
 <button
     class="itemButton"
     on:click={selectedClicked}
-    class:inset-brutal={active && !transpar}
-    class:inset-brutal-transparent={active && transpar}
+    class:inset-brutal={active}
     class:brutal-border={!active}
 >
     <div class="holdVis">
@@ -56,6 +55,7 @@
         font-weight: bold;
         /* position:relative; */
         /* width: fit-content; */
+        /* background-color: transparent; */
         background-color: beige;
         font-size:1.3rem;
         color:black;
@@ -64,6 +64,7 @@
         display: grid;
         grid-template-columns: 1fr;
         place-items: center;
+        /* background-color: beige; */
         /* grid-template-rows: auto; */
         /* position: relative; */
     }

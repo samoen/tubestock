@@ -75,8 +75,12 @@
         border: 2px solid black;
         box-shadow: 2px 2px 0px 0px black;
         border-radius: 8px;
-        /* font-size: 1.05em; */
-        /* transform: scale(0.8); */
+    }
+    :global(.inset-brutal) {
+        box-shadow: inset 2px 2px 3px 1px black;
+        margin:2px;
+        border: none;
+        border-radius: 9px;
     }
 
     :global(.listOfBarItems) {
@@ -86,20 +90,13 @@
         align-items: center;
     }
     
-    :global(.inset-brutal) {
-        box-shadow: inset 2px 2px 3px 1px black;
+    /* :global(.inset-brutal) { */
+        /* box-shadow: inset 2px 2px 3px 1px black; */
         /* border: 2px solid burlywood; */
-        border: 2px solid burlywood;
-        /* background-color: burlywood; */
-        border-radius: 9px;
-    }
-    :global(.inset-brutal-transparent) {
-        box-shadow: inset 2px 2px 3px 1px black;
         /* border: 2px solid burlywood; */
-        border: 2px solid transparent;
         /* background-color: burlywood; */
-        border-radius: 9px;
-    }
+        /* border-radius: 9px; */
+    /* } */
     :global( .msgs ) {
         display: flex;
         flex-direction: column-reverse;
