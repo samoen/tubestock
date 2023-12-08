@@ -13,12 +13,14 @@
 
     function selectedClicked() {
         if (cExist(compData)) {
+            console.log('removing compy')
             appState.value.compies = appState.value.compies.filter(
                 (c) => !ClientState.compiesAreSame(compData, c),
             );
             appState.dirty();
             return;
         }
+        console.log('adding compy, baritem clicked')
         appState.value.compies.unshift(compData);
         ClientState.getScrollY().setToZero();
         appState.dirty();
@@ -32,6 +34,7 @@
         return false;
     }
     let active = $derived(cExist(compData));
+    // let active = true
 </script>
 
 <button
@@ -47,19 +50,7 @@
 </button>
 
 <style>
-    .itemButton {
-        border-radius: 6px;
-        padding-inline: 5px;
-        padding-block: 3px;
-        cursor: pointer;
-        font-weight: bold;
-        /* position:relative; */
-        /* width: fit-content; */
-        /* background-color: transparent; */
-        background-color: beige;
-        font-size:1.3rem;
-        color:black;
-    }
+    
     .holdVis {
         display: grid;
         grid-template-columns: 1fr;

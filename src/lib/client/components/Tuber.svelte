@@ -6,13 +6,13 @@
     import SimpleForm from "./SimpleForm.svelte";
 
     const appState = ClientState.getAppState();
-    let { thing: tuberOnClient } = $props<{ thing: Utils.TuberInClient }>();
+    let { thing } = $props<{ thing: Utils.TuberInClient }>();
 
     async function placeStockClicked(
         inTxt: string,
         short: string,
     ): Promise<Utils.SamResult<{}>> {
-        if (!tuberOnClient)
+        if (!thing)
             return { failed: true, error: new Error("no tuber selected") };
         const intVal = Number.parseInt(inTxt);
         if (!intVal) {
@@ -24,7 +24,7 @@
         const shortBool = short == "true" ? true : false;
         // putStockLoading = true;
         const r = await ClientState.putStock(
-            tuberOnClient.channelId,
+            thing.channelId,
             intVal,
             !shortBool,
         );
@@ -33,26 +33,26 @@
     }
 </script>
 
-{#if tuberOnClient}
+{#if thing}
     <BarItem
         compData={{
             kind: "tuber",
-            thingId: tuberOnClient.id,
+            thingId: thing.id,
             maybeMakeProps() {
                 let found = appState.value.tuberList.findLast(
-                    (u) => u.id == tuberOnClient.id,
+                    (u) => u.id == thing.id,
                 );
                 if (found) return { thing: found };
                 return undefined;
             },
         }}
-        title={tuberOnClient.channelName}
+        title={thing.channelName}
     ></BarItem>
     <span class="bigBold">Tuber</span>
     <br />
     <br />
     <p>
-        Current subs: {tuberOnClient.count}
+        Current subs: {thing.count}
     </p>
     <br />
     <h4>Place Stock</h4>

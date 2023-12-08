@@ -48,7 +48,7 @@ async function updateThem() {
 		}
 		selectedWithRets.push(p)
 	}
-	const allusrs = await ServerState.betterUsersOnServerToClient()
+	// const allusrs = await ServerState.betterUsersOnServerToClient()
 	for (const memUser of ServerState.state.usersInMemory) {
 		if (!memUser.con) continue
 		const posesForThisUser = selectedWithRets.filter(p=>p.sel.holder.id == memUser.dbId)
@@ -67,7 +67,7 @@ async function updateThem() {
 		const worldEvent: Utils.WorldEvent = {
 			tubers: allTubers,
 			positions: posesToClient,
-			users: allusrs,
+			// users: allusrs,
 		}
 		ServerState.sendToUser(memUser, 'world', worldEvent)
 	}

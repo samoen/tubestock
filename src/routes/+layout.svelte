@@ -60,10 +60,7 @@
     }
     :global(body) {
         background-color: beige;
-        /* padding-inline: 5px; */
         padding: 10px;
-        /* margin: 0; */
-        /* word-wrap: break-word; */
     }
     
 
@@ -77,11 +74,23 @@
         box-shadow: 2px 2px 0px 0px black;
         border-radius: 8px;
     }
+
     :global(.inset-brutal) {
         box-shadow: inset 2px 2px 3px 1px black;
         margin:2px;
         border: none;
         border-radius: 9px;
+    }
+
+    :global(.itemButton){
+        border-radius: 6px;
+        padding-inline: 5px;
+        padding-block: 3px;
+        cursor: pointer;
+        font-weight: bold;
+        background-color: beige;
+        font-size:1.3rem;
+        color:black;
     }
 
     :global(.listOfBarItems) {
@@ -91,33 +100,18 @@
         align-items: center;
     }
     
-    /* :global(.inset-brutal) { */
-        /* box-shadow: inset 2px 2px 3px 1px black; */
-        /* border: 2px solid burlywood; */
-        /* border: 2px solid burlywood; */
-        /* background-color: burlywood; */
-        /* border-radius: 9px; */
-    /* } */
-    :global( .msgs ) {
+    :global(.msgs) {
         display: flex;
         flex-direction: column-reverse;
         align-items: flex-start;
-        /* height: 100px; */
         gap:5px;
         max-height: 30vh;
-
         padding:5px;
         overflow-y: auto;
-        /* scroll-behavior: smooth; */
-
-        /* box-shadow: inset; */
-        /* background-color: beige; */
-        /* margin:10px; */
-        /* margin-block: 5px; */
     }
-    :global( .listItem ) {
+
+    :global(.listItem) {
         border-radius: 5px;
-        /* background-color: burlywood; */
         padding: 5px;
     }
     

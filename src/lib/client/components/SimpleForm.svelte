@@ -11,18 +11,19 @@
         placeHold?: string;
     };
 
-    let { buttonLabel, inputs: things, onSubmit: coolfire } = $props<Props>();
+    let { buttonLabel, inputs , onSubmit } = $props<Props>();
 
     let meLoad = $state(false);
     let errTxt = $state("");
+
 
     type EleThing = {
         ishape: InputShape;
         ele: HTMLElement | undefined;
     };
-    let inputEles: EleThing[] = !things
+    let inputEles: EleThing[] = !inputs
         ? []
-        : things.map((t) => {
+        : inputs.map((t) => {
               return {
                   ishape: t,
                   ele: undefined,
@@ -45,7 +46,7 @@
     }
 
     async function itClicked() {
-        if (!coolfire) return;
+        if (!onSubmit) return;
         errTxt = ""
         meLoad = true;
         let vals: string[] = [];
@@ -64,7 +65,7 @@
             }
             vals.push(child.value);
         }
-        let res = await coolfire(...vals);
+        let res = await onSubmit(...vals);
         meLoad = false;
         if (res.failed) {
             errTxt = res.error.message;
@@ -83,9 +84,10 @@
     }
 </script>
 
-{#if things}
+{#if inputs}
     {#each inputEles as t}
         <div class="inputHolder" bind:this={t.ele}>
+
             <input
                 on:input={inputChanged}
                 type={t.ishape.itype}
@@ -143,6 +145,7 @@
         background-color: beige;
     }
     .inputHolder {
+        min-width: 400px;
         display: inline;
     }
 </style>

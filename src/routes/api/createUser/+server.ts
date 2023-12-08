@@ -22,11 +22,11 @@ export const POST: Kit.RequestHandler = async (event) => {
     )
     
     // broadcast new user list
-    const cUsrs = await ServerState.betterUsersOnServerToClient()
-    const w : Utils.WorldEvent = {
-        users:cUsrs
-    }
-    ServerState.broadcast('world',w)
+    // const cUsrs = await ServerState.betterUsersOnServerToClient()
+    // const w : Utils.WorldEvent = {
+        // users:cUsrs
+    // }
+    // ServerState.broadcast('world',w)
 
     return Kit.json({});
 };

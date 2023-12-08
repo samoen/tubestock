@@ -22,18 +22,6 @@
                     }
                     return {positionInClient:foundPos}
                 },}} title={p.tuberName + ' ' + p.id}></BarItem>
-                <!-- <span>
-                    {p.tuberName} : {p.amount} : {p.subsAtStart} : {p.long
-                        ? "(long)"
-                        : "(short)"} : returns {p.returnValue}
-                </span> -->
-                <!-- class="itemButton red" -->
-                <!-- <SimpleForm
-                    buttonLabel="exit"
-                    onSubmit={async () => {
-                        return await ClientState.exitPosition(p.id);
-                    }}
-                ></SimpleForm> -->
             </div>
         {/each}
     </div>

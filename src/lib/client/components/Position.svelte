@@ -13,7 +13,14 @@
 
         
     </script>
-    <BarItem compData={{kind:'position',thingId:positionInClient.id}} title={positionInClient.tuberName + ' ' + positionInClient.id}></BarItem>
+    <BarItem compData={{
+        kind:'position',
+        thingId:positionInClient.id,
+        maybeMakeProps() {
+            return {positionInClient:positionInClient}
+        },
+    }} title={positionInClient.tuberName + ' ' + positionInClient.id}></BarItem>
+    <span class="bigBold">Position #{positionInClient.id}</span>
     <br/>
     <p>Id: {positionInClient.id}</p>
     <p>Return value: {positionInClient.returnValue}</p>

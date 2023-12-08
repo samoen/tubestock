@@ -10,20 +10,23 @@
     let open = $state(false)
 </script>
 
-<button on:click={()=>open = !open}>{label}</button>
+<button class="brutal-border" on:click={()=>open = !open}>{label}</button>
 {#if open}
-<slot></slot>
-    
+    <!-- <div class="slotHold"> -->
+
+        <slot></slot>
+    <!-- </div> -->
 {/if}
 
 <style>
     button{
-        background-color: beige;
+        background-color: brown;
         font-size: large;
-        padding:5px;
+        padding-block:0px;
         border: 2px solid black;
         padding-inline: 10px;
-        border-radius: 20px;
+        border-radius: 10px;
+        color:white;
         /* border: none; */
         /* box-shadow: 2px 2px 0px 2px black; */
 

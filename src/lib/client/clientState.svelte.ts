@@ -185,6 +185,7 @@ export function showCompy(cWantShow: ComponentWantShow) {
     appState.value.compies = appState.value.compies.filter(
         (c) => !compiesAreSame(cWantShow, c),
     );
+    console.log('adding compy showing from search')
     appState.value.compies.unshift(cWantShow);
     getScrollY().setToZero();
 
@@ -311,6 +312,32 @@ export function calcNetWorth(
         res += pos.returnValue;
     }
     return res;
+}
+
+export async function userSearch(
+    m: number,
+): Promise<Utils.SamResult<Utils.UserSearchResponse>> {
+    const toSend: Utils.UserSearchRequest = {
+        userDbId: m,
+    };
+    const hit = await hitEndpoint(
+        "userSearch",
+        toSend,
+        Utils.userSearchResponseSchema,
+    );
+    if (hit.failed) {
+        return hit;
+    }
+    // let cWantshow: ComponentWantShow = {
+    //     kind: "otherUsr",
+    //     thingId: hit.value.userDeets.id,
+    //     maybeMakeProps: () => {
+    //         return {
+    //             thing: hit.value.userDeets,
+    //         };
+    //     },
+    // };
+    return hit;
 }
 
 export function receiveWorldEvent(we: Utils.WorldEvent) {

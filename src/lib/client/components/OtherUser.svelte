@@ -11,7 +11,7 @@
     type Props = {
         thing: Utils.OtherUserOnClient;
     };
-    let { thing: selectedUser } = $props<Props>();
+    let { thing } = $props<Props>();
 
     async function inviteToRoomClicked(
         userIdToInvite: number,
@@ -28,18 +28,22 @@
         );
         return r;
     }
-    async function addOrRemoveFriend(){
-        let toSend : Utils.AddFriendRequest = {
-            userDbId:selectedUser.id,
-            remove:isFriend
+    async function addOrRemoveFriend() {
+        let toSend: Utils.AddFriendRequest = {
+            userDbId: thing.id,
+            remove: isFriend,
+        };
+        let r = await ClientState.hitEndpoint(
+            "addFriend",
+            toSend,
+            Utils.worldEventSchema,
+        );
+        if (r.failed) {
+            return r;
         }
-        let r = await ClientState.hitEndpoint('addFriend',toSend,Utils.worldEventSchema)
-        if(r.failed){
-            return r
-        }
-        ClientState.receiveWorldEvent(r.value)
-        console.log('got friends ' + JSON.stringify(r.value))
-        return r
+        ClientState.receiveWorldEvent(r.value);
+        // console.log('got friends ' + JSON.stringify(r.value))
+        return r;
     }
     let roomsIOwn = $derived(
         (() => {
@@ -48,67 +52,97 @@
             const i = appState.value.roomInvites.filter(
                 (i) => i.toRoom.ownerId == myId,
             );
-            console.log("recalc invitables. " + i.length);
+            // console.log("recalc invitables. " + i.length);
 
             return i;
         })(),
     );
-    let isFriend = $derived((()=>{
-        return appState.value.friendsList.some(f=>f.id ==selectedUser.id)
-    })())
+    let isFriend = $derived(
+        (() => {
+            return appState.value.friendsList.some(
+                (f) => f.id == thing.id,
+            );
+        })(),
+    );
+    // function weirdAddComp(p:Utils.PositionInClient){
+    //     const c : ClientState.ComponentWantShow = {
+    //         kind: "position",
+    //         thingId: p.id,
+    //         maybeMakeProps() {
+    //             return { positionInClient: p };
+    //         },
+    //     }
+    //     ClientState.showCompy(c)
+    // }
 </script>
 
-{#if selectedUser}
+<!-- {#if thing} -->
+<BarItem
+    compData={{
+        kind: "otherUsr",
+        thingId: thing.id,
+        maybeMakeProps() {
+            let found = appState.value.friendsList.findLast(
+                (u) => u.id == thing.id,
+            );
+            if (found) return { thing: found };
+            
+            return undefined;
+        },
+    }}
+    title={thing.displayName}
+></BarItem>
+<span class="bigBold"> User #{thing.id} </span>
+<p>
+    Id: {thing.id}
+</p>
+<p>
+    Net worth: {ClientState.calcNetWorth(
+        thing.idleStock,
+        thing.positions,
+    )}
+</p>
+{#if roomsIOwn.length > 0}
+    <Opener label="Invite to Room">
+        {#each roomsIOwn as i}
+            <SimpleForm
+                buttonLabel={`${i.toRoom.roomName}`}
+                onSubmit={async () => {
+                    return await inviteToRoomClicked(
+                        thing.id,
+                        i.toRoom.id,
+                    );
+                }}
+            ></SimpleForm>
+        {/each}
+    </Opener>
+    <br/>
+{/if}
+
+<SimpleForm
+    buttonLabel={isFriend ? "remove friend" : "add friend"}
+    onSubmit={addOrRemoveFriend}
+></SimpleForm>
+<br />
+<h4>Positions</h4>
+{#each thing.positions as p (p.id)}
     <BarItem
         compData={{
-            kind: "otherUsr",
-            thingId: selectedUser.id,
+            kind: "position",
+            thingId: p.id,
             maybeMakeProps() {
-                let found = appState.value.friendsList.findLast(u=>u.id == selectedUser.id)
-                if(found) return {thing:found}
-                return undefined
+                return { positionInClient: p };
             },
         }}
-        title={selectedUser.displayName}
+        title={p.tuberName + " " + p.id}
     ></BarItem>
-    <span class="bigBold"> User #{selectedUser.id} </span>
-    <p>
-        Id: {selectedUser.id}
-    </p>
-    <p>
-        Net worth: {ClientState.calcNetWorth(
-            selectedUser.idleStock,
-            selectedUser.positions,
-        )}
-    </p>
-    {#each selectedUser.positions as p (p.id)}
-        <p>
-            {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
-        </p>
-    {/each}
-    {#if roomsIOwn.length > 0}
-        <Opener label="Invite to Room">
-            {#each roomsIOwn as i}
-                <SimpleForm
-                    buttonLabel={`${i.toRoom.roomName}`}
-                    onSubmit={async () => {
-                        if (!selectedUser) {
-                            return {
-                                failed: true,
-                                error: new Error("selected user is undefined"),
-                            };
-                        }
-                        return await inviteToRoomClicked(
-                            selectedUser.id,
-                            i.toRoom.id,
-                        );
-                    }}
-                ></SimpleForm>
-            {/each}
-        </Opener>
-    {/if}
-    <br/>
-    <SimpleForm buttonLabel="{isFriend ? 'remove friend' : 'add friend'}" onSubmit={addOrRemoveFriend}></SimpleForm>
-{:else}
-    <p>component not found</p>
-{/if}
+    <!-- <button class="itemButton inset-brutal" on:click={()=>{
+        weirdAddComp(p)
+    }}>{p.tuberName + " " + p.id}</button> -->
+    <!-- <p>
+        {p.tuberName} : {p.long ? "(long)" : "(short)"} : value {p.returnValue}
+    </p> -->
+{/each}
+<!-- {:else} -->
+<!-- <p>component not found</p> -->
+<!-- {/if} -->

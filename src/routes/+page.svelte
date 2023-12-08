@@ -24,6 +24,7 @@
     };
     let renderableComponents = $derived<RenderableComponent[]>(
         (() => {
+            console.log('rederiving renderable comps')
             const result: RenderableComponent[] = [];
             for (const c of appState.value.compies) {
                 let props: object | undefined = undefined;
@@ -31,6 +32,8 @@
                     let p = c.maybeMakeProps();
                     if (p) {
                         props = p;
+                    }else{
+                        console.log('failed to make props')
                     }
                 } else {
                     props = {};
