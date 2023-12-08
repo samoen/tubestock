@@ -26,7 +26,7 @@ import * as ClientState from '$lib/client/clientState.svelte'
 </script>
 
 <!-- <h3>Me</h3> -->
-<BarItem compData={{kind:'usr',thingId:undefined}} title='Me'></BarItem>
+<BarItem compData={{kind:'usr'}} title='Me'></BarItem>
 <p>Display Name: {appState.value.myUsername}</p>
 <p>Idle stock : {appState.value.myIdleStock}</p>
 <p>Net worth : {netWorth}</p>

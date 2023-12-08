@@ -28,12 +28,12 @@
 <div class="topBar brutal-border" class:solid={atTop} class:blurry={!atTop}>
     <h3><a href="/">Tubestock</a></h3>
     <a href="/about">about</a>
-    <BarItem compData={{kind:'usr', thingId:undefined}} title='Me'></BarItem>
-    <BarItem compData={{kind:'usrs', thingId:undefined}} title='Users'></BarItem>
-    <BarItem compData={{kind:'rooms', thingId:undefined}} title='Rooms'></BarItem>
-    <BarItem compData={{kind:'positions', thingId:undefined}} title='Positions'></BarItem>
-    <BarItem compData={{kind:'tubers', thingId:undefined}} title='Tubers'></BarItem>
-    <BarItem compData={{kind:'globalChat', thingId:undefined}} title='Global Chat'></BarItem>
+    <BarItem compData={{kind:'usr'}} title='Me'></BarItem>
+    <BarItem compData={{kind:'usrs',}} title='Users'></BarItem>
+    <BarItem compData={{kind:'rooms'}} title='Rooms'></BarItem>
+    <BarItem compData={{kind:'positions'}} title='Positions'></BarItem>
+    <BarItem compData={{kind:'tubers',}} title='Tubers'></BarItem>
+    <BarItem compData={{kind:'globalChat'}} title='Global Chat'></BarItem>
 </div>
 
 <slot />
@@ -64,17 +64,7 @@
         /* margin: 0; */
         /* word-wrap: break-word; */
     }
-    :global(.itemButton) {
-        border-radius: 6px;
-        padding-inline: 5px;
-        padding-block: 3px;
-        cursor: pointer;
-        font-weight: bold;
-        /* position:relative; */
-        /* width: fit-content; */
-        background-color: beige;
-        font-size:1.3rem;
-    }
+    
 
     :global(.opener){
         background-color: yellowgreen;
@@ -98,7 +88,15 @@
     
     :global(.inset-brutal) {
         box-shadow: inset 2px 2px 3px 1px black;
+        /* border: 2px solid burlywood; */
         border: 2px solid burlywood;
+        /* background-color: burlywood; */
+        border-radius: 9px;
+    }
+    :global(.inset-brutal-transparent) {
+        box-shadow: inset 2px 2px 3px 1px black;
+        /* border: 2px solid burlywood; */
+        border: 2px solid transparent;
         /* background-color: burlywood; */
         border-radius: 9px;
     }

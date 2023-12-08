@@ -50,7 +50,7 @@
     );
 </script>
 
-<BarItem compData={{ kind: "rooms", thingId: undefined}} title="Rooms"
+<BarItem compData={{ kind: "rooms"}} title="Rooms"
 ></BarItem>
 <div class="m">
     {#if showables.length > 0}

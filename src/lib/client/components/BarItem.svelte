@@ -1,17 +1,22 @@
 <script lang="ts">
     import * as ClientState from "$lib/client/clientState.svelte";
     import * as Utils from "$lib/utils";
+    import { boolean } from "drizzle-orm/mysql-core";
 
-    let { compData: forCompId, title } = $props<{ compData: ClientState.ComponentWantShow, title:string }>();
+    let { compData: forCompId, title, transpar } = $props<{
+        compData: ClientState.ComponentWantShow;
+        title: string;
+        transpar?:boolean;
+    }>();
 
     const appState = ClientState.getAppState();
 
-    
-
     function selectedClicked() {
         if (cExist(forCompId)) {
-            appState.value.compies = appState.value.compies.filter(c=>!((c.kind == forCompId.kind) && (c.thingId == forCompId.thingId)))
-            appState.dirty()
+            appState.value.compies = appState.value.compies.filter(
+                (c) => !ClientState.compiesAreSame(forCompId, c),
+            );
+            appState.dirty();
             return;
         }
         appState.value.compies.unshift(forCompId);
@@ -19,12 +24,9 @@
         appState.dirty();
     }
     function cExist(key: ClientState.ComponentWantShow): boolean {
-        for(const compy of appState.value.compies){
-
-            if(key.kind == compy.kind){
-                if(compy.thingId == key.thingId){
-                    return true
-                }
+        for (const compy of appState.value.compies) {
+            if (ClientState.compiesAreSame(key, compy)) {
+                return true;
             }
         }
         return false;
@@ -35,7 +37,8 @@
 <button
     class="itemButton"
     on:click={selectedClicked}
-    class:inset-brutal={active}
+    class:inset-brutal={active && !transpar}
+    class:inset-brutal-transparent={active && transpar}
     class:brutal-border={!active}
 >
     <div class="holdVis">
@@ -45,6 +48,18 @@
 </button>
 
 <style>
+    .itemButton {
+        border-radius: 6px;
+        padding-inline: 5px;
+        padding-block: 3px;
+        cursor: pointer;
+        font-weight: bold;
+        /* position:relative; */
+        /* width: fit-content; */
+        background-color: beige;
+        font-size:1.3rem;
+        color:black;
+    }
     .holdVis {
         display: grid;
         grid-template-columns: 1fr;

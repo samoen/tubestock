@@ -34,7 +34,7 @@
 
 <!-- <span class='bigBold'>Tubers</span> -->
 <!-- <button class="itemButton" on:click={()=>{ClientState.hideComp('tubers')}}>Hide</button> -->
-<BarItem compData={{ kind: "tubers", thingId: undefined }} title="Tubers"
+<BarItem compData={{ kind: "tubers" }} title="Tubers"
 ></BarItem>
 <div class="msgs">
     {#each appState.value.tuberList as t (t.channelId)}
@@ -50,6 +50,7 @@
                         if (found) return { thing: found };
                         return undefined;
                     },
+                    
                 }}
                 title={t.channelName}
             ></BarItem>

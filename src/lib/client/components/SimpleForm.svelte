@@ -128,6 +128,7 @@
         padding-inline: 4px;
         /* border-radius: 20px; */
         background-color: aliceblue;
+        color:black
     }
     .buttonLoading {
         position: absolute;

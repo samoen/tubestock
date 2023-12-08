@@ -68,7 +68,6 @@
                 if(found) return {thing:found}
                 return undefined
             },
-            template:ClientState.otherUsr
         }}
         title={selectedUser.displayName}
     ></BarItem>

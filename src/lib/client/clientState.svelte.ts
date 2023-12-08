@@ -27,46 +27,46 @@ export type ClientAppState = {
     // userList: Utils.OtherUserOnClient[];
     friendsList: Utils.OtherUserOnClient[];
     tuberList: Utils.TuberInClient[];
-    roomInvites:Utils.InviteOnClient[];
+    roomInvites: Utils.InviteOnClient[];
     // displayingInvites:number[];
     positionsList: Utils.PositionInClient[] | undefined;
     myUsername: string | undefined;
     myIdleStock: number | undefined;
     myPrivateId: string | undefined;
-    myDbId:number|undefined;
+    myDbId: number | undefined;
     selectedTuber: Utils.TuberInClient | undefined;
     selectedUser: Utils.OtherUserOnClient | undefined;
     subscribing: boolean;
-    compies:ComponentWantShow[]
+    compies: ComponentWantShow[]
     // uiUserList:Utils.OtherUserOnClient[]
 }
 
-export function getScrollY() : ShareRune {
-    if(scrollYRune)return scrollYRune
+export function getScrollY(): ShareRune {
+    if (scrollYRune) return scrollYRune
     console.log('new county')
-	let count = $state(0);
+    let count = $state(0);
 
-	function setToZero() {
-		count = 0;
-	}
+    function setToZero() {
+        count = 0;
+    }
     scrollYRune = {
-        set count(val:number){
+        set count(val: number) {
             count = val
         },
-		get count() {
-			return count;
-		},
-		setToZero:setToZero
-	};
+        get count() {
+            return count;
+        },
+        setToZero: setToZero
+    };
 
-	return scrollYRune
+    return scrollYRune
 }
 // type ShareRune = ReturnType<typeof createCounter>
 type ShareRune = {
-    count:number,
-    setToZero:()=>void
+    count: number,
+    setToZero: () => void
 }
-let scrollYRune : ShareRune | undefined = undefined
+let scrollYRune: ShareRune | undefined = undefined
 
 const stateFactory = () => {
     const as: ClientAppState = {
@@ -77,16 +77,17 @@ const stateFactory = () => {
         friendsList: [],
         positionsList: undefined,
         tuberList: [],
-        roomInvites:[],
+        roomInvites: [],
         myUsername: undefined,
         myIdleStock: undefined,
         myPrivateId: undefined,
-        myDbId:undefined,
+        myDbId: undefined,
         selectedTuber: undefined,
-        selectedUser:undefined,
+        selectedUser: undefined,
         subscribing: false,
-        compies: [{kind:'usrs',thingId:undefined},{kind:'globalChat',thingId:undefined}],
+        compies: [{ kind: 'usrs' }, { kind: 'globalChat' }],
     };
+
     let value = $state(as)
     return {
         get value() { return value; },
@@ -106,62 +107,90 @@ const stateFactory = () => {
 };
 
 
-export function getAppState(){
-    if(appState)return appState
+export function getAppState() {
+    if (appState) return appState
     appState = stateFactory()
     return appState;
 }
 let appState: ReturnType<typeof stateFactory>;
 
-export type mayMakeProps = {
-    t:any,
-    // makeProps?:(...args:any)=>object|undefined
+export type Template = {
+    t: ComponentType<SvelteComponent<any>>
+    // tkind: string
 }
-export type CompLedge = Record<string,mayMakeProps>
+export type CompLedge = Record<string, Template>
 
 export const allCompLedge = {
-    usr:{t:User},
-    usrs:{t:Users},
-    rooms:{t:Rooms},
-    positions:{t:Positions},
-    globalChat:{t:GlobalChat},
-    tubers:{t:Tubers},
-    otherUsr:{
+    usr: {
+        t: User,
+        // tkind: 'usr'
+    },
+    usrs: {
+        t: Users,
+        // tkind: 'usrs'
+    },
+    rooms: {
+        t: Rooms,
+        // tkind: 'rooms'
+    },
+    positions: { t: Positions, 
+        // tkind: 'positions' 
+    },
+    globalChat: { t: GlobalChat, 
+        // tkind: 'globalChat' 
+    },
+    tubers: { t: Tubers, 
+        // tkind: 'tubers' 
+    },
+    otherUsr: {
         t: OtherUser,
+        // tkind: 'otherUsr'
+
     },
-    room:{
-        t:Room,
+    room: {
+        t: Room, 
+        // tkind: 'room'
     },
-    tuber:{
-        t:Tuber,
+    tuber: {
+        t: Tuber,
+        // tkind: 'tuber'
     }
 } as const satisfies CompLedge
 
-export const usr = User
-export const usrs= Users
-export const rooms=Rooms
-export const positions=Positions
-export const globalChat=GlobalChat
-export const tubers=Tubers
-export const otherUsr=OtherUser
-export const room=Room
-export const tuber=Tuber
-
-// export const userstest = Users
-
-
 export type AllCompLedgeKey = keyof typeof allCompLedge
+
+
 // export type StaticCompKey = keyof typeof staticCompLedg
 // export type DynamicCompKey = keyof typeof dynamicCompLedge
 
 export type ComponentWantShow = {
     kind: AllCompLedgeKey
     thingId?: number
-    maybeMakeProps?:()=>any
-    template?:any
-} 
+    maybeMakeProps?: () => object | undefined
+}
 
-export async function setName(inputTxt: string) : Promise<Utils.SamResult<unknown>>{
+export function showCompy(cWantShow: ComponentWantShow) {
+    appState.value.compies = appState.value.compies.filter(
+        (c) => !compiesAreSame(cWantShow, c),
+    );
+    appState.value.compies.unshift(cWantShow);
+    getScrollY().setToZero();
+
+    appState.dirty();
+}
+export function compiesAreSame(
+    c1: ComponentWantShow,
+    c2: ComponentWantShow,
+): boolean {
+    if (c1.kind == c2.kind) {
+        if (c1.thingId == c2.thingId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export async function setName(inputTxt: string): Promise<Utils.SamResult<unknown>> {
     const toSend: Utils.SetNameRequest = {
         wantName: inputTxt,
     };
@@ -190,10 +219,10 @@ export async function subscribe() {
         return;
     }
     // window.onunload = () => {
-        //     manualSourceError();
-        // };
-        
-        // try {
+    //     manualSourceError();
+    // };
+
+    // try {
     appState.value.subscribing = true;
     appState.dirty()
     appState.value.source = new EventSource("/api/events");
@@ -222,34 +251,22 @@ export async function subscribe() {
     appState.value.source.addEventListener("chatmsg", (ev) => {
         const parsed = Utils.addMsgEventSchema.safeParse(
             JSON.parse(ev.data)
-            );
+        );
         // console.log("got chatmsg event " + JSON.stringify(parsed));
         if (!parsed.success) {
             console.log("bad update from server");
             return;
         }
-        if(!parsed.data.roomId){
+        if (!parsed.data.roomId) {
             appState.value.chatMsgs.unshift(parsed.data.msg)
-        }else{
-            const foundInvite = appState.value.roomInvites.findLast(ri=>ri.toRoom.id == parsed.data.roomId)
-            if(foundInvite){
+        } else {
+            const foundInvite = appState.value.roomInvites.findLast(ri => ri.toRoom.id == parsed.data.roomId)
+            if (foundInvite) {
                 foundInvite.toRoom.msgs.unshift(parsed.data.msg)
             }
         }
         appState.dirty()
     });
-
-    // appState.value.source.addEventListener("userJoined", (e) => {
-    //     const parsed = Utils.otherUserOnClientSchema.safeParse(
-    //         JSON.parse(e.data)
-    //     );
-    //     if (!parsed.success) {
-    //         console.log("bad update from server");
-    //         return;
-    //     }
-    //     console.log("got user joined " + JSON.stringify(parsed.data));
-    //     appState.value.userList.unshift(parsed.data)
-    // });
 
     appState.value.source.addEventListener("world", (e) => {
         console.log('got world event')
@@ -284,7 +301,7 @@ export function calcNetWorth(
     return res;
 }
 
-export function receiveWorldEvent(we:Utils.WorldEvent){
+export function receiveWorldEvent(we: Utils.WorldEvent) {
     // if (we.users) {
     //     appState.value.userList = we.users;
     // }
@@ -324,11 +341,11 @@ export function manualSourceError() {
 }
 
 
-export async function sendMsg(chatInputTxt: string, toRoom:number|undefined = undefined) : Promise<Utils.SamResult<{}>> {
+export async function sendMsg(chatInputTxt: string, toRoom: number | undefined = undefined): Promise<Utils.SamResult<{}>> {
     const toSend: Utils.SendMsgRequest = {
         msgTxt: chatInputTxt,
     };
-    if(toRoom != undefined){
+    if (toRoom != undefined) {
         toSend.toRoomId = toRoom
     }
     let r = await hitEndpoint("sendMsg", toSend, Utils.emptyObject);
@@ -339,7 +356,7 @@ export async function deleteUser() {
     await hitEndpoint("delete", {}, Utils.emptyObject);
 }
 
-export async function requestTuber(searchTxt: string) : Promise<Utils.SamResult<{}>> {
+export async function requestTuber(searchTxt: string): Promise<Utils.SamResult<{}>> {
     const toSend: Utils.TubeRequest = {
         channelName: searchTxt,
     };
@@ -349,7 +366,7 @@ export async function requestTuber(searchTxt: string) : Promise<Utils.SamResult<
 
 
 
-export async function putStock(channelId: string, amt: number, long: boolean) : Promise<Utils.SamResult<{}>> {
+export async function putStock(channelId: string, amt: number, long: boolean): Promise<Utils.SamResult<{}>> {
     const toSend: Utils.PutStockRequest = {
         channelId: channelId,
         amount: amt,
@@ -370,7 +387,7 @@ export async function putStock(channelId: string, amt: number, long: boolean) : 
     return resp
 }
 
-export async function exitPosition(positionId: number) : Promise< Utils.SamResult<Utils.ExitPositionResponse>> {
+export async function exitPosition(positionId: number): Promise<Utils.SamResult<Utils.ExitPositionResponse>> {
     const toSend: Utils.ExitPositionRequest = {
         positionId: positionId,
     };
@@ -387,10 +404,10 @@ export async function exitPosition(positionId: number) : Promise< Utils.SamResul
     return fSafe
 }
 
-export async function restoreUser(pId:string,displayName: string) : Promise<Utils.SamResult<{}>> {
+export async function restoreUser(pId: string, displayName: string): Promise<Utils.SamResult<{}>> {
     const toSend: Utils.RestoreRequest = {
         displayName: displayName,
-        privateId:pId,
+        privateId: pId,
     };
     let res = await hitEndpoint(
         "restore",
@@ -398,7 +415,7 @@ export async function restoreUser(pId:string,displayName: string) : Promise<Util
         Utils.emptyObject
     );
     if (res.failed) return res;
-    
+
     manualSourceError()
     subscribe()
     return res

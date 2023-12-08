@@ -8,11 +8,11 @@
 
     const appState = ClientState.getAppState();
     type Props = {
-        thing:Utils.InviteOnClient
+        thing: Utils.InviteOnClient;
         // inviteId: number;
     };
-    let { thing : invite } = $props<Props>();
-    let inviteId = invite.id
+    let { thing: invite } = $props<Props>();
+    let inviteId = invite.id;
     // let invite = $derived(
     //     (() => {
     //         return appState.value.roomInvites.findLast((i) => i.id == inviteId);
@@ -96,11 +96,17 @@
 {#if invite}
     <!-- <div style:marginBottom=60px> -->
     <BarItem
-        compData={{ kind: "room", thingId:inviteId, maybeMakeProps() {
-            let found = appState.value.roomInvites.findLast(u=>u.id == inviteId)
-            if(found) return {thing:found}
-            return undefined
-        }, }}
+        compData={{
+            kind: "room",
+            thingId: inviteId,
+            maybeMakeProps() {
+                let found = appState.value.roomInvites.findLast(
+                    (u) => u.id == inviteId,
+                );
+                if (found) return { thing: found };
+                return undefined;
+            },
+        }}
         title={invite.toRoom.roomName}
     ></BarItem>
     <span class="bigBold">Private Room</span>
@@ -111,7 +117,7 @@
         <SimpleForm
             buttonLabel="Delete Room"
             onSubmit={async () => {
-                if(!invite)return {failed:true,error:new Error('huh')}
+                if (!invite) return { failed: true, error: new Error("huh") };
                 return await deleteRoom(invite.toRoom.id);
             }}
         ></SimpleForm>
@@ -120,7 +126,7 @@
         <SimpleForm
             buttonLabel="leave"
             onSubmit={async () => {
-                if(!invite)return {failed:true,error:new Error('huh')}
+                if (!invite) return { failed: true, error: new Error("huh") };
                 return await leaveRoom(invite.toRoom.id);
             }}
         ></SimpleForm>
@@ -128,17 +134,27 @@
     <h4>Participants</h4>
     <div class="listOfBarItems">
         {#each invite.toRoom.invites as i (i.forUser.id)}
-            <Opener label={i.forUser.displayName + (i.forUser.id == invite.toRoom.ownerId ? '(owner)' : '')}>
+            <Opener
+                label={i.forUser.displayName +
+                    (i.forUser.id == invite.toRoom.ownerId ? "(owner)" : "")}
+            >
                 {#if invite.toRoom.ownerId == appState.value.myDbId && i.forUser.id != appState.value.myDbId}
                     <SimpleForm
                         buttonLabel="kick"
                         onSubmit={async () => {
-                            if(!invite)return {failed:true,error:new Error('huh')}
-                            return await kickUser(invite.toRoom.id, i.forUser.id);
+                            if (!invite)
+                                return {
+                                    failed: true,
+                                    error: new Error("huh"),
+                                };
+                            return await kickUser(
+                                invite.toRoom.id,
+                                i.forUser.id,
+                            );
                         }}
                     ></SimpleForm>
                 {/if}
-                    </Opener>
+            </Opener>
         {/each}
     </div>
     <h4>Messages</h4>
@@ -152,7 +168,8 @@
             <SimpleForm
                 buttonLabel="Show Earlier"
                 onSubmit={async () => {
-                    if(!invite)return {failed:true,error:new Error('huh')}
+                    if (!invite)
+                        return { failed: true, error: new Error("huh") };
                     return await getEarlierPrivateMsgs(invite);
                 }}
             ></SimpleForm>
@@ -161,7 +178,7 @@
     <SimpleForm
         buttonLabel="Send"
         onSubmit={async (msgTxt) => {
-            if(!invite)return {failed:true,error:new Error('huh')}
+            if (!invite) return { failed: true, error: new Error("huh") };
             return await ClientState.sendMsg(msgTxt, invite.toRoom.id);
         }}
         inputs={[{ itype: "text" }]}
@@ -171,5 +188,4 @@
 {/if}
 
 <style>
-    
 </style>
